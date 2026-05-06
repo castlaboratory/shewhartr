@@ -1,0 +1,15 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^\.github$
+^data-raw$
+^README\.Rmd$
+^README_files$
+^cran-comments\.md$
+^doc$
+^Meta$
+^\.travis\.yml$
+^Shewhart-ROADMAP\.md$
+^quickstart\.R$

@@ -1,0 +1,158 @@
+---
+title: "ARL by Monte Carlo simulation"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{ARL by Monte Carlo simulation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>",
+                      fig.width = 7, fig.height = 4.2,
+                      eval = FALSE)
+```
+
+```{r setup, message = FALSE}
+library(shewhartr)
+library(ggplot2)
+library(dplyr)
+```
+
+The Average Run Length (ARL) of a control chart is the expected number
+of samples until the chart signals. It is the single most important
+operating characteristic — it tells you, on average, how *quickly*
+the chart catches a real shift, and how *often* it cries wolf.
+
+Two flavours:
+
+- **In-control ARL** ($\mathrm{ARL}_0$): the expected number of
+  in-control samples until a *false* alarm. Larger is better. A high
+  $\mathrm{ARL}_0$ means low false-alarm rate.
+- **Out-of-control ARL** ($\mathrm{ARL}_1$): the expected number of
+  samples after a real shift before the chart signals. Smaller is
+  better. A low $\mathrm{ARL}_1$ means fast detection.
+
+These two are in tension. Adding more rules to a chart sharpens
+detection (lower $\mathrm{ARL}_1$) but increases false alarms
+(lower $\mathrm{ARL}_0$). `shewhart_arl()` quantifies the trade-off.
+
+## Closed-form benchmarks
+
+For the simplest setup — Nelson 1 only, normal data, 3-sigma limits —
+the ARL is known in closed form. The probability of falling outside
+3-sigma is $2 \cdot \Phi(-3) \approx 0.0027$, so:
+
+$$
+\mathrm{ARL}_0 = \frac{1}{0.0027} \approx 370.4.
+$$
+
+Let's verify by simulation:
+
+```{r}
+set.seed(2025)
+shewhart_arl(
+  shift = 0,
+  rules = "nelson_1_beyond_3s",
+  n_sim = 5000,
+  max_run = 2000
+)
+```
+
+The estimate should be close to 370 (Monte Carlo error around the
+closed form).
+
+## Adding rules sharpens detection
+
+What happens if we add Nelson 2 (9 points same side) on top?
+
+```{r}
+set.seed(2025)
+shewhart_arl(
+  shift = 0,
+  rules = c("nelson_1_beyond_3s", "nelson_2_nine_same"),
+  n_sim = 5000
+)
+```
+
+The ARL_0 drops from ~370 to ~250, meaning false alarms become more
+common. Whether that's worth it depends on what we get in detection
+power. Let's plot ARL across a grid of shifts:
+
+```{r}
+shifts <- seq(0, 3, by = 0.25)
+
+set.seed(2025)
+arl_n1 <- shewhart_arl(shifts, "nelson_1_beyond_3s", n_sim = 2000)
+arl_n12 <- shewhart_arl(shifts,
+                        c("nelson_1_beyond_3s", "nelson_2_nine_same"),
+                        n_sim = 2000)
+
+bind_rows(
+  arl_n1  |> mutate(rules = "Nelson 1 only"),
+  arl_n12 |> mutate(rules = "Nelson 1 + 2")
+) |>
+  ggplot(aes(shift, arl, colour = rules)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = arl_lower, ymax = arl_upper, fill = rules),
+              alpha = 0.15, colour = NA) +
+  scale_y_log10() +
+  labs(x = "Shift (sigma)", y = "ARL (log scale)",
+       title = "Operating characteristics") +
+  theme_minimal()
+```
+
+The gain is largest for *small* shifts (around 0.5-1 sigma), where
+Nelson 1 alone takes a long time to fire. For shifts of 2 sigma or
+more, both rule sets detect within a couple of samples.
+
+## A quantitative comparison: WE-7 vs Nelson 2
+
+The original `Shewhart` package (now `shewhartr`) (v0.1.x) used a Western Electric
+"7 in a row" rule for phase detection. The default in v1.0 is Nelson
+2 (9 in a row). The trade-off:
+
+```{r}
+set.seed(2025)
+arl_we  <- shewhart_arl(0, "we_seven_same",       n_sim = 5000, max_run = 2000)
+arl_n2  <- shewhart_arl(0, "nelson_2_nine_same",  n_sim = 5000, max_run = 2000)
+arl_we
+arl_n2
+```
+
+The WE rule's ARL_0 is around 64 (a false phase change every 64
+in-control samples on average); Nelson 2's is around 256 (one every
+~256 samples). For most monitoring contexts that is a meaningful
+difference. The WE rule is easier to teach, but the false-alarm cost
+is high.
+
+`shewhart_regression()` accepts either via the `phase_rule` argument:
+
+```{r}
+shewhart_regression(temperature_drift, value = temp_c, index = minute,
+                    phase_rule = "we_seven_same")        # legacy default
+shewhart_regression(temperature_drift, value = temp_c, index = minute,
+                    phase_rule = "nelson_2_nine_same")    # new default
+```
+
+## Beyond normal residuals
+
+`shewhart_arl()` simulates from a normal distribution by default.
+Real residuals are often non-normal — heavy-tailed, skewed, or
+autocorrelated. The closed-form ARL_0 of 370 for Nelson 1 then
+overstates how rarely false alarms occur. A bootstrap variant
+(simulating from your actual residuals) is on the roadmap; until
+then, a quick check is to call `shewhart_diagnostics(fit)` and
+inspect the Q-Q and ACF panels.
+
+## References
+
+- Champ, C. W., & Woodall, W. H. (1987). Exact Results for Shewhart
+  Control Charts with Supplementary Runs Rules. *Technometrics*,
+  29(4), 393-399.
+- Wald, A. (1947). *Sequential Analysis*. Wiley.
+- Page, E. S. (1954). Continuous Inspection Schemes. *Biometrika*,
+  41(1-2), 100-115.
+- Lucas, J. M., & Saccucci, M. S. (1990). Exponentially Weighted
+  Moving Average Control Schemes: Properties and Enhancements.
+  *Technometrics*, 32(1), 1-12.

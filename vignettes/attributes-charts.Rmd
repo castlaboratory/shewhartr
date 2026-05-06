@@ -1,0 +1,136 @@
+---
+title: "Attributes charts: p, np, c, u"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Attributes charts: p, np, c, u}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>",
+                      fig.width = 7, fig.height = 4.2)
+```
+
+```{r setup, message = FALSE}
+library(shewhartr)
+```
+
+When the quality characteristic is binary (defective / non-defective)
+or a count of defects per unit, classical variables charts are the
+wrong tool. Counts and proportions live on bounded supports and
+follow Binomial / Poisson distributions; pretending they are normal
+makes the chart limits wrong, sometimes badly.
+
+| Data                                     | Distribution | Chart                  |
+|------------------------------------------|--------------|------------------------|
+| Proportion defective (variable n)        | Binomial     | `shewhart_p()`         |
+| Number defective (constant n)            | Binomial     | `shewhart_np()`        |
+| Defect count per unit (constant exposure)| Poisson      | `shewhart_c()`         |
+| Defect count per unit (variable exposure)| Poisson      | `shewhart_u()`         |
+
+## p chart with variable n
+
+`claims_p` records 30 days of insurance-claim quality control. Each
+day, a variable number of claims (`n`) is processed and a count of
+errors (`defects`) is observed.
+
+```{r}
+fit <- shewhart_p(claims_p, defects = defects, n = n, index = day)
+broom::tidy(fit)
+```
+
+Because `n` varies day-to-day, the limits also vary day-to-day:
+
+```{r}
+broom::augment(fit) |> head(10)
+```
+
+The default `limits = "3sigma"` uses the normal approximation
+$\bar p \pm 3\sqrt{\bar p (1 - \bar p)/n_i}$. This is fine when
+$n_i \bar p \gtrsim 5$ and $n_i (1-\bar p) \gtrsim 5$. For small
+$n$ or extreme $\bar p$, switch to exact binomial limits:
+
+```{r, eval = FALSE}
+shewhart_p(claims_p, defects = defects, n = n, index = day,
+           limits = "binomial")
+```
+
+## c chart and Poisson honesty
+
+`pcb_solder` has 50 PCBs and a mean defect count of about 6. The
+default 3-sigma c-chart works fine here:
+
+```{r}
+fit_c <- shewhart_c(pcb_solder, defects = defects, index = board)
+broom::tidy(fit_c)
+```
+
+But if `c_bar` were small (say 2 or 3), the lower limit under the
+normal approximation would be negative — which makes no sense for a
+count. The package warns when this is likely:
+
+```{r}
+small_means <- data.frame(unit = 1:50, defects = rpois(50, lambda = 2))
+suppressWarnings(
+  fit_low <- shewhart_c(small_means, defects = defects, index = unit)
+)
+broom::tidy(fit_low)
+```
+
+For low-mean Poisson processes, use exact quantile limits:
+
+```{r}
+fit_low_exact <- shewhart_c(small_means, defects = defects, index = unit,
+                            limits = "poisson")
+broom::tidy(fit_low_exact)
+```
+
+George Box's advice — *don't transform if you can model the right
+distribution* — applies. The exact Poisson limits use
+$q(0.99865)$ and $q(0.00135)$ of $\mathrm{Poisson}(\bar c)$, the
+same coverage probability as classical 3-sigma limits but without
+the normal approximation.
+
+## np chart for constant n
+
+When subgroup size is constant, the np chart plots the *count* rather
+than the proportion. Useful for direct interpretation when n is a
+round number:
+
+```{r}
+fit_np <- shewhart_np(
+  data.frame(day = 1:30, defects = rbinom(30, size = 200, prob = 0.04)),
+  defects = defects,
+  n       = 200,
+  index   = day
+)
+broom::tidy(fit_np)
+```
+
+## u chart for variable exposure
+
+When the inspection size differs (e.g. fabric rolls of different
+length, machine-hours of different duration), the right chart is u —
+defects per unit of exposure:
+
+```{r}
+set.seed(1)
+df_u <- data.frame(
+  roll    = 1:25,
+  defects = rpois(25, lambda = 4 * runif(25, 0.5, 1.5)),
+  m2      = runif(25, 0.5, 1.5)
+)
+fit_u <- shewhart_u(df_u, defects = defects, exposure = m2, index = roll)
+broom::tidy(fit_u)
+```
+
+## References
+
+- Montgomery, D. C. (2019). *Introduction to Statistical Quality
+  Control* (8th ed.). Wiley. Chapter 7.
+- Ryan, T. P. (2011). *Statistical Methods for Quality Improvement*
+  (3rd ed.). Wiley. (On the inadequacy of 3-sigma limits for low-mean
+  Poisson counts.)
+- Box, G. E. P., Hunter, W. G., & Hunter, J. S. (2005). *Statistics
+  for Experimenters* (2nd ed.). Wiley.

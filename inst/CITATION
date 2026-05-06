@@ -1,0 +1,25 @@
+bibentry(
+  bibtype = "Manual",
+  title   = "shewhartr: Statistical Process Control with Tidyverse-Native Workflows",
+  author  = c(
+    person("André",     "Leite",        email = "leite@castlab.org",
+           role = c("aut", "cre")),
+    person("Hugo",      "Vasconcelos",  email = "hugo.vasconcelos@ufpe.br",
+           role = "aut"),
+    person("Raydonal",  "Ospina",       email = "raydonal@castlab.org",
+           role = "aut"),
+    person("Cristiano", "Ferraz",       email = "cferraz@castlab.org",
+           role = "aut")
+  ),
+  year    = format(Sys.Date(), "%Y"),
+  note    = sprintf("R package version %s", utils::packageVersion("shewhartr")),
+  url     = "https://castlaboratory.github.io/shewhartr/",
+  textVersion = paste0(
+    "Leite, A., Vasconcelos, H., Ospina, R., & Ferraz, C. (",
+    format(Sys.Date(), "%Y"),
+    "). shewhartr: Statistical Process Control with Tidyverse-Native ",
+    "Workflows. R package version ",
+    utils::packageVersion("shewhartr"),
+    ". https://castlaboratory.github.io/shewhartr/"
+  )
+)

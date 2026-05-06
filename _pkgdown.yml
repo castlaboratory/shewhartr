@@ -1,0 +1,144 @@
+url: https://castlaboratory.github.io/shewhartr/
+
+template:
+  bootstrap: 5
+  light-switch: true
+  bslib:
+    primary: "#0054AD"
+    base_font: {google: "Source Sans 3"}
+    heading_font: {google: "Source Sans 3"}
+    code_font: {google: "JetBrains Mono"}
+
+development:
+  mode: auto
+
+authors:
+  André Leite:
+    href: https://castlab.org
+  Castlab:
+    href: https://castlab.org
+    html: <img src='https://castlab.org/logo.png' height='24' alt='Castlab' />
+
+navbar:
+  structure:
+    left:  [intro, reference, articles, news]
+    right: [search, lightswitch, github]
+
+reference:
+  - title: "Classical charts — variables"
+    desc: >
+      Classical Shewhart charts for measurements organised in rational
+      subgroups (or as individuals).
+    contents:
+      - shewhart_i_mr
+      - shewhart_xbar_r
+      - shewhart_xbar_s
+
+  - title: "Classical charts — attributes"
+    desc: >
+      Charts for binary (defective/non-defective) and count
+      (defects-per-unit) attributes.
+    contents:
+      - shewhart_p
+      - shewhart_np
+      - shewhart_c
+      - shewhart_u
+
+  - title: "Regression-based chart"
+    desc: >
+      Control chart for trended processes, with optional automatic
+      phase detection and a flexible model menu (linear, log, log-log,
+      Gompertz, logistic, custom formula).
+    contents:
+      - shewhart_regression
+
+  - title: "Phase I / Phase II workflow"
+    desc: >
+      Explicit calibration and monitoring step, following the
+      Phase I / Phase II framework articulated by Woodall (2000).
+    contents:
+      - calibrate
+      - monitor
+
+  - title: "Diagnostics & operating characteristics"
+    desc: >
+      Tools to evaluate and interpret a chart configuration: runs
+      tests, ARL by simulation, residual diagnostic panels, Box-Cox
+      guidance.
+    contents:
+      - shewhart_runs
+      - shewhart_rules_available
+      - shewhart_arl
+      - shewhart_diagnostics
+      - shewhart_box_cox
+
+  - title: "Process capability"
+    contents:
+      - shewhart_capability
+
+  - title: "S3 methods (broom + ggplot2)"
+    contents:
+      - has_concept("shewhart-methods")
+      - print.shewhart_chart
+      - summary.shewhart_chart
+      - autoplot.shewhart_chart
+      - tidy.shewhart_chart
+      - glance.shewhart_chart
+      - augment.shewhart_chart
+
+  - title: "Math helpers"
+    contents:
+      - Gompertz
+      - SSgompertzDummy
+      - fit_gompertz_dummy
+      - loglog
+      - iloglog
+      - box_cox
+      - inv_box_cox
+      - shewhart_constants
+      - rolling_sum
+      - color_hue
+
+  - title: "Datasets"
+    contents:
+      - tablet_weight
+      - bottle_fill
+      - pcb_solder
+      - claims_p
+      - temperature_drift
+      - bacterial_growth
+      - cvd_recife
+
+  - title: "Class predicates"
+    contents:
+      - is_shewhart_chart
+
+articles:
+  - title: "Getting started"
+    navbar: ~
+    contents:
+      - getting-started
+
+  - title: "Chart families"
+    contents:
+      - variables-charts
+      - attributes-charts
+      - regression-charts
+
+  - title: "Statistical workflow"
+    contents:
+      - phase1-phase2
+      - arl-simulation
+      - diagnostics
+      - box-cox
+
+  - title: "Case studies"
+    contents:
+      - covid-recife
+
+home:
+  links:
+    - text: Castlab
+      href: https://castlab.org
+    - text: Source code
+      href: https://github.com/castlaboratory/shewhartr
