@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 1100 760"
+     width="1100" height="760"
+     role="img" aria-label="shewhartr architecture diagram">
+  <title>shewhartr architecture</title>
+  <desc>Diagram of the shewhartr package: a tidy data frame flows through one of the chart family constructors (variables, attributes, regression, memory-based, multivariate) into a shared shewhart_chart S3 object whose slots feed into print/summary, autoplot/as_plotly, broom tidy/glance/augment, and the Phase II monitor() helper.</desc>
+
+  <defs>
+    <style><![CDATA[
+      .lbl  { font-family: Helvetica, Arial, sans-serif; }
+      .ttl  { font-weight: 700; fill: #1F2937; }
+      .sub  { font-weight: 400; fill: #475569; font-size: 11px; }
+      .code { font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
+              fill: #0F172A; }
+      .stroke { fill: none; stroke: #94A3B8; stroke-width: 1.4; }
+      .arrow  { fill: #475569; }
+    ]]></style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" class="arrow"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="550" y="32" text-anchor="middle"
+        class="lbl ttl" font-size="22">shewhartr — package architecture</text>
+  <text x="550" y="54" text-anchor="middle"
+        class="lbl sub" font-size="13">tidy data in → S3 chart object → print / plot / broom / monitor</text>
+
+  <!-- ============= Layer 1: input ============= -->
+  <g transform="translate(425, 86)">
+    <rect width="250" height="56" rx="10" ry="10"
+          fill="#EEF2F7" stroke="#0054AD" stroke-width="2"/>
+    <text x="125" y="26" text-anchor="middle"
+          class="lbl ttl" font-size="14">Tidy data frame</text>
+    <text x="125" y="44" text-anchor="middle"
+          class="lbl code" font-size="11">value, index, subgroup, ...</text>
+  </g>
+
+  <!-- ============= Connectors: input → 4 constructors =============
+       T-junction: drop from input, span across, then branch with
+       arrows landing exactly on each constructor's top edge (y=178). -->
+  <path d="M 550 142 L 550 158"               class="stroke"/>
+  <path d="M 160 158 L 925 158"               class="stroke"/>
+  <path d="M 160 158 L 160 178"               class="stroke" marker-end="url(#arrow)"/>
+  <path d="M 415 158 L 415 178"               class="stroke" marker-end="url(#arrow)"/>
+  <path d="M 670 158 L 670 178"               class="stroke" marker-end="url(#arrow)"/>
+  <path d="M 925 158 L 925 178"               class="stroke" marker-end="url(#arrow)"/>
+
+  <!-- ============= Layer 2: constructors ============= -->
+  <g transform="translate(40, 178)">
+    <!-- Variables -->
+    <g transform="translate(0, 0)">
+      <rect width="240" height="160" rx="10" ry="10"
+            fill="#FFFFFF" stroke="#0054AD" stroke-width="1.5"/>
+      <rect width="240" height="28" rx="10" ry="10"
+            fill="#0054AD"/>
+      <rect y="14" width="240" height="14" fill="#0054AD"/>
+      <text x="120" y="19" text-anchor="middle"
+            class="lbl ttl" font-size="13" fill="#FFFFFF">Variables</text>
+      <text x="14" y="50" class="lbl code" font-size="12">shewhart_i_mr()</text>
+      <text x="14" y="68" class="lbl code" font-size="12">shewhart_xbar_r()</text>
+      <text x="14" y="86" class="lbl code" font-size="12">shewhart_xbar_s()</text>
+      <text x="14" y="106" class="lbl ttl" font-size="11" fill="#0054AD">Trended</text>
+      <text x="14" y="124" class="lbl code" font-size="12">shewhart_regression()</text>
+      <text x="14" y="146" class="lbl sub" font-size="11">multi-phase fit, runs-rule split</text>
+    </g>
+
+    <!-- Attributes -->
+    <g transform="translate(255, 0)">
+      <rect width="240" height="160" rx="10" ry="10"
+            fill="#FFFFFF" stroke="#16A34A" stroke-width="1.5"/>
+      <rect width="240" height="28" rx="10" ry="10"
+            fill="#16A34A"/>
+      <rect y="14" width="240" height="14" fill="#16A34A"/>
+      <text x="120" y="19" text-anchor="middle"
+            class="lbl ttl" font-size="13" fill="#FFFFFF">Attributes</text>
+      <text x="14" y="50" class="lbl code" font-size="12">shewhart_p()</text>
+      <text x="14" y="68" class="lbl code" font-size="12">shewhart_np()</text>
+      <text x="14" y="86" class="lbl code" font-size="12">shewhart_c()</text>
+      <text x="14" y="104" class="lbl code" font-size="12">shewhart_u()</text>
+      <text x="14" y="130" class="lbl sub" font-size="11">limits = "3sigma" or</text>
+      <text x="14" y="144" class="lbl sub" font-size="11">"poisson" (exact, c &amp; u)</text>
+    </g>
+
+    <!-- Memory-based -->
+    <g transform="translate(510, 0)">
+      <rect width="240" height="160" rx="10" ry="10"
+            fill="#FFFFFF" stroke="#D97706" stroke-width="1.5"/>
+      <rect width="240" height="28" rx="10" ry="10"
+            fill="#D97706"/>
+      <rect y="14" width="240" height="14" fill="#D97706"/>
+      <text x="120" y="19" text-anchor="middle"
+            class="lbl ttl" font-size="13" fill="#FFFFFF">Memory-based</text>
+      <text x="14" y="50" class="lbl code" font-size="12">shewhart_ewma()</text>
+      <text x="14" y="66" class="lbl sub" font-size="11">Roberts 1959, time-varying limits</text>
+      <text x="14" y="92" class="lbl code" font-size="12">shewhart_cusum()</text>
+      <text x="14" y="108" class="lbl sub" font-size="11">Page 1954, two-sided tabular</text>
+      <text x="14" y="138" class="lbl sub" font-size="11">target / sigma override</text>
+      <text x="14" y="152" class="lbl sub" font-size="11">enables Phase II directly</text>
+    </g>
+
+    <!-- Multivariate -->
+    <g transform="translate(765, 0)">
+      <rect width="240" height="160" rx="10" ry="10"
+            fill="#FFFFFF" stroke="#7030A0" stroke-width="1.5"/>
+      <rect width="240" height="28" rx="10" ry="10"
+            fill="#7030A0"/>
+      <rect y="14" width="240" height="14" fill="#7030A0"/>
+      <text x="120" y="19" text-anchor="middle"
+            class="lbl ttl" font-size="13" fill="#FFFFFF">Multivariate</text>
+      <text x="14" y="50" class="lbl code" font-size="12">shewhart_hotelling()</text>
+      <text x="14" y="68" class="lbl sub" font-size="11">individual or subgrouped</text>
+      <text x="14" y="84" class="lbl sub" font-size="11">Phase I  Beta exact UCL</text>
+      <text x="14" y="100" class="lbl sub" font-size="11">Phase II F predictive UCL</text>
+      <text x="14" y="124" class="lbl sub" font-size="11">.contrib_&lt;var&gt; columns</text>
+      <text x="14" y="138" class="lbl sub" font-size="11">point at the variable</text>
+      <text x="14" y="152" class="lbl sub" font-size="11">that fired the alarm</text>
+    </g>
+  </g>
+
+  <!-- ============= Connectors: 4 constructors → chart object =============
+       Inverted T: each constructor drops to a shared rail, the rail
+       converges in the middle, then a single arrow lands on the
+       chart's top edge (y=388). -->
+  <path d="M 160 338 L 160 358"               class="stroke"/>
+  <path d="M 415 338 L 415 358"               class="stroke"/>
+  <path d="M 670 338 L 670 358"               class="stroke"/>
+  <path d="M 925 338 L 925 358"               class="stroke"/>
+  <path d="M 160 358 L 925 358"               class="stroke"/>
+  <path d="M 550 358 L 550 388"               class="stroke" marker-end="url(#arrow)"/>
+
+  <!-- ============= Layer 3: shewhart_chart S3 object ============= -->
+  <g transform="translate(290, 388)">
+    <rect width="520" height="160" rx="12" ry="12"
+          fill="#0F172A" stroke="#0F172A"/>
+    <text x="260" y="26" text-anchor="middle"
+          class="lbl ttl" font-size="15" fill="#FFFFFF">shewhart_chart S3 object</text>
+    <text x="260" y="44" text-anchor="middle"
+          class="lbl sub" font-size="11" fill="#CBD5E1">subclass: shewhart_i_mr / shewhart_regression / shewhart_hotelling / ...</text>
+
+    <g font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="11.5" fill="#E2E8F0">
+      <text x="22"  y="78">$augmented</text>
+      <text x="115" y="78" fill="#94A3B8">tibble — per-row .value, .center, .upper, .lower, .flag_*</text>
+
+      <text x="22"  y="98">$limits</text>
+      <text x="115" y="98" fill="#94A3B8">tibble — chart-level CL / UCL / LCL summary</text>
+
+      <text x="22"  y="118">$violations</text>
+      <text x="115" y="118" fill="#94A3B8">tibble — (position, rule, description, value, severity)</text>
+
+      <text x="22"  y="138">$fits, $rules, $sigma_hat, $phase, $metadata</text>
+      <text x="22"  y="152" fill="#94A3B8">state carried over so monitor() can apply the same limits</text>
+    </g>
+  </g>
+
+  <!-- ============= Connectors: chart object → 3 consumers =============
+       T-split: drop from chart bottom, span across the three
+       consumer columns, then branch. Centres are calculated to land
+       exactly on each consumer's top-edge centre:
+         Inspect at x = 290 + 85 = 375
+         Plot    at x = 470 + 85 = 555
+         Tidy    at x = 650 + 80 = 730 -->
+  <path d="M 550 548 L 550 568"               class="stroke"/>
+  <path d="M 375 568 L 730 568"               class="stroke"/>
+  <path d="M 375 568 L 375 590"               class="stroke" marker-end="url(#arrow)"/>
+  <path d="M 555 568 L 555 590"               class="stroke" marker-end="url(#arrow)"/>
+  <path d="M 730 568 L 730 590"               class="stroke" marker-end="url(#arrow)"/>
+
+  <!-- ============= Layer 4: consumers ============= -->
+  <g transform="translate(290, 590)">
+    <!-- Inspect -->
+    <g transform="translate(0, 0)">
+      <rect width="170" height="138" rx="10" ry="10"
+            fill="#FFFFFF" stroke="#0054AD" stroke-width="1.5"/>
+      <text x="85" y="22" text-anchor="middle"
+            class="lbl ttl" font-size="13" fill="#0054AD">Inspect</text>
+      <text x="14" y="46" class="lbl code" font-size="11.5">print()</text>
+      <text x="14" y="64" class="lbl code" font-size="11.5">summary()</text>
+      <text x="14" y="82" class="lbl code" font-size="11.5">shewhart_diagnostics()</text>
+      <text x="14" y="100" class="lbl code" font-size="11.5">shewhart_capability()</text>
+      <text x="14" y="118" class="lbl code" font-size="11.5">shewhart_arl()</text>
+    </g>
+
+    <!-- Plot -->
+    <g transform="translate(180, 0)">
+      <rect width="170" height="138" rx="10" ry="10"
+            fill="#FFFFFF" stroke="#D97706" stroke-width="1.5"/>
+      <text x="85" y="22" text-anchor="middle"
+            class="lbl ttl" font-size="13" fill="#D97706">Plot</text>
+      <text x="14" y="46" class="lbl code" font-size="11.5">autoplot()</text>
+      <text x="14" y="60" class="lbl sub" font-size="11">ggplot2 base</text>
+      <text x="14" y="80" class="lbl code" font-size="11.5">as_plotly()</text>
+      <text x="14" y="94" class="lbl sub" font-size="11">interactive (Suggests)</text>
+      <text x="14" y="118" class="lbl sub" font-size="11">multi-phase regression:</text>
+      <text x="14" y="132" class="lbl sub" font-size="11">shaded band per phase</text>
+    </g>
+
+    <!-- Tidy -->
+    <g transform="translate(360, 0)">
+      <rect width="160" height="138" rx="10" ry="10"
+            fill="#FFFFFF" stroke="#16A34A" stroke-width="1.5"/>
+      <text x="80" y="22" text-anchor="middle"
+            class="lbl ttl" font-size="13" fill="#16A34A">Tidy (broom)</text>
+      <text x="14" y="46" class="lbl code" font-size="11.5">tidy()</text>
+      <text x="14" y="60" class="lbl sub" font-size="11">limit table</text>
+      <text x="14" y="80" class="lbl code" font-size="11.5">glance()</text>
+      <text x="14" y="94" class="lbl sub" font-size="11">one-row summary</text>
+      <text x="14" y="114" class="lbl code" font-size="11.5">augment()</text>
+      <text x="14" y="128" class="lbl sub" font-size="11">data + .fitted + flags</text>
+    </g>
+  </g>
+
+  <!-- ============= Phase I / Phase II side workflow ============= -->
+  <g transform="translate(40, 388)">
+    <rect width="220" height="200" rx="12" ry="12"
+          fill="#FFF7ED" stroke="#D97706" stroke-width="1.5"/>
+    <text x="110" y="24" text-anchor="middle"
+          class="lbl ttl" font-size="13" fill="#D97706">Phase I / Phase II</text>
+    <text x="110" y="40" text-anchor="middle"
+          class="lbl sub" font-size="11">Woodall (2000)</text>
+
+    <text x="14" y="68" class="lbl code" font-size="12">calibrate(data,</text>
+    <text x="34" y="84" class="lbl code" font-size="12">chart = "i_mr",</text>
+    <text x="34" y="100" class="lbl code" font-size="12">trim_outliers = TRUE)</text>
+    <text x="14" y="120" class="lbl sub" font-size="11">→ shewhart_chart, phase = "phase_1"</text>
+
+    <text x="14" y="148" class="lbl code" font-size="12">monitor(new_data, calib)</text>
+    <text x="14" y="168" class="lbl sub" font-size="11">limits frozen,</text>
+    <text x="14" y="182" class="lbl sub" font-size="11">→ phase = "phase_2"</text>
+  </g>
+
+  <!-- ============= Connector: chart ↔ Phase I/Phase II =============
+       Bidirectional: calibrate() emits a chart, monitor() consumes one.
+       Label is omitted on the wire because both function names are
+       already inside the Phase I/II box. -->
+  <path d="M 290 488 L 260 488"               class="stroke"
+        marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+
+  <!-- ============= Cross-cutting: runs rules + i18n on the right ============= -->
+  <g transform="translate(840, 388)">
+    <rect width="220" height="200" rx="12" ry="12"
+          fill="#F0FDF4" stroke="#16A34A" stroke-width="1.5"/>
+    <text x="110" y="24" text-anchor="middle"
+          class="lbl ttl" font-size="13" fill="#16A34A">Cross-cutting</text>
+
+    <text x="14" y="50" class="lbl code" font-size="12">shewhart_runs()</text>
+    <text x="14" y="64" class="lbl sub" font-size="10.5">8 Nelson rules + WE 7</text>
+    <text x="14" y="78" class="lbl sub" font-size="10.5">configurable per chart</text>
+
+    <text x="14" y="104" class="lbl code" font-size="12">shewhart_box_cox()</text>
+    <text x="14" y="118" class="lbl sub" font-size="10.5">profile log-likelihood</text>
+
+    <text x="14" y="144" class="lbl ttl" font-size="11" fill="#16A34A">i18n locales</text>
+    <text x="14" y="160" class="lbl sub" font-size="11">en / pt / es / fr</text>
+
+    <text x="14" y="180" class="lbl ttl" font-size="11" fill="#16A34A">Validation</text>
+    <text x="14" y="194" class="lbl sub" font-size="10.5">match qcc to 1e-3 tolerance</text>
+  </g>
+
+  <!-- ============= Connector: chart → cross-cutting =============
+       The chart stores rules / lambdas / locale that come from this
+       subsystem. Single arrow from chart's right edge to box's left edge. -->
+  <path d="M 810 488 L 840 488"               class="stroke" marker-end="url(#arrow)"/>
+  <text x="825" y="481" text-anchor="middle"
+        class="lbl sub" font-size="10">uses</text>
+
+  <!-- footer -->
+  <text x="550" y="744" text-anchor="middle"
+        class="lbl sub" font-size="10.5"
+        fill="#64748B">https://castlaboratory.github.io/shewhartr/</text>
+</svg>
