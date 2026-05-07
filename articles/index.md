@@ -13,6 +13,8 @@
   u](https://castlaboratory.github.io/shewhartr/articles/attributes-charts.md):
 - [Regression-based control
   charts](https://castlaboratory.github.io/shewhartr/articles/regression-charts.md):
+- [Memory-based charts: EWMA and
+  CUSUM](https://castlaboratory.github.io/shewhartr/articles/memory-based-charts.md):
 
 ### Statistical workflow
 

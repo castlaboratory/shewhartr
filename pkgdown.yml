@@ -8,10 +8,11 @@ articles:
   covid-recife: covid-recife.html
   diagnostics: diagnostics.html
   getting-started: getting-started.html
+  memory-based-charts: memory-based-charts.html
   phase1-phase2: phase1-phase2.html
   regression-charts: regression-charts.html
   variables-charts: variables-charts.html
-last_built: 2026-05-07T01:31Z
+last_built: 2026-05-07T01:43Z
 urls:
   reference: https://castlaboratory.github.io/shewhartr/reference
   article: https://castlaboratory.github.io/shewhartr/articles
