@@ -25,7 +25,7 @@ calibrate(data, ..., chart = "i_mr", trim_outliers = FALSE, max_trim_iter = 5L)
 
   A character key naming the chart constructor: `"i_mr"` (default),
   `"xbar_r"`, `"xbar_s"`, `"p"`, `"np"`, `"c"`, `"u"`, `"regression"`,
-  `"ewma"`, `"cusum"`, `"hotelling"`.
+  `"ewma"`, `"cusum"`, `"hotelling"`, `"mewma"`.
 
 - trim_outliers:
 

@@ -9,7 +9,7 @@ ink.
 ## Usage
 
 ``` r
-shewhart_theme(base_size = 11, base_family = "")
+shewhart_theme(base_size = 10.5, base_family = "")
 ```
 
 ## Arguments

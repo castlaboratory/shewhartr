@@ -250,6 +250,8 @@ univariate charts can miss.
 
 - [`shewhart_hotelling()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_hotelling.md)
   : Hotelling T-squared multivariate control chart
+- [`shewhart_mewma()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_mewma.md)
+  : Multivariate EWMA control chart
 
 ## Phase I / Phase II workflow
 
