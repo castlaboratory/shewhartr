@@ -95,6 +95,13 @@ distinction between estimation and monitoring, and `"arl-simulation"`
 shows how to evaluate the operating characteristics of any chart
 configuration.
 
+## Online documentation
+
+The full reference manual, articles for every chart family, diagnostics
+and the case study are at <https://castlaboratory.github.io/shewhartr/>.
+Source, issues and contribution guide are at
+<https://github.com/castlaboratory/shewhartr>.
+
 ## References
 
 Shewhart, W. A. (1931). *Economic Control of Quality of Manufactured
