@@ -4,16 +4,113 @@
 # routines use a shared theme and respect the chart's `metadata$locale`
 # for axis labels.
 
+#' Editorial-style ggplot2 theme used by every `autoplot.shewhart_*`
+#'
+#' Shared across the package so charts look like one family. The
+#' visual choices are inspired by data-journalism graphics (FT, Pew
+#' Research, The Economist): off-white background, only horizontal
+#' grid lines, axis line on the data side, left-aligned title block,
+#' and tonal grey for non-data ink.
+#'
+#' Use it from your own layers when you want a chart that matches
+#' the package's identity:
+#'
+#' ```
+#' ggplot(d, aes(x, y)) + geom_line() + shewhart_theme()
+#' ```
+#'
+#' @param base_size Base font size, in points.
+#' @param base_family Base font family. Empty string uses the system
+#'   default sans-serif. We do not hard-code a Google Font so the
+#'   theme works in offline / CRAN-check environments.
+#'
+#' @return A `ggplot2::theme()` object.
+#'
+#' @examples
+#' library(ggplot2)
+#' df <- data.frame(x = 1:50, y = cumsum(rnorm(50)))
+#' ggplot(df, aes(x, y)) + geom_line() + shewhart_theme()
+#' @export
+shewhart_theme <- function(base_size = 11, base_family = "") {
+  pal <- shewhart_palette("neutral")
+  ggplot2::theme_minimal(base_size = base_size, base_family = base_family) +
+    ggplot2::theme(
+      # Surfaces
+      plot.background  = ggplot2::element_rect(fill = pal["bg_plot"], colour = NA),
+      panel.background = ggplot2::element_rect(fill = pal["bg_panel"], colour = NA),
+
+      # Grid: a single horizontal whisper, matched to the data axis.
+      panel.grid.major.y = ggplot2::element_line(colour = pal["grid"], linewidth = 0.4),
+      panel.grid.major.x = ggplot2::element_blank(),
+      panel.grid.minor   = ggplot2::element_blank(),
+
+      # Axes: line on the data side only, short ticks, muted text.
+      axis.line.x  = ggplot2::element_line(colour = pal["axis_line"], linewidth = 0.4),
+      axis.line.y  = ggplot2::element_blank(),
+      axis.ticks.x = ggplot2::element_line(colour = pal["axis_line"], linewidth = 0.4),
+      axis.ticks.y = ggplot2::element_blank(),
+      axis.ticks.length = ggplot2::unit(3, "pt"),
+      axis.text  = ggplot2::element_text(colour = pal["text_med"],
+                                         size   = ggplot2::rel(0.85)),
+      axis.title = ggplot2::element_text(colour = pal["text_med"],
+                                         size   = ggplot2::rel(0.9)),
+      axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 6)),
+      axis.title.y = ggplot2::element_text(margin = ggplot2::margin(r = 6)),
+
+      # Title block: left-aligned to the plot edge (FT/Pew style).
+      plot.title = ggplot2::element_text(
+        colour = pal["text_high"], face = "bold",
+        size = ggplot2::rel(1.20),
+        margin = ggplot2::margin(b = 4),
+        hjust = 0
+      ),
+      plot.subtitle = ggplot2::element_text(
+        colour = pal["text_low"],
+        size = ggplot2::rel(0.95),
+        margin = ggplot2::margin(b = 14),
+        hjust = 0
+      ),
+      plot.caption = ggplot2::element_text(
+        colour = pal["text_xlow"],
+        size = ggplot2::rel(0.78),
+        hjust = 0,
+        margin = ggplot2::margin(t = 10)
+      ),
+      plot.title.position    = "plot",
+      plot.caption.position  = "plot",
+
+      # Legend: top-left, no background — encourages annotation
+      # rather than legend lookup but stays available when needed.
+      legend.background    = ggplot2::element_blank(),
+      legend.key           = ggplot2::element_blank(),
+      legend.title         = ggplot2::element_text(colour = pal["text_med"],
+                                                   size   = ggplot2::rel(0.85)),
+      legend.text          = ggplot2::element_text(colour = pal["text_med"],
+                                                   size   = ggplot2::rel(0.85)),
+      legend.position      = "top",
+      legend.justification = "left",
+      legend.box.spacing   = ggplot2::unit(2, "pt"),
+
+      # Strip (facets): no panel, just a bold label.
+      strip.background = ggplot2::element_blank(),
+      strip.text       = ggplot2::element_text(colour = pal["text_med"],
+                                               face   = "bold"),
+
+      plot.margin = ggplot2::margin(t = 12, r = 16, b = 10, l = 12)
+    )
+}
+
 #' @keywords internal
 #' @noRd
-shewhart_theme <- function() {
-  ggplot2::theme_bw(base_size = 11) +
-    ggplot2::theme(
-      panel.grid.minor   = ggplot2::element_blank(),
-      strip.background   = ggplot2::element_rect(fill = "grey90", colour = NA),
-      legend.position    = "bottom",
-      plot.title         = ggplot2::element_text(face = "bold")
-    )
+shewhart_phase_label <- function(phase, locale = "en") {
+  # Localised label like "Phase 1" / "Fase 1"; phase 0 (the baseline /
+  # calibration window) becomes "Phase 0 — Baseline" so the legend tells
+  # the reader what is happening.
+  template <- tr("phase_n", locale)
+  out <- vapply(phase,
+                function(p) sprintf(template, as.integer(p)),
+                character(1L))
+  out
 }
 
 #' @keywords internal
@@ -297,16 +394,20 @@ autoplot.shewhart_regression <- function(object, show_violations = TRUE,
   aug    <- object$augmented
   x_col  <- get_index_col(aug, chart = object)
 
-  # One ribbon + centre + limit triplet per phase. Ferraz et al. (2020)
-  # use a coloured band per phase as a visual band so the chart stays
-  # legible even with many short phases (the "regra do deslocamento"
-  # produces them naturally on epidemic data).
-  ph_lvls <- sort(unique(aug$.phase))
-  aug$.phase_f <- factor(aug$.phase, levels = ph_lvls)
+  # Build localised phase factor: "Phase 0", "Phase 1", "Fase 0", etc.
+  ph_lvls   <- sort(unique(aug$.phase))
+  ph_labels <- shewhart_phase_label(ph_lvls, locale)
+  aug$.phase_f <- factor(shewhart_phase_label(aug$.phase, locale),
+                         levels = ph_labels)
   pal <- shewhart_phase_palette(length(ph_lvls))
+  signal <- shewhart_palette("signal")
+  ink    <- shewhart_palette("neutral")
 
   p <- ggplot2::ggplot(aug, ggplot2::aes(x = .data[[x_col]]))
 
+  # Per-phase ribbon (alpha 0.07 — quieter than v1.2) + dashed limits
+  # + solid centre line. Limits and centre are drawn before the data
+  # so the points sit on top.
   for (i in seq_along(ph_lvls)) {
     ph  <- ph_lvls[i]
     sub <- aug[aug$.phase == ph, , drop = FALSE]
@@ -316,72 +417,98 @@ autoplot.shewhart_regression <- function(object, show_violations = TRUE,
       ggplot2::geom_ribbon(
         data = sub,
         ggplot2::aes(ymin = .data$.lower, ymax = .data$.upper),
-        fill = col, alpha = 0.10, colour = NA
+        fill = col, alpha = 0.07, colour = NA
       ) +
       ggplot2::geom_line(
         data = sub, ggplot2::aes(y = .data$.upper),
-        colour = col, linetype = "dashed", linewidth = 0.5, alpha = 0.7
+        colour = col, linetype = "dashed", linewidth = 0.4, alpha = 0.65
       ) +
       ggplot2::geom_line(
         data = sub, ggplot2::aes(y = .data$.lower),
-        colour = col, linetype = "dashed", linewidth = 0.5, alpha = 0.7
+        colour = col, linetype = "dashed", linewidth = 0.4, alpha = 0.65
       ) +
       ggplot2::geom_line(
         data = sub, ggplot2::aes(y = .data$.center,
                                  colour = .data$.phase_f),
-        linewidth = 0.85
+        linewidth = 0.7, lineend = "round"
       )
   }
 
-  # Observations (single grey series across all phases keeps the eye
-  # on the trajectory, not on per-phase line clutter).
+  # Observations: a thin tonal line connecting them, then small dots
+  # coloured by phase. The line is *very* subtle (alpha 0.45) so the
+  # phased structure stays the dominant visual element.
   p <- p +
-    ggplot2::geom_line(ggplot2::aes(y = .data$.value), colour = "grey55",
-                       linewidth = 0.35) +
+    ggplot2::geom_line(ggplot2::aes(y = .data$.value),
+                       colour = ink["text_low"],
+                       linewidth = 0.25, alpha = 0.45) +
     ggplot2::geom_point(ggplot2::aes(y = .data$.value,
                                      colour = .data$.phase_f),
-                        size = 1.7)
+                        size = 1.2, alpha = 0.95)
 
+  # Out-of-control points: a hollow firebrick ring with a white halo
+  # (the halo gap separates the ring from the underlying coloured
+  # point so both stay visible).
   if (show_violations && ".flag_any" %in% names(aug)) {
     viol <- aug[aug$.flag_any, , drop = FALSE]
     if (nrow(viol) > 0L) {
-      p <- p + ggplot2::geom_point(
-        data = viol,
-        ggplot2::aes(y = .data$.value),
-        colour = "firebrick", fill = "firebrick",
-        size = 2.6, shape = 21, stroke = 0.8)
+      p <- p +
+        ggplot2::geom_point(
+          data = viol, ggplot2::aes(y = .data$.value),
+          colour = "white", size = 3.1, stroke = 0
+        ) +
+        ggplot2::geom_point(
+          data = viol, ggplot2::aes(y = .data$.value),
+          colour = signal["out_of_control"],
+          fill   = NA, shape = 21, size = 2.6, stroke = 1.1
+        )
     }
   }
+
+  # Subtitle that summarises the chart configuration the way a
+  # data-journalism caption would: model + rule + alarm count.
+  rule_lbl <- if (length(object$rules)) {
+    paste(object$rules, collapse = ", ")
+  } else NA_character_
+  n_phases <- length(object$fits)
+  n_viol   <- nrow(object$violations)
+  subtitle <- sprintf(
+    "%s model, rule(s): %s — %d phase%s, %d violation%s",
+    object$metadata$model %||% "linear",
+    rule_lbl %||% "(none)",
+    n_phases, if (n_phases == 1L) "" else "s",
+    n_viol,   if (n_viol   == 1L) "" else "s"
+  )
 
   p +
     ggplot2::scale_colour_manual(
       name   = tr("legend_phase", locale),
-      values = stats::setNames(pal, as.character(ph_lvls))
+      values = stats::setNames(pal, ph_labels)
+    ) +
+    ggplot2::guides(
+      colour = ggplot2::guide_legend(
+        nrow = 1, byrow = TRUE,
+        override.aes = list(linewidth = 0, size = 3, alpha = 1)
+      )
     ) +
     ggplot2::labs(
-      title = tr("title_regression", locale),
-      x     = tr("label_index", locale),
-      y     = tr("label_value", locale)
+      title    = tr("title_regression", locale),
+      subtitle = subtitle,
+      x        = tr("label_index", locale),
+      y        = tr("label_value", locale)
     ) +
     shewhart_theme()
 }
 
 #' Sequential phase palette
 #'
-#' Soft, ordered palette so the eye reads phases in time order rather
-#' than as unrelated categories. Baseline (phase 0) is always
-#' `steelblue4` to match the rest of the package; subsequent phases
-#' interpolate through warmer hues.
+#' Returns the first `n` colours from the package's sequential phase
+#' palette (`shewhart_palette("phase_seq")`), interpolating smoothly
+#' if `n` exceeds the base length.
 #'
 #' @keywords internal
 #' @noRd
 shewhart_phase_palette <- function(n) {
-  if (n <= 1L) return("steelblue4")
-  base <- c("#1F4E79", "#2E75B6", "#5B9BD5",
-            "#A9D18E", "#E2C45F", "#ED7D31",
-            "#C00000", "#7030A0", "#404040")
-  if (n <= length(base)) return(base[seq_len(n)])
-  grDevices::colorRampPalette(base)(n)
+  shewhart_palette("phase_seq", n = max(1L, as.integer(n)))
 }
 
 # EWMA chart --------------------------------------------------------------

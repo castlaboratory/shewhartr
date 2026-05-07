@@ -106,6 +106,15 @@ reference:
     contents:
       - as_plotly
 
+  - title: "Theme and palettes"
+    desc: >
+      Shared visual identity used by every `autoplot()` method. Pull
+      these into your own ggplot layers when you want a chart that
+      matches the rest of the package.
+    contents:
+      - shewhart_theme
+      - shewhart_palette
+
   - title: "Math helpers"
     contents:
       - Gompertz
