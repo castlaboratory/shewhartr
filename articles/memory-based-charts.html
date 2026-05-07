@@ -126,7 +126,13 @@ to small shifts.</p>
 <span><span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
 <span>  chart  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"I-MR"</span>, <span class="st">"EWMA"</span>, <span class="st">"CUSUM"</span><span class="op">)</span>,</span>
 <span>  alarm  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu">first_alarm</span><span class="op">(</span><span class="va">imr</span><span class="op">)</span>, <span class="fu">first_alarm</span><span class="op">(</span><span class="va">ewma</span><span class="op">)</span>, <span class="fu">first_alarm</span><span class="op">(</span><span class="va">cusum</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 2</span></span></span>
+<span><span class="co">#&gt;   chart alarm</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> I-MR     10</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> EWMA     <span style="color: #BB0000;">NA</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> CUSUM    15</span></span></code></pre></div>
 <p>For a 0.5-sigma shift, the I-MR chart often fails to signal at all
 within 80 observations, while the EWMA and CUSUM typically catch it
 within a few points of the change.</p>
@@ -146,7 +152,25 @@ to 1 sigma (Lucas &amp; Saccucci 1990).</p>
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/shewhart_ewma.html">shewhart_ewma</a></span><span class="op">(</span><span class="va">df</span>, value <span class="op">=</span> <span class="va">y</span>, index <span class="op">=</span> <span class="va">t</span>,</span>
 <span>                     lambda <span class="op">=</span> <span class="fl">0.2</span>, L <span class="op">=</span> <span class="fl">2.7</span><span class="op">)</span></span>
 <span><span class="va">fit</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Shewhart chart </span><span style="color: #00BB00; font-weight: bold;">ewma</span> <span style="color: #00BBBB;">─────────────────────────────────────────────────────────</span></span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Observations / subgroups: <span style="color: #0000BB;">80</span></span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Phase: <span style="color: #0000BB;">"phase_1"</span></span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Sigma estimate (<span style="color: #0000BB;">"mr"</span>): <span style="color: #0000BB;">1.014</span></span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Control limits</span> ──</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 3</span></span></span>
+<span><span class="co">#&gt;   chart line            value</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> EWMA  CL              0.165</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> EWMA  UCL_asymptotic  1.08 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> EWMA  LCL_asymptotic -<span style="color: #BB0000;">0.748</span></span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Rule violations</span> ──</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> No violations across <span style="color: #0000BB;">1</span> rule: <span style="color: #0000BB;">"nelson_1_beyond_3s"</span>.</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
+<p><img src="memory-based-charts_files/figure-html/unnamed-chunk-3-1.png" class="r-plt" alt="" width="672"></p>
 <p>The control limits in an EWMA chart are <strong>time-varying</strong>
 by default. They start narrow and widen out to the asymptotic value
 <code>L · σ · sqrt(λ / (2 - λ))</code> as the recursion warms up. This
@@ -157,6 +181,7 @@ baseline).</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/shewhart_ewma.html">shewhart_ewma</a></span><span class="op">(</span><span class="va">df</span>, value <span class="op">=</span> <span class="va">y</span>, index <span class="op">=</span> <span class="va">t</span>, steady_state <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><img src="memory-based-charts_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="" width="672"></p>
 <div class="section level3">
 <h3 id="choosing-lambda">Choosing <code>lambda</code><a class="anchor" aria-label="anchor" href="#choosing-lambda"></a>
 </h3>
@@ -220,7 +245,25 @@ chart should be sensitive to (so <code>k = 0.5</code> for shifts of
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/shewhart_cusum.html">shewhart_cusum</a></span><span class="op">(</span><span class="va">df</span>, value <span class="op">=</span> <span class="va">y</span>, index <span class="op">=</span> <span class="va">t</span>, k <span class="op">=</span> <span class="fl">0.5</span>, h <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
 <span><span class="va">fit</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Shewhart chart </span><span style="color: #00BB00; font-weight: bold;">cusum</span> <span style="color: #00BBBB;">────────────────────────────────────────────────────────</span></span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Observations / subgroups: <span style="color: #0000BB;">80</span></span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Phase: <span style="color: #0000BB;">"phase_1"</span></span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Sigma estimate (<span style="color: #0000BB;">"mr"</span>): <span style="color: #0000BB;">1.014</span></span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Control limits</span> ──</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 3</span></span></span>
+<span><span class="co">#&gt;   chart line    value</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> CUSUM h_upper  4.05</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> CUSUM h_lower -<span style="color: #BB0000;">4.05</span></span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Rule violations</span> ──</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> <span style="color: #0000BB;">1</span> violation across <span style="color: #0000BB;">1</span> rule.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">cusum_decision</span>: <span style="color: #0000BB;">1</span> hit.</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
+<p><img src="memory-based-charts_files/figure-html/unnamed-chunk-5-1.png" class="r-plt" alt="" width="672"></p>
 <p>The plot draws <code>C+</code> as positive bars (potential upward
 drift) and <code>C-</code> as negative bars (potential downward drift),
 with the symmetric decision interval in dashed red. CUSUM’s main charm
@@ -283,6 +326,7 @@ calibrates on a 60-point in-control baseline and then monitors a fresh
 <span>              target <span class="op">=</span> <span class="va">mu_hat</span>, sigma <span class="op">=</span> <span class="va">sd_hat</span>,</span>
 <span>              lambda <span class="op">=</span> <span class="fl">0.2</span>, L <span class="op">=</span> <span class="fl">2.7</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><img src="memory-based-charts_files/figure-html/unnamed-chunk-6-1.png" class="r-plt" alt="" width="672"></p>
 <p>A <code><a href="../reference/calibrate.html">calibrate()</a></code> / <code><a href="../reference/monitor.html">monitor()</a></code> integration for
 memory-based charts is on the roadmap for a future release; for the
 moment the explicit <code>target</code> / <code>sigma</code> arguments

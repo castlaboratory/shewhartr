@@ -29,6 +29,15 @@ locally.)
 
 data(cvd_recife)
 head(cvd_recife)
+#> # A tibble: 6 × 3
+#>   date       new_deaths    .t
+#>   <date>          <int> <int>
+#> 1 2020-03-28          4     1
+#> 2 2020-03-29          0     2
+#> 3 2020-03-30          0     3
+#> 4 2020-03-31          0     4
+#> 5 2020-04-01          1     5
+#> 6 2020-04-02          1     6
 ```
 
 Columns: `date`, `new_deaths`, `.t` (an integer 1..N row index, useful
@@ -42,6 +51,10 @@ fit_imr <- shewhart_i_mr(cvd_recife,
                          value = new_deaths,
                          index = date)
 broom::glance(fit_imr)
+#> # A tibble: 1 × 8
+#>   type      n phase   sigma_hat sigma_method n_violations n_rules pct_violations
+#>   <chr> <int> <chr>       <dbl> <chr>               <int>   <int>          <dbl>
+#> 1 i_mr    279 phase_1      5.17 mr                    139       2          0.498
 ```
 
 The chart fires repeatedly along the entire ascending limb of the first
@@ -63,13 +76,20 @@ fit <- shewhart_regression(
   rules      = c("nelson_1_beyond_3s", "we_seven_same")
 )
 broom::glance(fit)
+#> # A tibble: 1 × 8
+#>   type        n phase sigma_hat sigma_method n_violations n_rules pct_violations
+#>   <chr>   <int> <chr>     <dbl> <chr>               <int>   <int>          <dbl>
+#> 1 regres…   279 phas…      3.47 mr                     10       2         0.0358
 length(fit$fits)        # number of phases
+#> [1] 9
 ```
 
 ``` r
 
 autoplot(fit)
 ```
+
+![](covid-recife_files/figure-html/unnamed-chunk-5-1.png)
 
 What the chart now does:
 
@@ -95,6 +115,7 @@ on your own series to let the data choose:
 ``` r
 
 shewhart_box_cox(cvd_recife$new_deaths + 1)$lambda_hat
+#> [1] 0
 ```
 
 If the maximiser is near 0, take logs. If it is near 0.5, the log-log

@@ -111,7 +111,16 @@ and let runs rules announce when the trend itself has changed.</p>
 yet built locally.)</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">cvd_recife</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">cvd_recife</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">cvd_recife</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 3</span></span></span>
+<span><span class="co">#&gt;   date       new_deaths    .t</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2020-03-28          4     1</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2020-03-29          0     2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2020-03-30          0     3</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 2020-03-31          0     4</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 2020-04-01          1     5</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 2020-04-02          1     6</span></span></code></pre></div>
 <p>Columns: <code>date</code>, <code>new_deaths</code>, <code>.t</code>
 (an integer 1..N row index, useful when a model needs a numeric
 predictor).</p>
@@ -123,7 +132,11 @@ predictor).</p>
 <code class="sourceCode R"><span><span class="va">fit_imr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/shewhart_i_mr.html">shewhart_i_mr</a></span><span class="op">(</span><span class="va">cvd_recife</span>,</span>
 <span>                         value <span class="op">=</span> <span class="va">new_deaths</span>,</span>
 <span>                         index <span class="op">=</span> <span class="va">date</span><span class="op">)</span></span>
-<span><span class="fu">broom</span><span class="fu">::</span><span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">fit_imr</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">broom</span><span class="fu">::</span><span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">fit_imr</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 8</span></span></span>
+<span><span class="co">#&gt;   type      n phase   sigma_hat sigma_method n_violations n_rules pct_violations</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> i_mr    279 phase_1      5.17 mr                    139       2          0.498</span></span></code></pre></div>
 <p>The chart fires repeatedly along the entire ascending limb of the
 first wave — every “violation” is the chart noticing that today is worse
 than yesterday, which is true and is also exactly what we already knew.
@@ -143,9 +156,15 @@ stationarity, not violations of the underlying public health story.</p>
 <span>  rules      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nelson_1_beyond_3s"</span>, <span class="st">"we_seven_same"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu">broom</span><span class="fu">::</span><span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">fits</span><span class="op">)</span>        <span class="co"># number of phases</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 8</span></span></span>
+<span><span class="co">#&gt;   type        n phase sigma_hat sigma_method n_violations n_rules pct_violations</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> regres…   279 phas…      3.47 mr                     10       2         0.035<span style="text-decoration: underline;">8</span></span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">fits</span><span class="op">)</span>        <span class="co"># number of phases</span></span>
+<span><span class="co">#&gt; [1] 9</span></span></code></pre></div>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
+<p><img src="covid-recife_files/figure-html/unnamed-chunk-5-1.png" class="r-plt" alt="" width="672"></p>
 <p>What the chart now does:</p>
 <ul>
 <li>The centre line follows the fitted trend, period by period.</li>
@@ -170,7 +189,8 @@ cleanest residuals in the original analysis. Run
 <code><a href="../reference/shewhart_box_cox.html">shewhart_box_cox()</a></code> on your own series to let the data
 choose:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/shewhart_box_cox.html">shewhart_box_cox</a></span><span class="op">(</span><span class="va">cvd_recife</span><span class="op">$</span><span class="va">new_deaths</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="va">lambda_hat</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/shewhart_box_cox.html">shewhart_box_cox</a></span><span class="op">(</span><span class="va">cvd_recife</span><span class="op">$</span><span class="va">new_deaths</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="va">lambda_hat</span></span>
+<span><span class="co">#&gt; [1] 0</span></span></code></pre></div>
 <p>If the maximiser is near 0, take logs. If it is near 0.5, the log-log
 scale is a reasonable approximation. For values between 0 and 1, a
 Box-Cox transformation in that range is the most defensible choice.</p>

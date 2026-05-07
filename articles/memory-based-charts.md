@@ -43,6 +43,12 @@ tibble::tibble(
   chart  = c("I-MR", "EWMA", "CUSUM"),
   alarm  = c(first_alarm(imr), first_alarm(ewma), first_alarm(cusum))
 )
+#> # A tibble: 3 × 2
+#>   chart alarm
+#>   <chr> <int>
+#> 1 I-MR     10
+#> 2 EWMA     NA
+#> 3 CUSUM    15
 ```
 
 For a 0.5-sigma shift, the I-MR chart often fails to signal at all
@@ -67,8 +73,27 @@ detecting shifts of 0.5 to 1 sigma (Lucas & Saccucci 1990).
 fit <- shewhart_ewma(df, value = y, index = t,
                      lambda = 0.2, L = 2.7)
 fit
+#> 
+#> ── Shewhart chart ewma ─────────────────────────────────────────────────────────
+#> • Observations / subgroups: 80
+#> • Phase: "phase_1"
+#> • Sigma estimate ("mr"): 1.014
+#> 
+#> 
+#> ── Control limits ──
+#> # A tibble: 3 × 3
+#>   chart line            value
+#>   <chr> <chr>           <dbl>
+#> 1 EWMA  CL              0.165
+#> 2 EWMA  UCL_asymptotic  1.08 
+#> 3 EWMA  LCL_asymptotic -0.748
+#> ── Rule violations ──
+#> 
+#> ✔ No violations across 1 rule: "nelson_1_beyond_3s".
 autoplot(fit)
 ```
+
+![](memory-based-charts_files/figure-html/unnamed-chunk-3-1.png)
 
 The control limits in an EWMA chart are **time-varying** by default.
 They start narrow and widen out to the asymptotic value
@@ -82,6 +107,8 @@ you have a long enough baseline).
 shewhart_ewma(df, value = y, index = t, steady_state = TRUE) |>
   autoplot()
 ```
+
+![](memory-based-charts_files/figure-html/unnamed-chunk-4-1.png)
 
 ### Choosing `lambda`
 
@@ -121,8 +148,27 @@ shift size the chart should be sensitive to (so `k = 0.5` for shifts of
 
 fit <- shewhart_cusum(df, value = y, index = t, k = 0.5, h = 4)
 fit
+#> 
+#> ── Shewhart chart cusum ────────────────────────────────────────────────────────
+#> • Observations / subgroups: 80
+#> • Phase: "phase_1"
+#> • Sigma estimate ("mr"): 1.014
+#> 
+#> 
+#> ── Control limits ──
+#> # A tibble: 2 × 3
+#>   chart line    value
+#>   <chr> <chr>   <dbl>
+#> 1 CUSUM h_upper  4.05
+#> 2 CUSUM h_lower -4.05
+#> ── Rule violations ──
+#> 
+#> ! 1 violation across 1 rule.
+#> cusum_decision: 1 hit.
 autoplot(fit)
 ```
+
+![](memory-based-charts_files/figure-html/unnamed-chunk-5-1.png)
 
 The plot draws `C+` as positive bars (potential upward drift) and `C-`
 as negative bars (potential downward drift), with the symmetric decision
@@ -169,6 +215,8 @@ shewhart_ewma(new_data, value = y, index = t,
               lambda = 0.2, L = 2.7) |>
   autoplot()
 ```
+
+![](memory-based-charts_files/figure-html/unnamed-chunk-6-1.png)
 
 A
 [`calibrate()`](https://castlaboratory.github.io/shewhartr/reference/calibrate.md)

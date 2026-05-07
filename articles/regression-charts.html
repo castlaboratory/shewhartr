@@ -125,6 +125,7 @@ component plus noise.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> regres…   200 phas…     0.366 mr                     11       2          0.055</span></span></code></pre></div>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
+<p><img src="regression-charts_files/figure-html/unnamed-chunk-3-1.png" class="r-plt" alt="" width="672"></p>
 <p>The chart’s centre line follows the fitted line, and limits are
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>±</mi><mn>3</mn><msub><mover><mi>σ</mi><mo accent="true">̂</mo></mover><mi>R</mi></msub></mrow><annotation encoding="application/x-tex">\pm 3\hat{\sigma}_R</annotation></semantics></math>
 where
@@ -189,6 +190,59 @@ in-control ARL is about 256 — false phase changes are rare. With the WE
 7-same rule, ARL_0 is about 64 — phase changes are detected faster but
 at a higher false-alarm cost. See the <code>arl-simulation</code>
 vignette for a quantitative comparison.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>            <span class="co"># Nelson 2 — usually 1–2 phases</span></span></code></pre></div>
+<p><img src="regression-charts_files/figure-html/unnamed-chunk-7-1.png" class="r-plt" alt="" width="672"></p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">fit_legacy</span><span class="op">)</span>     <span class="co"># WE 7 — typically more phases on the same data</span></span></code></pre></div>
+<p><img src="regression-charts_files/figure-html/unnamed-chunk-7-2.png" class="r-plt" alt="" width="672"></p>
+</div>
+<div class="section level2">
+<h2 id="a-worked-example-with-many-phases-and-visible-violations">A worked example with many phases and visible violations<a class="anchor" aria-label="anchor" href="#a-worked-example-with-many-phases-and-visible-violations"></a>
+</h2>
+<p>The COVID-19 mortality series for Recife is a textbook trended
+process: a long, irregular climb, a peak, a slow decline. With a single
+regression line and the legacy <code>we_seven_same</code> rule (the one
+the original SBPO 2020 paper used), the chart partitions the series into
+phases, fits a local trend in each, and flags the days when the observed
+value departs sharply from the local trend.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit_recife</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/shewhart_regression.html">shewhart_regression</a></span><span class="op">(</span></span>
+<span>  <span class="va">cvd_recife</span>,</span>
+<span>  value      <span class="op">=</span> <span class="va">new_deaths</span>,</span>
+<span>  index      <span class="op">=</span> <span class="va">.t</span>,</span>
+<span>  model      <span class="op">=</span> <span class="st">"loglog"</span>,</span>
+<span>  phase_rule <span class="op">=</span> <span class="st">"we_seven_same"</span>,</span>
+<span>  rules      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nelson_1_beyond_3s"</span>, <span class="st">"we_seven_same"</span><span class="op">)</span>,</span>
+<span>  lower_bound <span class="op">=</span> <span class="fl">0</span>          <span class="co"># death counts can't go negative</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">fit_recife</span><span class="op">$</span><span class="va">fits</span><span class="op">)</span>              <span class="co"># phases detected</span></span>
+<span><span class="co">#&gt; [1] 9</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">fit_recife</span><span class="op">$</span><span class="va">violations</span><span class="op">)</span>          <span class="co"># individual flagged observations</span></span>
+<span><span class="co">#&gt; [1] 10</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">fit_recife</span><span class="op">)</span></span></code></pre></div>
+<p><img src="regression-charts_files/figure-html/unnamed-chunk-8-1.png" class="r-plt" alt="" width="672"></p>
+<p>Each shaded band is a phase. The dashed lines are that phase’s
+3-sigma limits, the solid line is the regression centre line for that
+phase. Points highlighted in firebrick are the days flagged by the rule
+set as departing from the local trend — these are the days that
+motivated investigation in the original analysis.</p>
+<p>The <code>violations</code> table tells you exactly which days fired
+which rule:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">fit_recife</span><span class="op">$</span><span class="va">violations</span>, <span class="fl">8</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 8 × 5</span></span></span>
+<span><span class="co">#&gt;   position rule               description            value severity      </span></span>
+<span><span class="co">#&gt;      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>       52 nelson_1_beyond_3s 1 point beyond 3 sigma    49 out_of_control</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>       61 nelson_1_beyond_3s 1 point beyond 3 sigma    65 out_of_control</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>       86 nelson_1_beyond_3s 1 point beyond 3 sigma    48 out_of_control</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>      102 nelson_1_beyond_3s 1 point beyond 3 sigma    27 out_of_control</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>      104 nelson_1_beyond_3s 1 point beyond 3 sigma    18 out_of_control</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>      111 nelson_1_beyond_3s 1 point beyond 3 sigma    23 out_of_control</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span>      117 nelson_1_beyond_3s 1 point beyond 3 sigma    15 out_of_control</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">8</span>      181 nelson_1_beyond_3s 1 point beyond 3 sigma    17 out_of_control</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="the-model-menu">The model menu<a class="anchor" aria-label="anchor" href="#the-model-menu"></a>
@@ -234,7 +288,7 @@ internally and selects based on the maximum-likelihood lambda. It is a
 good first try when you don’t have strong prior knowledge of the
 functional form.</p>
 <p>For full control, supply your own formula:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/shewhart_regression.html">shewhart_regression</a></span><span class="op">(</span><span class="va">temperature_drift</span>, value <span class="op">=</span> <span class="va">temp_c</span>, index <span class="op">=</span> <span class="va">minute</span>,</span>
 <span>                    formula <span class="op">=</span> <span class="va">temp_c</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/stats/poly.html" class="external-link">poly</a></span><span class="op">(</span><span class="va">minute</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -243,7 +297,7 @@ functional form.</p>
 </h2>
 <p><code>bacterial_growth</code> is a 24-hour OD time series whose true
 mean is a Gompertz curve.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_gomp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/shewhart_regression.html">shewhart_regression</a></span><span class="op">(</span></span>
 <span>  <span class="va">bacterial_growth</span>,</span>
 <span>  value <span class="op">=</span> <span class="va">od</span>,</span>
@@ -255,8 +309,9 @@ mean is a Gompertz curve.</p>
 <span><span class="co">#&gt;   type        n phase sigma_hat sigma_method n_violations n_rules pct_violations</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> regres…    80 phas…     0.160 mr                      8       2            0.1</span></span></code></pre></div>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">fit_gomp</span><span class="op">)</span></span></code></pre></div>
+<p><img src="regression-charts_files/figure-html/unnamed-chunk-12-1.png" class="r-plt" alt="" width="672"></p>
 <p>The Gompertz parameterisation we use comes from Zwietering et al.
 (1990) and is in <code><a href="../reference/Gompertz.html">?Gompertz</a></code>.</p>
 </div>

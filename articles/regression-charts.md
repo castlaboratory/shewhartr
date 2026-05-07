@@ -48,6 +48,8 @@ broom::glance(fit)
 autoplot(fit)
 ```
 
+![](regression-charts_files/figure-html/unnamed-chunk-3-1.png)
+
 The chart’s centre line follows the fitted line, and limits are
 $`\pm 3\hat{\sigma}_R`$ where $`\hat{\sigma}_R`$ is estimated from the
 moving range of the residuals.
@@ -121,6 +123,74 @@ in-control ARL is about 256 — false phase changes are rare. With the WE
 at a higher false-alarm cost. See the `arl-simulation` vignette for a
 quantitative comparison.
 
+``` r
+
+autoplot(fit)            # Nelson 2 — usually 1–2 phases
+```
+
+![](regression-charts_files/figure-html/unnamed-chunk-7-1.png)
+
+``` r
+
+autoplot(fit_legacy)     # WE 7 — typically more phases on the same data
+```
+
+![](regression-charts_files/figure-html/unnamed-chunk-7-2.png)
+
+## A worked example with many phases and visible violations
+
+The COVID-19 mortality series for Recife is a textbook trended process:
+a long, irregular climb, a peak, a slow decline. With a single
+regression line and the legacy `we_seven_same` rule (the one the
+original SBPO 2020 paper used), the chart partitions the series into
+phases, fits a local trend in each, and flags the days when the observed
+value departs sharply from the local trend.
+
+``` r
+
+fit_recife <- shewhart_regression(
+  cvd_recife,
+  value      = new_deaths,
+  index      = .t,
+  model      = "loglog",
+  phase_rule = "we_seven_same",
+  rules      = c("nelson_1_beyond_3s", "we_seven_same"),
+  lower_bound = 0          # death counts can't go negative
+)
+
+length(fit_recife$fits)              # phases detected
+#> [1] 9
+nrow(fit_recife$violations)          # individual flagged observations
+#> [1] 10
+autoplot(fit_recife)
+```
+
+![](regression-charts_files/figure-html/unnamed-chunk-8-1.png)
+
+Each shaded band is a phase. The dashed lines are that phase’s 3-sigma
+limits, the solid line is the regression centre line for that phase.
+Points highlighted in firebrick are the days flagged by the rule set as
+departing from the local trend — these are the days that motivated
+investigation in the original analysis.
+
+The `violations` table tells you exactly which days fired which rule:
+
+``` r
+
+head(fit_recife$violations, 8)
+#> # A tibble: 8 × 5
+#>   position rule               description            value severity      
+#>      <int> <chr>              <chr>                  <int> <chr>         
+#> 1       52 nelson_1_beyond_3s 1 point beyond 3 sigma    49 out_of_control
+#> 2       61 nelson_1_beyond_3s 1 point beyond 3 sigma    65 out_of_control
+#> 3       86 nelson_1_beyond_3s 1 point beyond 3 sigma    48 out_of_control
+#> 4      102 nelson_1_beyond_3s 1 point beyond 3 sigma    27 out_of_control
+#> 5      104 nelson_1_beyond_3s 1 point beyond 3 sigma    18 out_of_control
+#> 6      111 nelson_1_beyond_3s 1 point beyond 3 sigma    23 out_of_control
+#> 7      117 nelson_1_beyond_3s 1 point beyond 3 sigma    15 out_of_control
+#> 8      181 nelson_1_beyond_3s 1 point beyond 3 sigma    17 out_of_control
+```
+
 ## The model menu
 
 | `model = ...` | Functional form                                        |
@@ -170,6 +240,8 @@ broom::glance(fit_gomp)
 
 autoplot(fit_gomp)
 ```
+
+![](regression-charts_files/figure-html/unnamed-chunk-12-1.png)
 
 The Gompertz parameterisation we use comes from Zwietering et al. (1990)
 and is in

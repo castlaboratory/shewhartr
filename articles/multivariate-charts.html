@@ -126,13 +126,41 @@ marginal.</p>
 <p>A glance at each variable independently shows nothing dramatic:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/shewhart_i_mr.html">shewhart_i_mr</a></span><span class="op">(</span><span class="va">reactor</span>, value <span class="op">=</span> <span class="va">temp</span>,     index <span class="op">=</span> <span class="va">hour</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/shewhart_i_mr.html">shewhart_i_mr</a></span><span class="op">(</span><span class="va">reactor</span>, value <span class="op">=</span> <span class="va">pressure</span>, index <span class="op">=</span> <span class="va">hour</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>But the Hotelling chart catches the fault:</p>
+<span><span class="co">#&gt; Warning: Removed 1 row containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_line()`).</span></span>
+<span><span class="co">#&gt; Warning: Removed 1 row containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_point()`).</span></span></code></pre></div>
+<p><img src="multivariate-charts_files/figure-html/unnamed-chunk-3-1.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/shewhart_i_mr.html">shewhart_i_mr</a></span><span class="op">(</span><span class="va">reactor</span>, value <span class="op">=</span> <span class="va">pressure</span>, index <span class="op">=</span> <span class="va">hour</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Removed 1 row containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_line()`).</span></span>
+<span><span class="co">#&gt; Removed 1 row containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_point()`).</span></span></code></pre></div>
+<p><img src="multivariate-charts_files/figure-html/unnamed-chunk-3-2.png" class="r-plt" alt="" width="672"></p>
+<p>But the Hotelling chart catches the fault:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/shewhart_hotelling.html">shewhart_hotelling</a></span><span class="op">(</span><span class="va">reactor</span>, vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">temp</span>, <span class="va">pressure</span><span class="op">)</span>,</span>
 <span>                          index <span class="op">=</span> <span class="va">hour</span><span class="op">)</span></span>
 <span><span class="va">fit</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Shewhart chart </span><span style="color: #00BB00; font-weight: bold;">hotelling</span> <span style="color: #00BBBB;">────────────────────────────────────────────────────</span></span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Observations / subgroups: <span style="color: #0000BB;">100</span></span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Phase: <span style="color: #0000BB;">"phase_1"</span></span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Sigma estimate (<span style="color: #0000BB;">"hotelling"</span>): <span style="color: #0000BB;">NA</span></span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Control limits</span> ──</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 3</span></span></span>
+<span><span class="co">#&gt;   chart line  value</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> T2    UCL    11.3</span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Rule violations</span> ──</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> <span style="color: #0000BB;">2</span> violations across <span style="color: #0000BB;">1</span> rule.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">hotelling_ucl</span>: <span style="color: #0000BB;">2</span> hits.</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
+<p><img src="multivariate-charts_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level2">
 <h2 id="what-the-chart-computes">What the chart computes<a class="anchor" aria-label="anchor" href="#what-the-chart-computes"></a>
@@ -170,11 +198,16 @@ pass <code>phase = "phase_2"</code> for the wider Phase II UCL.</p>
 contribution column per variable: the marginal increase in
 <code>T²</code> attributable to that variable. When the chart fires, the
 contribution columns point at the responsible variable(s).</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span><span class="op">$</span><span class="va">augmented</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">.flag_signal</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">hour</span>, <span class="va">.t2</span>, <span class="va">.upper</span>, <span class="fu"><a href="https://tidyselect.r-lib.org/reference/starts_with.html" class="external-link">starts_with</a></span><span class="op">(</span><span class="st">".contrib_"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 5</span></span></span>
+<span><span class="co">#&gt;    hour   .t2 .upper .contrib_temp .contrib_pressure</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>    15  12.4   11.3          1.22              7.74</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>    97  11.8   11.3         11.8               8.27</span></span></code></pre></div>
 <p>In our reactor example, observations after hour 80 typically have the
 bulk of their <code>T²</code> value coming from
 <code>.contrib_pressure</code> — the chart is correctly fingerprinting
@@ -185,7 +218,7 @@ the stuck pressure sensor as the culprit.</p>
 </h2>
 <p>The same <code><a href="../reference/calibrate.html">calibrate()</a></code> / <code><a href="../reference/monitor.html">monitor()</a></code> workflow
 used for univariate charts works for the multivariate chart too:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">7</span><span class="op">)</span></span>
 <span><span class="va">in_control</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu">MASS</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/MASS/man/mvrnorm.html" class="external-link">mvrnorm</a></span><span class="op">(</span><span class="fl">120</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span>, <span class="va">Sigma</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">in_control</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"temp"</span>, <span class="st">"pressure"</span><span class="op">)</span></span>
@@ -199,7 +232,9 @@ used for univariate charts works for the multivariate chart too:</p>
 <span></span>
 <span><span class="va">mon</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/monitor.html">monitor</a></span><span class="op">(</span><span class="va">new_data</span>, <span class="va">calib</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">mon</span><span class="op">$</span><span class="va">augmented</span><span class="op">$</span><span class="va">.flag_signal</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 3</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">mon</span><span class="op">)</span></span></code></pre></div>
+<p><img src="multivariate-charts_files/figure-html/unnamed-chunk-6-1.png" class="r-plt" alt="" width="672"></p>
 <p><code><a href="../reference/monitor.html">monitor()</a></code> reuses the Phase I mean vector and inverse
 covariance (stored on the calibration object) and applies the
 appropriate Phase II UCL — strict separation of estimation and

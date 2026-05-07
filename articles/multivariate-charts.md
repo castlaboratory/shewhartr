@@ -44,8 +44,24 @@ A glance at each variable independently shows nothing dramatic:
 ``` r
 
 shewhart_i_mr(reactor, value = temp,     index = hour) |> autoplot()
-shewhart_i_mr(reactor, value = pressure, index = hour) |> autoplot()
+#> Warning: Removed 1 row containing missing values or values outside the scale range
+#> (`geom_line()`).
+#> Warning: Removed 1 row containing missing values or values outside the scale range
+#> (`geom_point()`).
 ```
+
+![](multivariate-charts_files/figure-html/unnamed-chunk-3-1.png)
+
+``` r
+
+shewhart_i_mr(reactor, value = pressure, index = hour) |> autoplot()
+#> Warning: Removed 1 row containing missing values or values outside the scale range
+#> (`geom_line()`).
+#> Removed 1 row containing missing values or values outside the scale range
+#> (`geom_point()`).
+```
+
+![](multivariate-charts_files/figure-html/unnamed-chunk-3-2.png)
 
 But the Hotelling chart catches the fault:
 
@@ -54,8 +70,26 @@ But the Hotelling chart catches the fault:
 fit <- shewhart_hotelling(reactor, vars = c(temp, pressure),
                           index = hour)
 fit
+#> 
+#> ── Shewhart chart hotelling ────────────────────────────────────────────────────
+#> • Observations / subgroups: 100
+#> • Phase: "phase_1"
+#> • Sigma estimate ("hotelling"): NA
+#> 
+#> 
+#> ── Control limits ──
+#> # A tibble: 1 × 3
+#>   chart line  value
+#>   <chr> <chr> <dbl>
+#> 1 T2    UCL    11.3
+#> ── Rule violations ──
+#> 
+#> ! 2 violations across 1 rule.
+#> hotelling_ucl: 2 hits.
 autoplot(fit)
 ```
+
+![](multivariate-charts_files/figure-html/unnamed-chunk-4-1.png)
 
 ## What the chart computes
 
@@ -97,6 +131,11 @@ fit$augmented |>
   filter(.flag_signal) |>
   select(hour, .t2, .upper, starts_with(".contrib_")) |>
   head(5)
+#> # A tibble: 2 × 5
+#>    hour   .t2 .upper .contrib_temp .contrib_pressure
+#>   <int> <dbl>  <dbl>         <dbl>             <dbl>
+#> 1    15  12.4   11.3          1.22              7.74
+#> 2    97  11.8   11.3         11.8               8.27
 ```
 
 In our reactor example, observations after hour 80 typically have the
@@ -127,8 +166,11 @@ new_data$pressure[31:40] <- rnorm(10, 0, 0.05)
 
 mon <- monitor(new_data, calib)
 sum(mon$augmented$.flag_signal)
+#> [1] 3
 autoplot(mon)
 ```
+
+![](multivariate-charts_files/figure-html/unnamed-chunk-6-1.png)
 
 [`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md)
 reuses the Phase I mean vector and inverse covariance (stored on the
