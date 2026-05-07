@@ -40,7 +40,7 @@ broom::glance(fit)
 #> # A tibble: 1 × 8
 #>   type        n phase sigma_hat sigma_method n_violations n_rules pct_violations
 #>   <chr>   <int> <chr>     <dbl> <chr>               <int>   <int>          <dbl>
-#> 1 regres…   200 phas…     0.366 mr                      7       2          0.035
+#> 1 regres…   200 phas…     0.366 mr                     11       2          0.055
 ```
 
 ``` r
@@ -96,9 +96,9 @@ broom::glance(fit)
 #> # A tibble: 1 × 8
 #>   type        n phase sigma_hat sigma_method n_violations n_rules pct_violations
 #>   <chr>   <int> <chr>     <dbl> <chr>               <int>   <int>          <dbl>
-#> 1 regres…   120 phas…     0.495 mr                      4       2         0.0333
+#> 1 regres…   120 phas…     0.481 mr                      7       2         0.0583
 length(fit$fits)    # number of phases detected
-#> [1] 8
+#> [1] 7
 ```
 
 The `phase_rule` argument accepts any rule from
@@ -112,7 +112,7 @@ fit_legacy <- shewhart_regression(trended, value = y, index = t,
                                   model = "linear",
                                   phase_rule = "we_seven_same")
 length(fit_legacy$fits)
-#> [1] 10
+#> [1] 9
 ```
 
 The trade-off is straightforward. With Nelson 2 (9 same side), the

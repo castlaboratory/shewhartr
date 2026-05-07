@@ -144,7 +144,7 @@ print(fit)
 #> ── Shewhart chart regression-based ─────────────────────────────────────────────
 #> • Observations / subgroups: 60
 #> • Phase: "phase_1"
-#> • Sigma estimate ("mr"): 0.4142
+#> • Sigma estimate ("mr"): 0.4273
 #> 
 #> ── Control limits ──
 #> 
@@ -152,8 +152,8 @@ print(fit)
 #>   .phase cl_first ucl_first lcl_first cl_last ucl_last lcl_last
 #>    <int>    <dbl>     <dbl>     <dbl>   <dbl>    <dbl>    <dbl>
 #> 1      0    0.443      1.82    -0.936    5.19     6.57     3.81
-#> 2      1    5.59       7.34     3.84     9.05    10.8      7.30
-#> 3      2   10.4       11.6      9.16    16.4     17.6     15.2 
+#> 2      1    5.52       6.96     4.07    10.2     11.7      8.79
+#> 3      2   11.2       12.5      9.96    16.3     17.6     15.0 
 #> 4      3   15.9       17.2     14.7     18.1     19.3     16.8 
 #> ── Rule violations ──
 #> 

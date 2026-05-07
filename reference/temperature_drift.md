@@ -40,20 +40,6 @@ fit <- shewhart_regression(temperature_drift,
                            value = temp_c, index = minute,
                            model = "linear")
 ggplot2::autoplot(fit)
-#> Warning: n too large, allowed maximum for palette Set2 is 8
-#> Returning the palette you asked for with that many colors
-#> `geom_line()`: Each group consists of only one observation.
-#> ℹ Do you need to adjust the group aesthetic?
-#> `geom_line()`: Each group consists of only one observation.
-#> ℹ Do you need to adjust the group aesthetic?
-#> `geom_line()`: Each group consists of only one observation.
-#> ℹ Do you need to adjust the group aesthetic?
-#> Warning: Removed 11 rows containing missing values or values outside the scale range
-#> (`geom_line()`).
-#> Warning: Removed 11 rows containing missing values or values outside the scale range
-#> (`geom_line()`).
-#> Warning: Removed 11 rows containing missing values or values outside the scale range
-#> (`geom_line()`).
 
 # }
 ```
