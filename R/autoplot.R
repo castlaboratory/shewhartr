@@ -31,7 +31,7 @@
 #' df <- data.frame(x = 1:50, y = cumsum(rnorm(50)))
 #' ggplot(df, aes(x, y)) + geom_line() + shewhart_theme()
 #' @export
-shewhart_theme <- function(base_size = 11, base_family = "") {
+shewhart_theme <- function(base_size = 10.5, base_family = "") {
   pal <- shewhart_palette("neutral")
   ggplot2::theme_minimal(base_size = base_size, base_family = base_family) +
     ggplot2::theme(
@@ -51,42 +51,42 @@ shewhart_theme <- function(base_size = 11, base_family = "") {
       axis.ticks.y = ggplot2::element_blank(),
       axis.ticks.length = ggplot2::unit(3, "pt"),
       axis.text  = ggplot2::element_text(colour = pal["text_med"],
-                                         size   = ggplot2::rel(0.85)),
+                                         size   = ggplot2::rel(0.82)),
       axis.title = ggplot2::element_text(colour = pal["text_med"],
-                                         size   = ggplot2::rel(0.9)),
+                                         size   = ggplot2::rel(0.85)),
       axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 6)),
       axis.title.y = ggplot2::element_text(margin = ggplot2::margin(r = 6)),
 
       # Title block: left-aligned to the plot edge (FT/Pew style).
       plot.title = ggplot2::element_text(
         colour = pal["text_high"], face = "bold",
-        size = ggplot2::rel(1.20),
+        size = ggplot2::rel(1.18),
         margin = ggplot2::margin(b = 4),
         hjust = 0
       ),
       plot.subtitle = ggplot2::element_text(
         colour = pal["text_low"],
-        size = ggplot2::rel(0.95),
-        margin = ggplot2::margin(b = 14),
+        size = ggplot2::rel(0.9),
+        margin = ggplot2::margin(b = 12),
         hjust = 0
       ),
       plot.caption = ggplot2::element_text(
         colour = pal["text_xlow"],
-        size = ggplot2::rel(0.78),
+        size = ggplot2::rel(0.74),
         hjust = 0,
         margin = ggplot2::margin(t = 10)
       ),
       plot.title.position    = "plot",
       plot.caption.position  = "plot",
 
-      # Legend: top-left, no background — encourages annotation
-      # rather than legend lookup but stays available when needed.
+      # Legend: top-left, bold title, slightly smaller than data text.
       legend.background    = ggplot2::element_blank(),
       legend.key           = ggplot2::element_blank(),
       legend.title         = ggplot2::element_text(colour = pal["text_med"],
-                                                   size   = ggplot2::rel(0.85)),
+                                                   size   = ggplot2::rel(0.82),
+                                                   face   = "bold"),
       legend.text          = ggplot2::element_text(colour = pal["text_med"],
-                                                   size   = ggplot2::rel(0.85)),
+                                                   size   = ggplot2::rel(0.8)),
       legend.position      = "top",
       legend.justification = "left",
       legend.box.spacing   = ggplot2::unit(2, "pt"),
@@ -182,45 +182,47 @@ autoplot.shewhart_chart <- function(object,
 plot_single_panel <- function(object, title_key, y_key, locale,
                               show_violations, show_sigma_zones, ...) {
 
-  aug   <- object$augmented
-  x_col <- get_index_col(aug, chart = object)
+  aug    <- object$augmented
+  x_col  <- get_index_col(aug, chart = object)
+  signal <- shewhart_palette("signal")
+  ink    <- shewhart_palette("neutral")
 
-  # Line layers for centre and limits
   p <- ggplot2::ggplot(aug, ggplot2::aes(x = .data[[x_col]], y = .data$.value)) +
-    ggplot2::geom_line(colour = "grey70") +
-    ggplot2::geom_point(size = 1.5)
+    ggplot2::geom_line(colour = ink["text_low"], linewidth = 0.25, alpha = 0.45) +
+    ggplot2::geom_point(colour = signal["in_control"], size = 1.2, alpha = 0.95)
 
   if (show_sigma_zones) {
     p <- p +
       ggplot2::geom_ribbon(
         ggplot2::aes(ymin = .data$.center - .data$.sigma,
                      ymax = .data$.center + .data$.sigma),
-        fill = "steelblue", alpha = 0.08, colour = NA) +
+        fill = signal["in_control"], alpha = 0.06, colour = NA) +
       ggplot2::geom_ribbon(
         ggplot2::aes(ymin = .data$.center - 2 * .data$.sigma,
                      ymax = .data$.center + 2 * .data$.sigma),
-        fill = "steelblue", alpha = 0.05, colour = NA)
+        fill = signal["in_control"], alpha = 0.04, colour = NA)
   }
 
   p <- p +
-    ggplot2::geom_line(ggplot2::aes(y = .data$.center), colour = "steelblue4",
-                       linewidth = 0.6) +
-    ggplot2::geom_line(ggplot2::aes(y = .data$.upper), colour = "firebrick",
-                       linetype = "dashed", linewidth = 0.6) +
-    ggplot2::geom_line(ggplot2::aes(y = .data$.lower), colour = "firebrick",
-                       linetype = "dashed", linewidth = 0.6)
+    ggplot2::geom_line(ggplot2::aes(y = .data$.center),
+                       colour = signal["in_control"], linewidth = 0.7,
+                       lineend = "round") +
+    ggplot2::geom_line(ggplot2::aes(y = .data$.upper),
+                       colour = signal["out_of_control"],
+                       linetype = "dashed", linewidth = 0.4, alpha = 0.7) +
+    ggplot2::geom_line(ggplot2::aes(y = .data$.lower),
+                       colour = signal["out_of_control"],
+                       linetype = "dashed", linewidth = 0.4, alpha = 0.7)
 
   if (show_violations && ".flag_any" %in% names(aug)) {
     viol <- dplyr::filter(aug, .data$.flag_any)
     if (nrow(viol) > 0L) {
-      p <- p + ggplot2::geom_point(
-        data   = viol,
-        colour = "firebrick",
-        fill   = "firebrick",
-        size   = 2.5,
-        shape  = 21,
-        stroke = 0.8
-      )
+      p <- p +
+        ggplot2::geom_point(data = viol, colour = "white",
+                            size = 2.4, stroke = 0) +
+        ggplot2::geom_point(data = viol,
+                            colour = signal["out_of_control"], fill = NA,
+                            shape = 21, size = 2.0, stroke = 1.0)
     }
   }
 
@@ -278,46 +280,55 @@ plot_two_panel <- function(object, title_key, top_key, bottom_key,
                            bottom_upper_col, bottom_lower_col,
                            locale, show_violations, ...) {
 
-  aug   <- object$augmented
-  x_col <- get_index_col(aug, chart = object)
+  aug    <- object$augmented
+  x_col  <- get_index_col(aug, chart = object)
+  signal <- shewhart_palette("signal")
+  ink    <- shewhart_palette("neutral")
 
-  # Top panel: individuals / Xbar
-  p1 <- ggplot2::ggplot(aug, ggplot2::aes(x = .data[[x_col]], y = .data$.value)) +
-    ggplot2::geom_line(colour = "grey70") +
-    ggplot2::geom_point(size = 1.5) +
-    ggplot2::geom_line(ggplot2::aes(y = .data$.center), colour = "steelblue4",
-                       linewidth = 0.6) +
-    ggplot2::geom_line(ggplot2::aes(y = .data$.upper), colour = "firebrick",
-                       linetype = "dashed", linewidth = 0.6) +
-    ggplot2::geom_line(ggplot2::aes(y = .data$.lower), colour = "firebrick",
-                       linetype = "dashed", linewidth = 0.6) +
-    ggplot2::labs(title = tr(title_key, locale),
-                  x = tr("label_index", locale),
-                  y = tr(top_key, locale)) +
-    shewhart_theme()
+  panel <- function(y_col, centre_col, upper_col, lower_col,
+                    title = NULL, ylab) {
+    g <- ggplot2::ggplot(aug, ggplot2::aes(x = .data[[x_col]],
+                                           y = .data[[y_col]])) +
+      ggplot2::geom_line(colour = ink["text_low"],
+                         linewidth = 0.25, alpha = 0.45) +
+      ggplot2::geom_point(colour = signal["in_control"],
+                          size = 1.2, alpha = 0.95) +
+      ggplot2::geom_line(ggplot2::aes(y = .data[[centre_col]]),
+                         colour = signal["in_control"],
+                         linewidth = 0.7, lineend = "round") +
+      ggplot2::geom_line(ggplot2::aes(y = .data[[upper_col]]),
+                         colour = signal["out_of_control"],
+                         linetype = "dashed", linewidth = 0.4, alpha = 0.7) +
+      ggplot2::geom_line(ggplot2::aes(y = .data[[lower_col]]),
+                         colour = signal["out_of_control"],
+                         linetype = "dashed", linewidth = 0.4, alpha = 0.7)
+    g + ggplot2::labs(title = title,
+                      x = tr("label_index", locale),
+                      y = ylab) +
+      shewhart_theme()
+  }
+
+  p1 <- panel(".value", ".center", ".upper", ".lower",
+              title = tr(title_key, locale),
+              ylab  = tr(top_key, locale))
 
   if (show_violations && ".flag_any" %in% names(aug)) {
     viol <- dplyr::filter(aug, .data$.flag_any)
     if (nrow(viol) > 0L) {
-      p1 <- p1 + ggplot2::geom_point(
-        data = viol, colour = "firebrick", fill = "firebrick",
-        size = 2.5, shape = 21, stroke = 0.8)
+      p1 <- p1 +
+        ggplot2::geom_point(data = viol,
+                            ggplot2::aes(y = .data$.value),
+                            colour = "white", size = 2.4, stroke = 0) +
+        ggplot2::geom_point(data = viol,
+                            ggplot2::aes(y = .data$.value),
+                            colour = signal["out_of_control"], fill = NA,
+                            shape = 21, size = 2.0, stroke = 1.0)
     }
   }
 
-  # Bottom panel: MR / R / S
-  p2 <- ggplot2::ggplot(aug, ggplot2::aes(x = .data[[x_col]],
-                                          y = .data[[bottom_value_col]])) +
-    ggplot2::geom_line(colour = "grey70") +
-    ggplot2::geom_point(size = 1.5) +
-    ggplot2::geom_line(ggplot2::aes(y = .data[[bottom_center_col]]),
-                       colour = "steelblue4", linewidth = 0.6) +
-    ggplot2::geom_line(ggplot2::aes(y = .data[[bottom_upper_col]]),
-                       colour = "firebrick", linetype = "dashed", linewidth = 0.6) +
-    ggplot2::geom_line(ggplot2::aes(y = .data[[bottom_lower_col]]),
-                       colour = "firebrick", linetype = "dashed", linewidth = 0.6) +
-    ggplot2::labs(x = tr("label_index", locale), y = tr(bottom_key, locale)) +
-    shewhart_theme()
+  p2 <- panel(bottom_value_col, bottom_center_col,
+              bottom_upper_col, bottom_lower_col,
+              ylab = tr(bottom_key, locale))
 
   out <- list(top = p1, bottom = p2)
   class(out) <- "shewhart_plot_pair"
@@ -454,12 +465,12 @@ autoplot.shewhart_regression <- function(object, show_violations = TRUE,
       p <- p +
         ggplot2::geom_point(
           data = viol, ggplot2::aes(y = .data$.value),
-          colour = "white", size = 3.1, stroke = 0
+          colour = "white", size = 2.4, stroke = 0
         ) +
         ggplot2::geom_point(
           data = viol, ggplot2::aes(y = .data$.value),
           colour = signal["out_of_control"],
-          fill   = NA, shape = 21, size = 2.6, stroke = 1.1
+          fill   = NA, shape = 21, size = 2.0, stroke = 1.0
         )
     }
   }
@@ -481,13 +492,13 @@ autoplot.shewhart_regression <- function(object, show_violations = TRUE,
 
   p +
     ggplot2::scale_colour_manual(
-      name   = tr("legend_phase", locale),
+      name   = tr("legend_phases", locale),
       values = stats::setNames(pal, ph_labels)
     ) +
     ggplot2::guides(
       colour = ggplot2::guide_legend(
         nrow = 1, byrow = TRUE,
-        override.aes = list(linewidth = 0, size = 3, alpha = 1)
+        override.aes = list(linewidth = 0, size = 2.4, alpha = 1)
       )
     ) +
     ggplot2::labs(
@@ -520,33 +531,39 @@ autoplot.shewhart_ewma <- function(object, show_violations = TRUE,
   locale <- locale %||% object$metadata$locale %||% "en"
   aug    <- object$augmented
   x_col  <- get_index_col(aug, chart = object)
+  signal <- shewhart_palette("signal")
+  ink    <- shewhart_palette("neutral")
 
   p <- ggplot2::ggplot(aug, ggplot2::aes(x = .data[[x_col]])) +
-    # Raw observations as faded grey dots, EWMA as the foreground series
     ggplot2::geom_point(ggplot2::aes(y = .data$.value),
-                        colour = "grey70", size = 1.2) +
+                        colour = ink["text_xlow"], size = 1.0, alpha = 0.6) +
     ggplot2::geom_line(ggplot2::aes(y = .data$.ewma),
-                       colour = "steelblue4", linewidth = 0.7) +
+                       colour = signal["in_control"], linewidth = 0.7,
+                       lineend = "round") +
     ggplot2::geom_point(ggplot2::aes(y = .data$.ewma),
-                        colour = "steelblue4", size = 1.6) +
+                        colour = signal["in_control"], size = 1.2,
+                        alpha = 0.95) +
     ggplot2::geom_line(ggplot2::aes(y = .data$.center),
-                       colour = "steelblue4", linewidth = 0.5,
-                       alpha = 0.5) +
+                       colour = signal["in_control"], linewidth = 0.4,
+                       alpha = 0.45) +
     ggplot2::geom_line(ggplot2::aes(y = .data$.upper),
-                       colour = "firebrick", linetype = "dashed",
-                       linewidth = 0.6) +
+                       colour = signal["out_of_control"], linetype = "dashed",
+                       linewidth = 0.4, alpha = 0.7) +
     ggplot2::geom_line(ggplot2::aes(y = .data$.lower),
-                       colour = "firebrick", linetype = "dashed",
-                       linewidth = 0.6)
+                       colour = signal["out_of_control"], linetype = "dashed",
+                       linewidth = 0.4, alpha = 0.7)
 
   if (show_violations && ".flag_any" %in% names(aug)) {
     viol <- dplyr::filter(aug, .data$.flag_any)
     if (nrow(viol) > 0L) {
-      p <- p + ggplot2::geom_point(
-        data = viol,
-        ggplot2::aes(y = .data$.ewma),
-        colour = "firebrick", fill = "firebrick",
-        size = 2.6, shape = 21, stroke = 0.8)
+      p <- p +
+        ggplot2::geom_point(data = viol,
+                            ggplot2::aes(y = .data$.ewma),
+                            colour = "white", size = 2.4, stroke = 0) +
+        ggplot2::geom_point(data = viol,
+                            ggplot2::aes(y = .data$.ewma),
+                            colour = signal["out_of_control"], fill = NA,
+                            shape = 21, size = 2.0, stroke = 1.0)
     }
   }
 
@@ -582,27 +599,38 @@ autoplot.shewhart_cusum <- function(object, show_violations = TRUE,
                       aug$.cusum_neg > decision)
   )
 
+  signal <- shewhart_palette("signal")
+  ink    <- shewhart_palette("neutral")
+  fam    <- shewhart_palette("family")
+
   p <- ggplot2::ggplot(long, ggplot2::aes(x = .data[[x_col]],
                                           y = .data$cusum_value)) +
-    ggplot2::geom_hline(yintercept = 0, colour = "grey70") +
+    ggplot2::geom_hline(yintercept = 0, colour = ink["axis_line"],
+                        linewidth = 0.4) +
     ggplot2::geom_segment(
       ggplot2::aes(xend = .data[[x_col]], yend = 0,
                    colour = .data$cusum_kind),
-      linewidth = 0.6, alpha = 0.85) +
-    ggplot2::geom_point(ggplot2::aes(colour = .data$cusum_kind), size = 1.6) +
-    ggplot2::geom_hline(yintercept =  decision, colour = "firebrick",
-                        linetype = "dashed", linewidth = 0.6) +
-    ggplot2::geom_hline(yintercept = -decision, colour = "firebrick",
-                        linetype = "dashed", linewidth = 0.6) +
+      linewidth = 0.45, alpha = 0.85, lineend = "round") +
+    ggplot2::geom_point(ggplot2::aes(colour = .data$cusum_kind),
+                        size = 1.2, alpha = 0.95) +
+    ggplot2::geom_hline(yintercept =  decision,
+                        colour = signal["out_of_control"],
+                        linetype = "dashed", linewidth = 0.4, alpha = 0.7) +
+    ggplot2::geom_hline(yintercept = -decision,
+                        colour = signal["out_of_control"],
+                        linetype = "dashed", linewidth = 0.4, alpha = 0.7) +
     ggplot2::scale_colour_manual(
       name   = NULL,
-      values = c(Positive = "steelblue4", Negative = "darkorange3"))
+      values = c(Positive = unname(signal["in_control"]),
+                 Negative = unname(fam["memory_based"])))
 
   if (show_violations && any(long$flag)) {
-    p <- p + ggplot2::geom_point(
-      data   = long[long$flag, , drop = FALSE],
-      colour = "firebrick", fill = "firebrick",
-      size   = 2.6, shape = 21, stroke = 0.8)
+    p <- p +
+      ggplot2::geom_point(data   = long[long$flag, , drop = FALSE],
+                          colour = "white", size = 2.4, stroke = 0) +
+      ggplot2::geom_point(data   = long[long$flag, , drop = FALSE],
+                          colour = signal["out_of_control"], fill = NA,
+                          shape = 21, size = 2.0, stroke = 1.0)
   }
 
   p +
@@ -629,20 +657,29 @@ autoplot.shewhart_hotelling <- function(object, show_violations = TRUE,
   x_col  <- get_index_col(aug, chart = object)
   ucl    <- aug$.upper[1L]
 
+  signal <- shewhart_palette("signal")
+  ink    <- shewhart_palette("neutral")
+
   p <- ggplot2::ggplot(aug, ggplot2::aes(x = .data[[x_col]],
                                          y = .data$.t2)) +
-    ggplot2::geom_line(colour = "grey70") +
-    ggplot2::geom_point(size = 1.6, colour = "steelblue4") +
-    ggplot2::geom_hline(yintercept = ucl, colour = "firebrick",
-                        linetype = "dashed", linewidth = 0.6) +
-    ggplot2::geom_hline(yintercept = 0, colour = "grey80")
+    ggplot2::geom_line(colour = ink["text_low"],
+                       linewidth = 0.25, alpha = 0.45) +
+    ggplot2::geom_point(colour = signal["in_control"],
+                        size = 1.2, alpha = 0.95) +
+    ggplot2::geom_hline(yintercept = ucl,
+                        colour = signal["out_of_control"],
+                        linetype = "dashed", linewidth = 0.4, alpha = 0.7) +
+    ggplot2::geom_hline(yintercept = 0, colour = ink["axis_line"],
+                        linewidth = 0.3, alpha = 0.6)
 
   if (show_violations && any(aug$.flag_signal)) {
     viol <- dplyr::filter(aug, .data$.flag_signal)
-    p <- p + ggplot2::geom_point(
-      data   = viol,
-      colour = "firebrick", fill = "firebrick",
-      size   = 2.6, shape = 21, stroke = 0.8)
+    p <- p +
+      ggplot2::geom_point(data = viol, colour = "white",
+                          size = 2.4, stroke = 0) +
+      ggplot2::geom_point(data = viol,
+                          colour = signal["out_of_control"], fill = NA,
+                          shape = 21, size = 2.0, stroke = 1.0)
   }
 
   meta <- object$metadata
