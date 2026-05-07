@@ -100,6 +100,41 @@ shewhart_theme <- function(base_size = 10.5, base_family = "") {
     )
 }
 
+#' Build the two ggplot2 layers that mark a violation
+#'
+#' Centralised so every autoplot in the package uses the same shape,
+#' size and colour for an out-of-control point. Returns two layers in
+#' a list: a solid white halo, then a hollow ring in the package's
+#' `out_of_control` colour.
+#'
+#' @param data A data frame already filtered to the violating rows.
+#' @param y A bare column name (passed via tidy-eval) for the
+#'   y-aesthetic. Defaults to `.value`.
+#' @param halo,ring,stroke Numeric scalars overriding the default
+#'   sizes when needed (e.g. the regression chart with shaded bands
+#'   wants slightly different sizing). Defaults match the rest of
+#'   the family.
+#'
+#' @keywords internal
+#' @noRd
+violation_layers <- function(data, y_col = ".value",
+                             halo = 1.7, ring = 1.4, stroke = 0.7) {
+  signal <- shewhart_palette("signal")
+  list(
+    ggplot2::geom_point(
+      data = data,
+      ggplot2::aes(y = .data[[y_col]]),
+      colour = "white", size = halo, stroke = 0
+    ),
+    ggplot2::geom_point(
+      data = data,
+      ggplot2::aes(y = .data[[y_col]]),
+      colour = signal["out_of_control"], fill = NA,
+      shape = 21, size = ring, stroke = stroke
+    )
+  )
+}
+
 #' @keywords internal
 #' @noRd
 shewhart_phase_label <- function(phase, locale = "en") {
@@ -216,14 +251,7 @@ plot_single_panel <- function(object, title_key, y_key, locale,
 
   if (show_violations && ".flag_any" %in% names(aug)) {
     viol <- dplyr::filter(aug, .data$.flag_any)
-    if (nrow(viol) > 0L) {
-      p <- p +
-        ggplot2::geom_point(data = viol, colour = "white",
-                            size = 2.4, stroke = 0) +
-        ggplot2::geom_point(data = viol,
-                            colour = signal["out_of_control"], fill = NA,
-                            shape = 21, size = 2.0, stroke = 1.0)
-    }
+    if (nrow(viol) > 0L) p <- p + violation_layers(viol)
   }
 
   p +
@@ -314,16 +342,7 @@ plot_two_panel <- function(object, title_key, top_key, bottom_key,
 
   if (show_violations && ".flag_any" %in% names(aug)) {
     viol <- dplyr::filter(aug, .data$.flag_any)
-    if (nrow(viol) > 0L) {
-      p1 <- p1 +
-        ggplot2::geom_point(data = viol,
-                            ggplot2::aes(y = .data$.value),
-                            colour = "white", size = 2.4, stroke = 0) +
-        ggplot2::geom_point(data = viol,
-                            ggplot2::aes(y = .data$.value),
-                            colour = signal["out_of_control"], fill = NA,
-                            shape = 21, size = 2.0, stroke = 1.0)
-    }
+    if (nrow(viol) > 0L) p1 <- p1 + violation_layers(viol)
   }
 
   p2 <- panel(bottom_value_col, bottom_center_col,
@@ -456,23 +475,11 @@ autoplot.shewhart_regression <- function(object, show_violations = TRUE,
                                      colour = .data$.phase_f),
                         size = 1.2, alpha = 0.95)
 
-  # Out-of-control points: a hollow firebrick ring with a white halo
-  # (the halo gap separates the ring from the underlying coloured
-  # point so both stay visible).
+  # Out-of-control points: hollow ring + white halo, sized so they
+  # read against any phase colour underneath.
   if (show_violations && ".flag_any" %in% names(aug)) {
     viol <- aug[aug$.flag_any, , drop = FALSE]
-    if (nrow(viol) > 0L) {
-      p <- p +
-        ggplot2::geom_point(
-          data = viol, ggplot2::aes(y = .data$.value),
-          colour = "white", size = 2.4, stroke = 0
-        ) +
-        ggplot2::geom_point(
-          data = viol, ggplot2::aes(y = .data$.value),
-          colour = signal["out_of_control"],
-          fill   = NA, shape = 21, size = 2.0, stroke = 1.0
-        )
-    }
+    if (nrow(viol) > 0L) p <- p + violation_layers(viol)
   }
 
   # Subtitle that summarises the chart configuration the way a
@@ -555,16 +562,7 @@ autoplot.shewhart_ewma <- function(object, show_violations = TRUE,
 
   if (show_violations && ".flag_any" %in% names(aug)) {
     viol <- dplyr::filter(aug, .data$.flag_any)
-    if (nrow(viol) > 0L) {
-      p <- p +
-        ggplot2::geom_point(data = viol,
-                            ggplot2::aes(y = .data$.ewma),
-                            colour = "white", size = 2.4, stroke = 0) +
-        ggplot2::geom_point(data = viol,
-                            ggplot2::aes(y = .data$.ewma),
-                            colour = signal["out_of_control"], fill = NA,
-                            shape = 21, size = 2.0, stroke = 1.0)
-    }
+    if (nrow(viol) > 0L) p <- p + violation_layers(viol, y_col = ".ewma")
   }
 
   p +
@@ -625,12 +623,8 @@ autoplot.shewhart_cusum <- function(object, show_violations = TRUE,
                  Negative = unname(fam["memory_based"])))
 
   if (show_violations && any(long$flag)) {
-    p <- p +
-      ggplot2::geom_point(data   = long[long$flag, , drop = FALSE],
-                          colour = "white", size = 2.4, stroke = 0) +
-      ggplot2::geom_point(data   = long[long$flag, , drop = FALSE],
-                          colour = signal["out_of_control"], fill = NA,
-                          shape = 21, size = 2.0, stroke = 1.0)
+    p <- p + violation_layers(long[long$flag, , drop = FALSE],
+                              y_col = "cusum_value")
   }
 
   p +
@@ -674,12 +668,7 @@ autoplot.shewhart_hotelling <- function(object, show_violations = TRUE,
 
   if (show_violations && any(aug$.flag_signal)) {
     viol <- dplyr::filter(aug, .data$.flag_signal)
-    p <- p +
-      ggplot2::geom_point(data = viol, colour = "white",
-                          size = 2.4, stroke = 0) +
-      ggplot2::geom_point(data = viol,
-                          colour = signal["out_of_control"], fill = NA,
-                          shape = 21, size = 2.0, stroke = 1.0)
+    p <- p + violation_layers(viol, y_col = ".t2")
   }
 
   meta <- object$metadata
