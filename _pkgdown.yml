@@ -17,7 +17,7 @@ authors:
     href: https://castlab.org
   Castlab:
     href: https://castlab.org
-    html: <img src='https://castlab.org/logo.png' height='24' alt='Castlab' />
+    html: "<img src='https://castlab.org/img/icon.png' height='20' alt='Castlab'/>"
 
 navbar:
   structure:
