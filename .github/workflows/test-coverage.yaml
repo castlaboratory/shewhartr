@@ -34,9 +34,17 @@ jobs:
           covr::to_cobertura(cov)
         shell: Rscript {0}
 
-      - uses: codecov/codecov-action@v4
+      - name: Upload to Codecov
+        # Skip the upload entirely when no Codecov token is configured —
+        # the coverage was still computed (visible in the job output) but
+        # the upload step would otherwise fail with "Token required - not
+        # valid tokenless upload" since codecov-action v4.
+        if: ${{ env.CODECOV_TOKEN != '' }}
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        uses: codecov/codecov-action@v5
         with:
-          fail_ci_if_error: ${{ github.event_name != 'pull_request' && true || false }}
+          fail_ci_if_error: false
           files: ./cobertura.xml
           plugins: noop
           disable_search: true
