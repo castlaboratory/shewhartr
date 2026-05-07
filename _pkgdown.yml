@@ -135,7 +135,6 @@ reference:
 
 articles:
   - title: "Getting started"
-    navbar: ~
     contents:
       - getting-started
 
