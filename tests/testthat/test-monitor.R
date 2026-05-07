@@ -19,9 +19,11 @@ test_that("monitor() dispatches for all eight chart types", {
   expect_equal(m2$phase, "phase_2")
 
   # c -----------------------------------------------------------------
-  d3 <- data.frame(d = rpois(40, 6))
+  # Use lambda >= 10 so the normal-approximation warning that would fire
+  # at small c_bar does not get into the test record.
+  d3 <- data.frame(d = rpois(40, 12))
   cal3 <- calibrate(d3, defects = d, chart = "c")
-  m3 <- monitor(data.frame(d = rpois(15, 6)), cal3)
+  m3 <- monitor(data.frame(d = rpois(15, 12)), cal3)
   expect_equal(m3$phase, "phase_2")
 
   # np ----------------------------------------------------------------

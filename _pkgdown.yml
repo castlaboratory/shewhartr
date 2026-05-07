@@ -102,6 +102,10 @@ reference:
       - glance.shewhart_chart
       - augment.shewhart_chart
 
+  - title: "Interactive plots"
+    contents:
+      - as_plotly
+
   - title: "Math helpers"
     contents:
       - Gompertz

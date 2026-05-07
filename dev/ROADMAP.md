@@ -565,13 +565,16 @@ declarada:
    `monitor_*()` em `R/calibrate.R` é trabalho pequeno (~50 linhas por
    chart) e dá uniformidade na superfície de API.
 
-3. **Validação numérica vs Montgomery / `qcc`** (#7 acima). Útil para
-   confiança do usuário; merece um arquivo
-   `tests/testthat/test-vs-montgomery.R` com casos do livro.
+3. **Validação numérica vs `qcc`.** ✓ resolvido na v1.2.0. Adicionado
+   `tests/testthat/test-vs-qcc.R` (skip silencioso quando `qcc` ausente)
+   comparando limites contra os datasets canônicos do `qcc`
+   (`pistonrings`, `orangejuice`, `circuit`); todos os center / UCL /
+   LCL coincidem com `qcc` em tolerância 1e-3.
 
-4. **Suporte plotly.** Mantido em `Suggests` desde a v1.0.0; precisa de
-   um construtor `as_plotly()` que converta `autoplot()` para plotly
-   preservando rótulos / violations. Não bloqueia ninguém.
+4. **Suporte plotly via `as_plotly()`.** ✓ resolvido na v1.2.0. Genérico
+   + método para `shewhart_chart` que produz `plotly::ggplotly` para
+   single-panel e `plotly::subplot` (com x-axis compartilhado) para
+   two-panel charts.
 
 5. **Bug numérico em `SSgompertzDummy` self-starter.** O initial-guesser
    atual converge para os dados sintéticos do exemplo via

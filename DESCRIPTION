@@ -1,7 +1,7 @@
 Package: shewhartr
 Type: Package
 Title: Statistical Process Control with Tidyverse-Native Workflows
-Version: 1.1.0
+Version: 1.2.0
 Authors@R: c(
     person("André", "Leite", , "leite@castlab.org",
            role = c("aut", "cre")),
@@ -49,6 +49,7 @@ Imports:
 Suggests:
     patchwork (>= 1.1.0),
     plotly (>= 4.10.0),
+    qcc (>= 2.7),
     lubridate (>= 1.9.0),
     testthat (>= 3.2.0),
     vdiffr (>= 1.0.0),
