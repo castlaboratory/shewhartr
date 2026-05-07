@@ -622,8 +622,11 @@ porque o Monte Carlo é caro demais para vignette build.
   time-varying e steady-state, decisão `h` calibrada por lookup na
   tabela de Prabhu & Runger (1997) para `ARL_0 ≈ 200`. Phase II via
   `calibrate()/monitor()` mesmo padrão das outras cartas.
-* **MCUSUM** (Crosier 1988, Pignatiello & Runger 1990) — análogo
-  multivariado da CUSUM. Bom complemento ao MEWMA.
+* **MCUSUM** (Crosier 1988). ✓ resolvido na v1.3.0.
+  `shewhart_mcusum()` com operador de shrinkage de Crosier
+  (`S_i = V_i (1 - k/C_i)` se `C_i > k`, senão zero), decisão `h`
+  calibrada para `k=0.5` e `p=2..10` em `ARL_0 ≈ 200`. Phase II
+  continua do `S_n` final da calibração (Crosier 1988 §5).
 * **T² baseado em PCA** quando `p` é grande (Jackson 1991, ch. 1).
 
 ### Diagnostics e modelagem

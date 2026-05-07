@@ -68,6 +68,7 @@ reference:
     contents:
       - shewhart_hotelling
       - shewhart_mewma
+      - shewhart_mcusum
 
   - title: "Phase I / Phase II workflow"
     desc: >

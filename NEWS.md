@@ -2,15 +2,26 @@
 
 ## New chart family
 
+The multivariate side of the package now has the natural pair of
+memory-based charts. Both follow the `calibrate()` / `monitor()`
+Phase I / Phase II workflow.
+
 * `shewhart_mewma()` — Multivariate Exponentially Weighted Moving
-  Average chart (Lowry, Woodall, Champ & Rigdon 1992). Joint
-  monitoring of `p > 1` correlated variables for *small persistent*
-  shifts in the vector mean — the multivariate analogue of
-  `shewhart_ewma()`. Supports both time-varying and steady-state
-  covariance, decision interval `h` calibrated by lookup in the
-  Prabhu & Runger (1997) table for `ARL_0 ~ 200`, and the same
-  `calibrate()` / `monitor()` Phase I / Phase II workflow as the
-  rest of the package.
+  Average (Lowry, Woodall, Champ & Rigdon 1992). The multivariate
+  analogue of `shewhart_ewma()`: joint monitoring of `p > 1`
+  correlated variables for *small persistent* shifts in the vector
+  mean. Time-varying and steady-state covariance both supported.
+  Decision interval `h` calibrated by lookup in Prabhu & Runger
+  (1997) Table 3 (`ARL_0 ~ 200`).
+* `shewhart_mcusum()` — Multivariate CUSUM (Crosier 1988). The
+  multivariate analogue of `shewhart_cusum()`. Uses Crosier's
+  shrinkage operator: at each step the cumulative vector is
+  shrunk towards zero by `k / C_i` where `C_i` is its Mahalanobis
+  norm; if the norm falls below `k`, the cumulative vector resets
+  to zero. Decision interval `h` calibrated by lookup in
+  Crosier (1988) Table 1 for `k = 0.5`, `ARL_0 ~ 200`,
+  `p = 2..10`. Phase II monitoring continues from the calibration's
+  final `S` vector (Crosier 1988 §5).
 
 ## Visual identity
 

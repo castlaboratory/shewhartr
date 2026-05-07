@@ -36,7 +36,8 @@
 #' @param ... Arguments passed to a chart constructor.
 #' @param chart A character key naming the chart constructor:
 #'   `"i_mr"` (default), `"xbar_r"`, `"xbar_s"`, `"p"`, `"np"`, `"c"`,
-#'   `"u"`, `"regression"`, `"ewma"`, `"cusum"`, `"hotelling"`, `"mewma"`.
+#'   `"u"`, `"regression"`, `"ewma"`, `"cusum"`, `"hotelling"`,
+#'   `"mewma"`, `"mcusum"`.
 #' @param trim_outliers Logical. If `TRUE`, iteratively drop
 #'   observations that violate the rules and re-estimate limits
 #'   (Montgomery 2019, Section 6.2.3).
@@ -67,7 +68,8 @@ calibrate <- function(data, ..., chart = "i_mr",
   chart <- rlang::arg_match(
     chart,
     values = c("i_mr", "xbar_r", "xbar_s", "p", "np", "c", "u",
-               "regression", "ewma", "cusum", "hotelling", "mewma")
+               "regression", "ewma", "cusum", "hotelling",
+               "mewma", "mcusum")
   )
 
   builder <- switch(chart,
@@ -82,7 +84,8 @@ calibrate <- function(data, ..., chart = "i_mr",
     ewma       = shewhart_ewma,
     cusum      = shewhart_cusum,
     hotelling  = shewhart_hotelling,
-    mewma      = shewhart_mewma
+    mewma      = shewhart_mewma,
+    mcusum     = shewhart_mcusum
   )
 
   fit <- builder(data, ...)
@@ -159,6 +162,7 @@ monitor <- function(data, chart) {
     cusum      = monitor_cusum(data, chart),
     hotelling  = monitor_hotelling(data, chart),
     mewma      = monitor_mewma(data, chart),
+    mcusum     = monitor_mcusum(data, chart),
     cli::cli_abort(c(
       "Phase II monitoring not implemented for chart type {.val {chart$type}}."
     ))
@@ -869,6 +873,78 @@ monitor_mewma <- function(data, chart) {
       rule        = "mewma_h",
       description = sprintf("MEWMA T2 exceeds h = %.3f", m$h),
       value       = t2[pos_hits],
+      severity    = "alarm"
+    )
+  }
+
+  out <- chart
+  out$augmented  <- augmented
+  out$violations <- violations
+  out$phase      <- "phase_2"
+  out$n          <- nrow(augmented)
+  out
+}
+
+# Monitor: Multivariate CUSUM ---------------------------------------------
+
+#' @keywords internal
+#' @noRd
+monitor_mcusum <- function(data, chart) {
+  m <- chart$metadata
+  for (v in m$vars) check_column(data, v, arg = v)
+  X <- as.matrix(data[, m$vars, drop = FALSE])
+  if (!is.numeric(X) || anyNA(X)) {
+    cli::cli_abort("All monitored variables must be numeric and complete.")
+  }
+
+  centred <- sweep(X, 2L, m$target, "-")
+  n_new   <- nrow(X)
+
+  # Continue from the final Phase I S-vector so the recursion picks up
+  # exactly where the calibration left off (this is the recommendation
+  # in Crosier 1988 §5 for prospective use).
+  prev <- m$last_S %||% numeric(m$p)
+  S    <- matrix(0, nrow = n_new, ncol = m$p)
+  Y    <- numeric(n_new)
+  for (i in seq_len(n_new)) {
+    V  <- prev + centred[i, ]
+    Ci <- sqrt(as.numeric(t(V) %*% m$cov_inv %*% V))
+    if (Ci <= m$k) {
+      S[i, ] <- 0
+    } else {
+      S[i, ] <- V * (1 - m$k / Ci)
+    }
+    Y[i] <- sqrt(as.numeric(t(S[i, ]) %*% m$cov_inv %*% S[i, ]))
+    prev <- S[i, ]
+  }
+
+  flag <- Y > m$h
+  augmented <- tibble::tibble(
+    .obs         = seq_len(n_new),
+    .y           = Y,
+    .center      = NA_real_,
+    .upper       = m$h,
+    .lower       = 0,
+    .flag_signal = flag,
+    .flag_any    = flag
+  )
+  augmented[[m$index_name]] <- if (m$index_name %in% names(data)) {
+    data[[m$index_name]]
+  } else {
+    seq_len(n_new)
+  }
+
+  pos_hits <- which(flag)
+  violations <- if (length(pos_hits) == 0L) {
+    tibble::tibble(position = integer(0), rule = character(0),
+                   description = character(0), value = numeric(0),
+                   severity = character(0))
+  } else {
+    tibble::tibble(
+      position    = pos_hits,
+      rule        = "mcusum_h",
+      description = sprintf("MCUSUM Y exceeds h = %.3f", m$h),
+      value       = Y[pos_hits],
       severity    = "alarm"
     )
   }
