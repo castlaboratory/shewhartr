@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">shewhartr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,7 +44,26 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="1.1.0" id="shewhartr-110-development-version">shewhartr 1.1.0 (development version)<a class="anchor" aria-label="anchor" href="#shewhartr-110-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="1.2.0" id="shewhartr-120-development-version">shewhartr 1.2.0 (development version)<a class="anchor" aria-label="anchor" href="#shewhartr-120-development-version"></a></h2>
+<p>This release closes the remaining items from <code>dev/ROADMAP.md §11</code> that were left for after v1.1: a plotly bridge and external numerical validation against the long-established <code>qcc</code> package.</p>
+<div class="section level3">
+<h3 id="interactive-plots-as_plotly-1-2-0">Interactive plots: <code>as_plotly()</code>
+<a class="anchor" aria-label="anchor" href="#interactive-plots-as_plotly-1-2-0"></a></h3>
+<ul><li>New generic <code><a href="../reference/as_plotly.html">as_plotly()</a></code> with a <code>shewhart_chart</code> method that converts any chart into an interactive plotly figure. For two-panel charts (I-MR, X̄-R, X̄-S) the helper produces a <code><a href="https://rdrr.io/pkg/plotly/man/subplot.html" class="external-link">plotly::subplot()</a></code> with a synchronised x-axis. <code>plotly</code> is in <code>Suggests</code>, so it is only loaded on demand.</li>
+<li>The <code>tooltip</code> argument is forwarded to <code><a href="https://rdrr.io/pkg/plotly/man/ggplotly.html" class="external-link">plotly::ggplotly()</a></code> for full control of what hover boxes display.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="validation-against-qcc-1-2-0">Validation against qcc<a class="anchor" aria-label="anchor" href="#validation-against-qcc-1-2-0"></a></h3>
+<ul><li>New <code>tests/testthat/test-vs-qcc.R</code> (skipped silently if <code>qcc</code> is not installed) compares the limits computed by <code>shewhartr</code> to the reference values from the <code>qcc</code> package on its canonical example datasets — <code>pistonrings</code> for the variables charts, <code>orangejuice</code> for p / np, <code>circuit</code> for c. Every centre line and 3-sigma limit agrees with <code>qcc</code> to within 1e-3 absolute tolerance.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="test-hygiene-1-2-0">Test hygiene<a class="anchor" aria-label="anchor" href="#test-hygiene-1-2-0"></a></h3>
+<ul><li>
+<code>test-monitor.R</code> no longer triggers the (correct) “small c_bar” cli_warn from <code>chart-c.R</code>: the test data uses <code>lambda = 12</code> so the normal approximation is well-behaved. The 1-warning warning in <code>devtools::test()</code> is gone; the suite is now FAIL 0 / WARN 0.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.1.0" id="shewhartr-110">shewhartr 1.1.0<a class="anchor" aria-label="anchor" href="#shewhartr-110"></a></h2>
 <p>This release closes most of the items left open in <code>dev/ROADMAP.md §11</code>.</p>
 <div class="section level3">
 <h3 id="new-chart-family-multivariate-1-1-0">New chart family: multivariate<a class="anchor" aria-label="anchor" href="#new-chart-family-multivariate-1-1-0"></a></h3>

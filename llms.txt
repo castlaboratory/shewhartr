@@ -233,6 +233,11 @@ by simulation, residual diagnostic panels, Box-Cox guidance.
 - [`augment(`*`<shewhart_chart>`*`)`](https://castlaboratory.github.io/shewhartr/reference/augment.shewhart_chart.md)
   : Augment new data with control-chart annotations
 
+## Interactive plots
+
+- [`as_plotly()`](https://castlaboratory.github.io/shewhartr/reference/as_plotly.md)
+  : Convert a Shewhart chart to an interactive plotly figure
+
 ## Math helpers
 
 - [`Gompertz()`](https://castlaboratory.github.io/shewhartr/reference/Gompertz.md)

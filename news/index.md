@@ -1,6 +1,42 @@
 # Changelog
 
-## shewhartr 1.1.0 (development version)
+## shewhartr 1.2.0 (development version)
+
+This release closes the remaining items from `dev/ROADMAP.md §11` that
+were left for after v1.1: a plotly bridge and external numerical
+validation against the long-established `qcc` package.
+
+### Interactive plots: `as_plotly()`
+
+- New generic
+  [`as_plotly()`](https://castlaboratory.github.io/shewhartr/reference/as_plotly.md)
+  with a `shewhart_chart` method that converts any chart into an
+  interactive plotly figure. For two-panel charts (I-MR, X̄-R, X̄-S) the
+  helper produces a
+  [`plotly::subplot()`](https://rdrr.io/pkg/plotly/man/subplot.html)
+  with a synchronised x-axis. `plotly` is in `Suggests`, so it is only
+  loaded on demand.
+- The `tooltip` argument is forwarded to
+  [`plotly::ggplotly()`](https://rdrr.io/pkg/plotly/man/ggplotly.html)
+  for full control of what hover boxes display.
+
+### Validation against qcc
+
+- New `tests/testthat/test-vs-qcc.R` (skipped silently if `qcc` is not
+  installed) compares the limits computed by `shewhartr` to the
+  reference values from the `qcc` package on its canonical example
+  datasets — `pistonrings` for the variables charts, `orangejuice` for p
+  / np, `circuit` for c. Every centre line and 3-sigma limit agrees with
+  `qcc` to within 1e-3 absolute tolerance.
+
+### Test hygiene
+
+- `test-monitor.R` no longer triggers the (correct) “small c_bar”
+  cli_warn from `chart-c.R`: the test data uses `lambda = 12` so the
+  normal approximation is well-behaved. The 1-warning warning in
+  `devtools::test()` is gone; the suite is now FAIL 0 / WARN 0.
+
+## shewhartr 1.1.0
 
 This release closes most of the items left open in `dev/ROADMAP.md §11`.
 
