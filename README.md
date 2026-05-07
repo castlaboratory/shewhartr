@@ -65,6 +65,37 @@ autoplot(fit)
 | Small persistent shifts (memory-based)       | [`shewhart_ewma()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_ewma.html), [`shewhart_cusum()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_cusum.html) |
 | Several correlated variables monitored jointly | [`shewhart_hotelling()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_hotelling.html) |
 
+## Multi-phase regression chart
+
+The flagship chart for trended processes splits the series into
+phases when a runs rule fires, fits a local model in each, and
+flags points that depart from the local trend. The example below
+uses the COVID-19 mortality series for Recife (`cvd_recife`) with
+the original analysis settings from Ferraz et al. (2020):
+
+```r
+fit <- shewhart_regression(
+  cvd_recife,
+  value       = new_deaths,
+  index       = .t,
+  model       = "loglog",
+  phase_rule  = "we_seven_same",
+  rules       = c("nelson_1_beyond_3s", "we_seven_same"),
+  lower_bound = 0
+)
+
+length(fit$fits)              # number of phases detected
+nrow(fit$violations)          # individual flagged observations
+autoplot(fit)
+```
+
+<img src="man/figures/README-regression-cvd.png" alt="Regression chart on cvd_recife showing nine phases with locally fitted limits" width="100%" />
+
+Each shaded band is one phase, the solid line is the local
+regression centre, the dashed lines are the phase's 3-sigma limits,
+and the firebrick points are the days flagged by the rule set as
+departing from the local trend.
+
 ## Phase I vs Phase II
 
 A Shewhart chart serves two different purposes that are easy to
@@ -84,6 +115,26 @@ calib <- calibrate(historical_data, value = y,
 alarms <- monitor(new_observations, calib)
 alarms$violations
 ```
+
+## Architecture
+
+<img src="man/figures/architecture.svg" alt="shewhartr architecture: tidy data in, S3 chart object, print/plot/broom/monitor out" width="100%" />
+
+Every chart constructor — variables (`shewhart_i_mr`, `shewhart_xbar_r`,
+`shewhart_xbar_s`), attributes (`shewhart_p`, `shewhart_np`,
+`shewhart_c`, `shewhart_u`), regression
+(`shewhart_regression`), memory-based (`shewhart_ewma`,
+`shewhart_cusum`), and multivariate (`shewhart_hotelling`) —
+returns a `shewhart_chart` S3 object with a uniform layout. The same
+object then feeds into:
+
+- **Inspect**: `print()`, `summary()`, `shewhart_diagnostics()`,
+  `shewhart_capability()`, `shewhart_arl()`.
+- **Plot**: `autoplot()` (ggplot2) and `as_plotly()` (interactive,
+  `plotly` in `Suggests`).
+- **Tidy**: `broom::tidy()`, `glance()`, `augment()`.
+- **Phase II**: `calibrate()` produces a Phase I chart whose limits
+  are frozen by `monitor()` for prospective monitoring.
 
 ## Documentation
 
