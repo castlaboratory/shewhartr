@@ -549,21 +549,17 @@ Três workflows:
 Itens que ficaram fora da v1.0.0 deliberadamente, em ordem de prioridade
 declarada:
 
-1. **Hotelling T² multivariado** (`shewhart_hotelling()`). Implementação
-   séria: distribuição beta exata em Phase I, aproximação F em Phase II,
-   decomposição T² para diagnóstico de qual variável drift, T² baseado em
-   PCA quando `p` é grande. Estimativa: 400-500 linhas de R + vinheta
-   dedicada + 15-20 testes. API a decidir: vetor de colunas via
-   `tidyselect`, ou múltiplas chamadas de `enquos(...)`. Equivalentes
-   existentes: `qcc::mqcc()`, pacote `MSQC`. **Justificativa de adiar:**
-   audiência minoritária; merece tempo de design dedicado em vez de ser
-   enxertado para destravar v1.0.0; CRAN não bloqueia.
+1. **Hotelling T² multivariado** (`shewhart_hotelling()`). ✓ resolvido na
+   v1.1.0. Individual + subgrupado, Phase I (Beta exata) e Phase II (F
+   preditiva), tidyselect API, decomposição de contribuição por variável
+   (Mason et al. 1995), `monitor_hotelling()`, vinheta
+   `multivariate-charts`. Versão T²-PCA para `p` grande fica para v1.3.
 
-2. **Phase II para EWMA/CUSUM via `calibrate()`/`monitor()`.** Hoje a
-   API de monitoramento funciona via os argumentos `target`/`sigma`
-   diretamente nas funções construtoras; integração com o switch de
-   `monitor_*()` em `R/calibrate.R` é trabalho pequeno (~50 linhas por
-   chart) e dá uniformidade na superfície de API.
+2. **Phase II para EWMA/CUSUM via `calibrate()`/`monitor()`.** ✓ resolvido
+   na v1.1.0. `monitor_ewma()` continua a recursão a partir do estado
+   final da calibração com limites steady-state; `monitor_cusum()`
+   continua ambos os acumuladores; `calibrate()` aceita `chart =
+   "ewma" | "cusum" | "hotelling"`.
 
 3. **Validação numérica vs `qcc`.** ✓ resolvido na v1.2.0. Adicionado
    `tests/testthat/test-vs-qcc.R` (skip silencioso quando `qcc` ausente)
@@ -576,8 +572,69 @@ declarada:
    single-panel e `plotly::subplot` (com x-axis compartilhado) para
    two-panel charts.
 
-5. **Bug numérico em `SSgompertzDummy` self-starter.** O initial-guesser
-   atual converge para os dados sintéticos do exemplo via
-   `fit_gompertz_dummy()` mas é frágil; revisão dos starting values
-   (especialmente `b2`, `b3`) merece atenção dedicada antes de promover
-   o exemplo de `\donttest{}` para `@examples` plain.
+5. **Bug numérico em `SSgompertzDummy` self-starter.** ✓ resolvido na
+   v1.1.0. Starting values agora derivados dos dados (`Asym`, `b2`,
+   `b3`, `Beta` calculados a partir do dummy-zero subset com fórmulas
+   da inversa Gompertz e regressão `log(-log(y/Asym))` para a taxa).
+   Convergiu cleanly em y-escala 10, 100, 10000 e em vários ranges de
+   taxa. Exemplo voltou de `\dontrun{}` para `\donttest{}`.
+
+---
+
+## 12. Bugs descobertos e corrigidos pós-v1.2.0
+
+Sessão de revisão de qualidade de saída revelou três bugs sobrepostos
+no autoplot da carta de regressão:
+
+1. **`get_index_col()` ignorava colunas começando com `.`.** `cvd_recife`
+   tem `.t` como índice; o helper caía no fallback e selecionava
+   `new_deaths` (a resposta) como eixo X. Corrigido para usar
+   `metadata$index_name` quando disponível e excluir apenas uma
+   allow-list explícita de colunas internas.
+
+2. **`detect_phases()` era greedy demais.** O loop só exigia
+   `nrow(last_phase) > 9` e aceitava o primeiro hit da regra. Com
+   `we_seven_same`, fases recém-criadas eram cortadas no 7º ponto.
+   Corrigido para exigir `2 × n_consec` pontos e ignorar hits dentro
+   da janela de warm-up. `cvd_recife` resolve em 9 fases agora,
+   alinhado com Ferraz et al. (2020) §3.
+
+3. **`autoplot.shewhart_regression` ficava ilegível com 9+ fases.**
+   Reescrito para: ribbon pálido por fase, CL e limites contidos no
+   segmento, paleta sequencial ordenada no tempo
+   (`shewhart_phase_palette()`), pontos coloridos pela fase. Visualmente
+   próximo da Figura 4 do paper SBPO 2020.
+
+Plus: 4 vinhetas estavam com `eval = FALSE` global (covid-recife,
+memory-based-charts, multivariate-charts) ou em chunks individuais
+(regression-charts), de modo que **nenhum gráfico renderizava no site**
+para essas seções. Corrigido; `arl-simulation` mantém `eval = FALSE`
+porque o Monte Carlo é caro demais para vignette build.
+
+---
+
+## 13. Próximos passos (v1.3.0+, sem prioridade fixa)
+
+### Multivariate
+
+* **MEWMA** (multivariate EWMA, Lowry et al. 1992) — extensão natural
+  do Hotelling para detecção de pequenos shifts conjuntos.
+  ARL_0 ≈ 200, recurso: `Z_i = λ X_i + (1-λ) Z_{i-1}`,
+  `T²_i = (Z_i - μ)' Σ_Z⁻¹ (Z_i - μ)`.
+* **MCUSUM** (Crosier 1988, Pignatiello & Runger 1990) — análogo
+  multivariado da CUSUM. Bom complemento ao MEWMA.
+* **T² baseado em PCA** quando `p` é grande (Jackson 1991, ch. 1).
+
+### Diagnostics e modelagem
+
+* **Autocorrelation handling** na regression chart. Mencionado na
+  vinheta `regression-charts` mas não implementado: ajuste com
+  estrutura ARMA nos resíduos (Box-Jenkins) e limites estendidos.
+* **Capacity multivariate** (Cp/Cpk multivariado, Wang 2005).
+
+### Polimentos
+
+* **MYT decomposition** sequencial em `shewhart_hotelling` para
+  diagnóstico mais rico (atualmente só decomposição marginal).
+* **Examples + case studies** adicionais: tablet weight, claims_p
+  como vinhetas de aplicação ao invés de só datasets.
