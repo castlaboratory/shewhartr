@@ -4,7 +4,7 @@
      width="518" height="600"
      role="img" aria-label="shewhartr hex logo">
   <title>shewhartr</title>
-  <desc>Hex sticker for the shewhartr R package: a stylised Shewhart control chart with UCL, CL, LCL, in-control points, and one out-of-control point in red.</desc>
+  <desc>Hex sticker for the shewhartr R package: a phased Shewhart control chart with three phases (calibration, shift detection, settled monitoring), each with its own centre line and limits.</desc>
 
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
@@ -17,70 +17,106 @@
     </clipPath>
   </defs>
 
-  <!-- Background hex (filled) -->
+  <!-- Background hex -->
   <path d="M259 0 L518 150 L518 450 L259 600 L0 450 L0 150 Z"
         fill="url(#bg)"/>
 
-  <!-- Outer hex border, drawn inside the clip so the stroke isn't cut off -->
+  <!-- Outer hex border, drawn inside the clip -->
   <g clip-path="url(#hexClip)">
     <path d="M259 0 L518 150 L518 450 L259 600 L0 450 L0 150 Z"
-          fill="none"
-          stroke="#0054AD"
-          stroke-width="20"
+          fill="none" stroke="#0054AD" stroke-width="20"
           stroke-linejoin="miter"/>
   </g>
 
-  <!-- Inner hex hairline, decorative -->
+  <!-- Inner hex hairline -->
   <path d="M259 22 L498 161 L498 439 L259 578 L20 439 L20 161 Z"
-        fill="none"
-        stroke="#0054AD"
-        stroke-width="1"
-        opacity="0.25"/>
+        fill="none" stroke="#0054AD" stroke-width="1" opacity="0.25"/>
 
-  <!-- Control chart -->
-  <g transform="translate(85, 0)">
-    <!-- Plot area: x in [0, 348], y from 160 (UCL) to 340 (LCL); CL at 250 -->
+  <!-- Phase chart -->
+  <g>
+    <!-- Phase 1: calibration baseline (blue) -->
+    <rect x="64" y="150" width="130" height="230"
+          fill="#0054AD" opacity="0.06"/>
+    <line x1="64"  y1="290" x2="194" y2="290"
+          stroke="#0054AD" stroke-width="2.4"/>
+    <line x1="64"  y1="255" x2="194" y2="255"
+          stroke="#0054AD" stroke-width="2"
+          stroke-dasharray="6 4" stroke-linecap="round" opacity="0.85"/>
+    <line x1="64"  y1="325" x2="194" y2="325"
+          stroke="#0054AD" stroke-width="2"
+          stroke-dasharray="6 4" stroke-linecap="round" opacity="0.85"/>
 
-    <!-- UCL (dashed red) -->
-    <line x1="0" y1="180" x2="348" y2="180"
-          stroke="#D62828" stroke-width="3"
-          stroke-dasharray="9 5" stroke-linecap="round"/>
+    <!-- Phase 2: shift detected (amber) -->
+    <rect x="194" y="150" width="130" height="230"
+          fill="#D97706" opacity="0.06"/>
+    <line x1="194" y1="240" x2="324" y2="240"
+          stroke="#D97706" stroke-width="2.4"/>
+    <line x1="194" y1="205" x2="324" y2="205"
+          stroke="#D97706" stroke-width="2"
+          stroke-dasharray="6 4" stroke-linecap="round" opacity="0.85"/>
+    <line x1="194" y1="275" x2="324" y2="275"
+          stroke="#D97706" stroke-width="2"
+          stroke-dasharray="6 4" stroke-linecap="round" opacity="0.85"/>
 
-    <!-- LCL (dashed red) -->
-    <line x1="0" y1="340" x2="348" y2="340"
-          stroke="#D62828" stroke-width="3"
-          stroke-dasharray="9 5" stroke-linecap="round"/>
+    <!-- Phase 3: re-stabilised (green) -->
+    <rect x="324" y="150" width="130" height="230"
+          fill="#16A34A" opacity="0.07"/>
+    <line x1="324" y1="200" x2="454" y2="200"
+          stroke="#16A34A" stroke-width="2.4"/>
+    <line x1="324" y1="165" x2="454" y2="165"
+          stroke="#16A34A" stroke-width="2"
+          stroke-dasharray="6 4" stroke-linecap="round" opacity="0.85"/>
+    <line x1="324" y1="235" x2="454" y2="235"
+          stroke="#16A34A" stroke-width="2"
+          stroke-dasharray="6 4" stroke-linecap="round" opacity="0.85"/>
 
-    <!-- Center line (CL) -->
-    <line x1="0" y1="260" x2="348" y2="260"
-          stroke="#0054AD" stroke-width="2.5"
-          opacity="0.55"/>
+    <!-- Phase boundaries (thin vertical guides) -->
+    <line x1="194" y1="150" x2="194" y2="380"
+          stroke="#1F2937" stroke-width="0.8"
+          stroke-dasharray="3 4" opacity="0.5"/>
+    <line x1="324" y1="150" x2="324" y2="380"
+          stroke="#1F2937" stroke-width="0.8"
+          stroke-dasharray="3 4" opacity="0.5"/>
 
-    <!-- Connecting polyline through the data points -->
+    <!-- Connecting polyline through all points -->
     <polyline
-      points="0,240 38,225 76,255 114,215 152,275 190,245 228,210 266,160 304,240 342,255"
-      fill="none"
-      stroke="#0054AD"
-      stroke-width="3"
-      stroke-linejoin="round"
-      stroke-linecap="round"/>
+      points="84,300 117,282 150,295 183,288 220,250 253,232 286,245 319,238 350,210 383,196 416,205 443,198"
+      fill="none" stroke="#1F2937"
+      stroke-width="1.8" stroke-linejoin="round"
+      stroke-linecap="round" opacity="0.6"/>
 
-    <!-- In-control points -->
+    <!-- Phase 1 points (blue) -->
     <g fill="#0054AD" stroke="#FFFFFF" stroke-width="1.5">
-      <circle cx="0"   cy="240" r="6"/>
-      <circle cx="38"  cy="225" r="6"/>
-      <circle cx="76"  cy="255" r="6"/>
-      <circle cx="114" cy="215" r="6"/>
-      <circle cx="152" cy="275" r="6"/>
-      <circle cx="190" cy="245" r="6"/>
-      <circle cx="228" cy="210" r="6"/>
-      <circle cx="304" cy="240" r="6"/>
-      <circle cx="342" cy="255" r="6"/>
+      <circle cx="84"  cy="300" r="6"/>
+      <circle cx="117" cy="282" r="6"/>
+      <circle cx="150" cy="295" r="6"/>
+      <circle cx="183" cy="288" r="6"/>
     </g>
 
-    <!-- Out-of-control point (above UCL): larger, red, with halo -->
-    <circle cx="266" cy="160" r="12" fill="#FFFFFF"/>
-    <circle cx="266" cy="160" r="9"  fill="#D62828" stroke="#FFFFFF" stroke-width="2"/>
+    <!-- Phase 2 points (amber) -->
+    <g fill="#D97706" stroke="#FFFFFF" stroke-width="1.5">
+      <circle cx="220" cy="250" r="6"/>
+      <circle cx="253" cy="232" r="6"/>
+      <circle cx="286" cy="245" r="6"/>
+      <circle cx="319" cy="238" r="6"/>
+    </g>
+
+    <!-- Phase 3 points (green) -->
+    <g fill="#16A34A" stroke="#FFFFFF" stroke-width="1.5">
+      <circle cx="350" cy="210" r="6"/>
+      <circle cx="383" cy="196" r="6"/>
+      <circle cx="416" cy="205" r="6"/>
+      <circle cx="443" cy="198" r="6"/>
+    </g>
+
+    <!-- Phase labels (small, on top of each shaded band) -->
+    <g font-family="Helvetica, Arial, sans-serif"
+       font-size="14" font-weight="700"
+       text-anchor="middle">
+      <text x="129" y="143" fill="#0054AD" opacity="0.9">I</text>
+      <text x="259" y="143" fill="#D97706" opacity="0.9">II</text>
+      <text x="389" y="143" fill="#16A34A" opacity="0.9">III</text>
+    </g>
   </g>
 
   <!-- Wordmark -->
