@@ -62,6 +62,7 @@ autoplot(fit)
 | Defect counts, constant inspection size      | [`shewhart_c()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_c.html)              |
 | Defect counts, variable inspection size      | [`shewhart_u()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_u.html)              |
 | Process with trend (drift, growth, decay)    | [`shewhart_regression()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_regression.html) |
+| Small persistent shifts (memory-based)       | [`shewhart_ewma()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_ewma.html), [`shewhart_cusum()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_cusum.html) |
 
 ## Phase I vs Phase II
 

@@ -318,6 +318,113 @@ autoplot.shewhart_regression <- function(object, show_violations = TRUE,
     shewhart_theme()
 }
 
+# EWMA chart --------------------------------------------------------------
+
+#' @exportS3Method ggplot2::autoplot shewhart_ewma
+autoplot.shewhart_ewma <- function(object, show_violations = TRUE,
+                                   show_sigma_zones = FALSE,
+                                   locale = NULL, ...) {
+  locale <- locale %||% object$metadata$locale %||% "en"
+  aug    <- object$augmented
+  x_col  <- get_index_col(aug)
+
+  p <- ggplot2::ggplot(aug, ggplot2::aes(x = .data[[x_col]])) +
+    # Raw observations as faded grey dots, EWMA as the foreground series
+    ggplot2::geom_point(ggplot2::aes(y = .data$.value),
+                        colour = "grey70", size = 1.2) +
+    ggplot2::geom_line(ggplot2::aes(y = .data$.ewma),
+                       colour = "steelblue4", linewidth = 0.7) +
+    ggplot2::geom_point(ggplot2::aes(y = .data$.ewma),
+                        colour = "steelblue4", size = 1.6) +
+    ggplot2::geom_line(ggplot2::aes(y = .data$.center),
+                       colour = "steelblue4", linewidth = 0.5,
+                       alpha = 0.5) +
+    ggplot2::geom_line(ggplot2::aes(y = .data$.upper),
+                       colour = "firebrick", linetype = "dashed",
+                       linewidth = 0.6) +
+    ggplot2::geom_line(ggplot2::aes(y = .data$.lower),
+                       colour = "firebrick", linetype = "dashed",
+                       linewidth = 0.6)
+
+  if (show_violations && ".flag_any" %in% names(aug)) {
+    viol <- dplyr::filter(aug, .data$.flag_any)
+    if (nrow(viol) > 0L) {
+      p <- p + ggplot2::geom_point(
+        data = viol,
+        ggplot2::aes(y = .data$.ewma),
+        colour = "firebrick", fill = "firebrick",
+        size = 2.6, shape = 21, stroke = 0.8)
+    }
+  }
+
+  p +
+    ggplot2::labs(
+      title    = tr("title_ewma", locale),
+      subtitle = sprintf("lambda = %.2f, L = %.2f",
+                         object$metadata$lambda, object$metadata$L),
+      x        = tr("label_index", locale),
+      y        = tr("label_ewma", locale)
+    ) +
+    shewhart_theme()
+}
+
+# CUSUM chart -------------------------------------------------------------
+
+#' @exportS3Method ggplot2::autoplot shewhart_cusum
+autoplot.shewhart_cusum <- function(object, show_violations = TRUE,
+                                    show_sigma_zones = FALSE,
+                                    locale = NULL, ...) {
+  locale <- locale %||% object$metadata$locale %||% "en"
+  aug    <- object$augmented
+  x_col  <- get_index_col(aug)
+  decision <- object$metadata$decision
+
+  # CUSUM is plotted with C+ as positive bars and C- as negative,
+  # so a single panel makes the symmetric decision interval visible.
+  long <- tibble::tibble(
+    !!x_col      := rep(aug[[x_col]], 2L),
+    cusum_kind    = rep(c("Positive", "Negative"), each = nrow(aug)),
+    cusum_value   = c(aug$.cusum_pos, -aug$.cusum_neg),
+    flag          = c(aug$.cusum_pos > decision,
+                      aug$.cusum_neg > decision)
+  )
+
+  p <- ggplot2::ggplot(long, ggplot2::aes(x = .data[[x_col]],
+                                          y = .data$cusum_value)) +
+    ggplot2::geom_hline(yintercept = 0, colour = "grey70") +
+    ggplot2::geom_segment(
+      ggplot2::aes(xend = .data[[x_col]], yend = 0,
+                   colour = .data$cusum_kind),
+      linewidth = 0.6, alpha = 0.85) +
+    ggplot2::geom_point(ggplot2::aes(colour = .data$cusum_kind), size = 1.6) +
+    ggplot2::geom_hline(yintercept =  decision, colour = "firebrick",
+                        linetype = "dashed", linewidth = 0.6) +
+    ggplot2::geom_hline(yintercept = -decision, colour = "firebrick",
+                        linetype = "dashed", linewidth = 0.6) +
+    ggplot2::scale_colour_manual(
+      name   = NULL,
+      values = c(Positive = "steelblue4", Negative = "darkorange3"))
+
+  if (show_violations && any(long$flag)) {
+    p <- p + ggplot2::geom_point(
+      data   = long[long$flag, , drop = FALSE],
+      colour = "firebrick", fill = "firebrick",
+      size   = 2.6, shape = 21, stroke = 0.8)
+  }
+
+  p +
+    ggplot2::labs(
+      title    = tr("title_cusum", locale),
+      subtitle = sprintf("k = %.2f, h = %.2f, decision = %.3f",
+                         object$metadata$k,
+                         object$metadata$h,
+                         decision),
+      x = tr("label_index", locale),
+      y = tr("label_cusum", locale)
+    ) +
+    shewhart_theme()
+}
+
 # Print method for two-panel charts ---------------------------------------
 
 #' @exportS3Method print shewhart_plot_pair

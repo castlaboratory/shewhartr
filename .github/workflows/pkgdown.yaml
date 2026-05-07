@@ -34,6 +34,14 @@ jobs:
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
 
+      - name: Strip orphan top-level docs
+        # pkgdown:::package_mds() renders every *.md in the package root
+        # as a stand-alone HTML page (it has a hardcoded allow-list and
+        # no config to opt out). CLAUDE.md must stay in the repo for
+        # Claude Code, so we remove its rendered counterpart from the
+        # site after the build.
+        run: rm -f docs/CLAUDE.html docs/CLAUDE.md
+
       - name: Deploy to GitHub pages 🚀
         if: github.event_name != 'pull_request'
         uses: JamesIves/github-pages-deploy-action@v4.5.0

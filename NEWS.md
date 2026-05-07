@@ -37,6 +37,12 @@ against `v0.1.x` will not run unchanged.
   `linear`, `log`, `loglog`, `gompertz`, `logistic`, plus user
   formulas), automatic phase detection via configurable runs rules,
   and proper handling of irregular time grids.
+* Memory-based charts: `shewhart_ewma()` (Roberts 1959) for the
+  Exponentially Weighted Moving Average chart, with both time-varying
+  and steady-state limits, and `shewhart_cusum()` (Page 1954) for the
+  two-sided tabular CUSUM chart with configurable reference value `k`
+  and decision interval `h`. Both fit in the same S3 / broom / autoplot
+  pipeline as the classical charts.
 
 ## New methodology
 

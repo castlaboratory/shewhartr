@@ -52,6 +52,14 @@ reference:
     contents:
       - shewhart_regression
 
+  - title: "Memory-based charts"
+    desc: >
+      Charts that accumulate information across observations and so
+      detect small persistent shifts faster than Shewhart-style charts.
+    contents:
+      - shewhart_ewma
+      - shewhart_cusum
+
   - title: "Phase I / Phase II workflow"
     desc: >
       Explicit calibration and monitoring step, following the
