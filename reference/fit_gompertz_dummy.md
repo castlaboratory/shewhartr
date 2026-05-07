@@ -45,6 +45,6 @@ df$y <- 100 * exp(-2 * exp(-0.3 * df$x)) + 20 * df$d + rnorm(50, 0, 3)
 fit <- fit_gompertz_dummy(df, x = x, y = y, dummy = d)
 coef(fit)
 #>        Asym          b2          b3        Beta 
-#> 103.9420208   1.8648478   0.2661911  19.3328518 
+#> 103.9420206   1.8648478   0.2661911  19.3328517 
 # }
 ```
