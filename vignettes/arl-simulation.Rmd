@@ -93,13 +93,19 @@ bind_rows(
   arl_n12 |> mutate(rules = "Nelson 1 + 2")
 ) |>
   ggplot(aes(shift, arl, colour = rules)) +
-  geom_line() +
+  geom_line(linewidth = 0.7) +
   geom_ribbon(aes(ymin = arl_lower, ymax = arl_upper, fill = rules),
-              alpha = 0.15, colour = NA) +
+              alpha = 0.12, colour = NA) +
   scale_y_log10() +
+  scale_colour_manual(
+    values = c(`Nelson 1 only` = unname(shewhart_palette("signal")["in_control"]),
+               `Nelson 1 + 2`  = unname(shewhart_palette("family")["memory_based"]))) +
+  scale_fill_manual(
+    values = c(`Nelson 1 only` = unname(shewhart_palette("signal")["in_control"]),
+               `Nelson 1 + 2`  = unname(shewhart_palette("family")["memory_based"]))) +
   labs(x = "Shift (sigma)", y = "ARL (log scale)",
        title = "Operating characteristics") +
-  theme_minimal()
+  shewhart_theme()
 ```
 
 The gain is largest for *small* shifts (around 0.5-1 sigma), where

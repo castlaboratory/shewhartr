@@ -1,4 +1,41 @@
-# shewhartr 1.2.0 (development version)
+# shewhartr 1.3.0 (development version)
+
+## New chart family
+
+* `shewhart_mewma()` — Multivariate Exponentially Weighted Moving
+  Average chart (Lowry, Woodall, Champ & Rigdon 1992). Joint
+  monitoring of `p > 1` correlated variables for *small persistent*
+  shifts in the vector mean — the multivariate analogue of
+  `shewhart_ewma()`. Supports both time-varying and steady-state
+  covariance, decision interval `h` calibrated by lookup in the
+  Prabhu & Runger (1997) table for `ARL_0 ~ 200`, and the same
+  `calibrate()` / `monitor()` Phase I / Phase II workflow as the
+  rest of the package.
+
+## Visual identity
+
+* Every `autoplot()` method now uses `shewhart_palette()` and
+  `shewhart_theme()`, so plots from any chart family share the
+  same editorial look (off-white surface, single horizontal grid,
+  bold left-aligned title, sequential phase palette, hollow firebrick
+  rings on out-of-control points). Out-of-control marks
+  centralised in a new internal `violation_layers()` helper, sized
+  at halo 1.7 / ring 1.4 / stroke 0.7.
+* Regression chart legend title is now plural and bold ("Phases" /
+  "Fases") and uses localised `Phase 0`, `Phase 1`, … labels via
+  the `phase_n` and new `legend_phases` locale entries.
+* The `arl-simulation` vignette's hand-rolled chart was using
+  `theme_minimal()` with default ggplot2 colours; now uses
+  `shewhart_theme()` and the package palette so it matches the rest.
+
+## Bug fixes / hygiene
+
+* Three U+2014 em-dash characters in `R/autoplot.R` (two comments,
+  one string literal) replaced with ASCII alternatives or the
+  `—` escape so `R CMD check` no longer warns about non-ASCII
+  source.
+
+# shewhartr 1.2.0
 
 This release closes the remaining items from `dev/ROADMAP.md §11`
 that were left for after v1.1: a plotly bridge and external numerical

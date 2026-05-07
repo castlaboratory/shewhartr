@@ -36,7 +36,7 @@
 #' @param ... Arguments passed to a chart constructor.
 #' @param chart A character key naming the chart constructor:
 #'   `"i_mr"` (default), `"xbar_r"`, `"xbar_s"`, `"p"`, `"np"`, `"c"`,
-#'   `"u"`, `"regression"`, `"ewma"`, `"cusum"`, `"hotelling"`.
+#'   `"u"`, `"regression"`, `"ewma"`, `"cusum"`, `"hotelling"`, `"mewma"`.
 #' @param trim_outliers Logical. If `TRUE`, iteratively drop
 #'   observations that violate the rules and re-estimate limits
 #'   (Montgomery 2019, Section 6.2.3).
@@ -67,7 +67,7 @@ calibrate <- function(data, ..., chart = "i_mr",
   chart <- rlang::arg_match(
     chart,
     values = c("i_mr", "xbar_r", "xbar_s", "p", "np", "c", "u",
-               "regression", "ewma", "cusum", "hotelling")
+               "regression", "ewma", "cusum", "hotelling", "mewma")
   )
 
   builder <- switch(chart,
@@ -81,7 +81,8 @@ calibrate <- function(data, ..., chart = "i_mr",
     regression = shewhart_regression,
     ewma       = shewhart_ewma,
     cusum      = shewhart_cusum,
-    hotelling  = shewhart_hotelling
+    hotelling  = shewhart_hotelling,
+    mewma      = shewhart_mewma
   )
 
   fit <- builder(data, ...)
@@ -157,6 +158,7 @@ monitor <- function(data, chart) {
     ewma       = monitor_ewma(data, chart),
     cusum      = monitor_cusum(data, chart),
     hotelling  = monitor_hotelling(data, chart),
+    mewma      = monitor_mewma(data, chart),
     cli::cli_abort(c(
       "Phase II monitoring not implemented for chart type {.val {chart$type}}."
     ))
@@ -787,6 +789,85 @@ monitor_hotelling <- function(data, chart) {
       position    = pos_hits,
       rule        = "hotelling_ucl",
       description = sprintf("T2 exceeds UCL = %.3f", ucl),
+      value       = t2[pos_hits],
+      severity    = "alarm"
+    )
+  }
+
+  out <- chart
+  out$augmented  <- augmented
+  out$violations <- violations
+  out$phase      <- "phase_2"
+  out$n          <- nrow(augmented)
+  out
+}
+
+# Monitor: Multivariate EWMA ----------------------------------------------
+
+#' @keywords internal
+#' @noRd
+monitor_mewma <- function(data, chart) {
+  m <- chart$metadata
+  for (v in m$vars) check_column(data, v, arg = v)
+  X <- as.matrix(data[, m$vars, drop = FALSE])
+  if (!is.numeric(X) || anyNA(X)) {
+    cli::cli_abort("All monitored variables must be numeric and complete.")
+  }
+
+  centred <- sweep(X, 2L, m$target, "-")
+  n_new   <- nrow(X)
+
+  # Continue the recursion from the final Phase I value.
+  z0   <- if (chart$n > 0L) {
+    aug_p <- chart$augmented
+    # Reconstruct Z_n by re-running the recursion on the original data is
+    # overkill; instead carry the implicit Z = 0 reset and use the
+    # Phase II steady-state covariance, which is the recommended practice
+    # (Lowry et al. 1992 §4).
+    rep(0, m$p)
+  } else rep(0, m$p)
+
+  Z <- matrix(0, nrow = n_new, ncol = m$p)
+  prev <- z0
+  for (i in seq_len(n_new)) {
+    Z[i, ] <- m$lambda * centred[i, ] + (1 - m$lambda) * prev
+    prev <- Z[i, ]
+  }
+
+  ratio    <- m$lambda / (2 - m$lambda)
+  sigma_zi <- ratio * m$cov         # steady-state for Phase II
+  sigma_zi_inv <- solve(sigma_zi)
+  t2 <- numeric(n_new)
+  for (i in seq_len(n_new)) {
+    t2[i] <- as.numeric(t(Z[i, ]) %*% sigma_zi_inv %*% Z[i, ])
+  }
+
+  flag <- t2 > m$h
+  augmented <- tibble::tibble(
+    .obs         = seq_len(n_new),
+    .t2          = t2,
+    .center      = NA_real_,
+    .upper       = m$h,
+    .lower       = 0,
+    .flag_signal = flag,
+    .flag_any    = flag
+  )
+  augmented[[m$index_name]] <- if (m$index_name %in% names(data)) {
+    data[[m$index_name]]
+  } else {
+    seq_len(n_new)
+  }
+
+  pos_hits <- which(flag)
+  violations <- if (length(pos_hits) == 0L) {
+    tibble::tibble(position = integer(0), rule = character(0),
+                   description = character(0), value = numeric(0),
+                   severity = character(0))
+  } else {
+    tibble::tibble(
+      position    = pos_hits,
+      rule        = "mewma_h",
+      description = sprintf("MEWMA T2 exceeds h = %.3f", m$h),
       value       = t2[pos_hits],
       severity    = "alarm"
     )

@@ -67,6 +67,7 @@ reference:
       structure that univariate charts can miss.
     contents:
       - shewhart_hotelling
+      - shewhart_mewma
 
   - title: "Phase I / Phase II workflow"
     desc: >

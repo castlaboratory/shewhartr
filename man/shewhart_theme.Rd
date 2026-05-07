@@ -4,7 +4,7 @@
 \alias{shewhart_theme}
 \title{Editorial-style ggplot2 theme used by every \verb{autoplot.shewhart_*}}
 \usage{
-shewhart_theme(base_size = 11, base_family = "")
+shewhart_theme(base_size = 10.5, base_family = "")
 }
 \arguments{
 \item{base_size}{Base font size, in points.}

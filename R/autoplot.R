@@ -684,6 +684,48 @@ autoplot.shewhart_hotelling <- function(object, show_violations = TRUE,
     shewhart_theme()
 }
 
+# Multivariate EWMA chart -------------------------------------------------
+
+#' @exportS3Method ggplot2::autoplot shewhart_mewma
+autoplot.shewhart_mewma <- function(object, show_violations = TRUE,
+                                    show_sigma_zones = FALSE,
+                                    locale = NULL, ...) {
+  locale <- locale %||% object$metadata$locale %||% "en"
+  aug    <- object$augmented
+  x_col  <- get_index_col(aug, chart = object)
+  signal <- shewhart_palette("signal")
+  ink    <- shewhart_palette("neutral")
+  ucl    <- aug$.upper[1L]
+
+  p <- ggplot2::ggplot(aug, ggplot2::aes(x = .data[[x_col]],
+                                         y = .data$.t2)) +
+    ggplot2::geom_line(colour = ink["text_low"],
+                       linewidth = 0.25, alpha = 0.45) +
+    ggplot2::geom_point(colour = signal["in_control"],
+                        size = 1.2, alpha = 0.95) +
+    ggplot2::geom_hline(yintercept = ucl,
+                        colour = signal["out_of_control"],
+                        linetype = "dashed", linewidth = 0.4, alpha = 0.7) +
+    ggplot2::geom_hline(yintercept = 0, colour = ink["axis_line"],
+                        linewidth = 0.3, alpha = 0.6)
+
+  if (show_violations && any(aug$.flag_signal)) {
+    viol <- dplyr::filter(aug, .data$.flag_signal)
+    p <- p + violation_layers(viol, y_col = ".t2")
+  }
+
+  meta <- object$metadata
+  p +
+    ggplot2::labs(
+      title    = tr("title_mewma", locale),
+      subtitle = sprintf("p = %d, lambda = %.2f, h = %.2f",
+                         meta$p, meta$lambda, meta$h),
+      x = tr("label_index", locale),
+      y = tr("label_t2", locale)
+    ) +
+    shewhart_theme()
+}
+
 # Print method for two-panel charts ---------------------------------------
 
 #' @exportS3Method print shewhart_plot_pair

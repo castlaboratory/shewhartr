@@ -617,10 +617,11 @@ porque o Monte Carlo é caro demais para vignette build.
 
 ### Multivariate
 
-* **MEWMA** (multivariate EWMA, Lowry et al. 1992) — extensão natural
-  do Hotelling para detecção de pequenos shifts conjuntos.
-  ARL_0 ≈ 200, recurso: `Z_i = λ X_i + (1-λ) Z_{i-1}`,
-  `T²_i = (Z_i - μ)' Σ_Z⁻¹ (Z_i - μ)`.
+* **MEWMA** (multivariate EWMA, Lowry et al. 1992). ✓ resolvido na
+  v1.3.0. `shewhart_mewma()` com recursão padrão, covariância
+  time-varying e steady-state, decisão `h` calibrada por lookup na
+  tabela de Prabhu & Runger (1997) para `ARL_0 ≈ 200`. Phase II via
+  `calibrate()/monitor()` mesmo padrão das outras cartas.
 * **MCUSUM** (Crosier 1988, Pignatiello & Runger 1990) — análogo
   multivariado da CUSUM. Bom complemento ao MEWMA.
 * **T² baseado em PCA** quando `p` é grande (Jackson 1991, ch. 1).
