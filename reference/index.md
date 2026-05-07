@@ -55,6 +55,8 @@ univariate charts can miss.
   : Hotelling T-squared multivariate control chart
 - [`shewhart_mewma()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_mewma.md)
   : Multivariate EWMA control chart
+- [`shewhart_mcusum()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_mcusum.md)
+  : Multivariate CUSUM control chart (Crosier 1988)
 
 ## Phase I / Phase II workflow
 
