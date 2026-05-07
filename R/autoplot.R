@@ -18,10 +18,28 @@ shewhart_theme <- function() {
 
 #' @keywords internal
 #' @noRd
-get_index_col <- function(aug, fallback = "index") {
-  # Looks for a non-dot column to use as x-axis. Falls back to .obs.
-  user_cols <- setdiff(names(aug), grep("^\\.", names(aug), value = TRUE))
-  if (length(user_cols) > 0L) user_cols[1L] else ".obs"
+get_index_col <- function(aug, fallback = ".obs", chart = NULL) {
+  # If the chart object has metadata, use the index column the user
+  # named when constructing it. Otherwise fall back to the first
+  # non-internal column, then to .obs. Note that "internal" only
+  # excludes columns the package adds itself (.value, .center, .upper,
+  # ...); a user index column may legitimately start with a dot
+  # (cvd_recife has a `.t` column), so we never reject it on shape.
+  if (!is.null(chart) && !is.null(chart$metadata$index_name) &&
+      chart$metadata$index_name %in% names(aug)) {
+    return(chart$metadata$index_name)
+  }
+  internal <- c(".obs", ".value", ".center", ".sigma", ".upper", ".lower",
+                ".fitted", ".phase", ".phase_f", ".phase_label", ".N",
+                ".ewma", ".cusum_pos", ".cusum_neg", ".t2",
+                ".mr", ".mr_center", ".mr_upper", ".mr_lower",
+                ".range", ".r_center", ".r_upper", ".r_lower",
+                ".s", ".s_center", ".s_upper", ".s_lower",
+                ".flag_signal", ".flag_any")
+  candidates <- setdiff(names(aug), internal)
+  candidates <- candidates[!grepl("^\\.flag_", candidates) &
+                           !grepl("^\\.contrib_", candidates)]
+  if (length(candidates) > 0L) candidates[1L] else fallback
 }
 
 #' Plot a Shewhart chart with ggplot2
@@ -68,7 +86,7 @@ plot_single_panel <- function(object, title_key, y_key, locale,
                               show_violations, show_sigma_zones, ...) {
 
   aug   <- object$augmented
-  x_col <- get_index_col(aug)
+  x_col <- get_index_col(aug, chart = object)
 
   # Line layers for centre and limits
   p <- ggplot2::ggplot(aug, ggplot2::aes(x = .data[[x_col]], y = .data$.value)) +
@@ -164,7 +182,7 @@ plot_two_panel <- function(object, title_key, top_key, bottom_key,
                            locale, show_violations, ...) {
 
   aug   <- object$augmented
-  x_col <- get_index_col(aug)
+  x_col <- get_index_col(aug, chart = object)
 
   # Top panel: individuals / Xbar
   p1 <- ggplot2::ggplot(aug, ggplot2::aes(x = .data[[x_col]], y = .data$.value)) +
@@ -277,45 +295,93 @@ autoplot.shewhart_regression <- function(object, show_violations = TRUE,
                                          locale = NULL, ...) {
   locale <- locale %||% object$metadata$locale %||% "en"
   aug    <- object$augmented
-  x_col  <- get_index_col(aug)
+  x_col  <- get_index_col(aug, chart = object)
 
-  p <- ggplot2::ggplot(aug, ggplot2::aes(x = .data[[x_col]], y = .data$.value)) +
-    ggplot2::geom_line(colour = "grey70") +
-    ggplot2::geom_point(size = 1.5)
+  # One ribbon + centre + limit triplet per phase. Ferraz et al. (2020)
+  # use a coloured band per phase as a visual band so the chart stays
+  # legible even with many short phases (the "regra do deslocamento"
+  # produces them naturally on epidemic data).
+  ph_lvls <- sort(unique(aug$.phase))
+  aug$.phase_f <- factor(aug$.phase, levels = ph_lvls)
+  pal <- shewhart_phase_palette(length(ph_lvls))
 
-  # Per-phase fits (drawn separately so each segment is connected)
-  for (ph in unique(aug$.phase)) {
-    sub <- dplyr::filter(aug, .data$.phase == ph)
+  p <- ggplot2::ggplot(aug, ggplot2::aes(x = .data[[x_col]]))
+
+  for (i in seq_along(ph_lvls)) {
+    ph  <- ph_lvls[i]
+    sub <- aug[aug$.phase == ph, , drop = FALSE]
+    if (nrow(sub) < 1L) next
+    col <- pal[i]
     p <- p +
-      ggplot2::geom_line(data = sub, ggplot2::aes(y = .data$.center,
-                                                  colour = factor(.data$.phase)),
-                         linewidth = 0.7) +
-      ggplot2::geom_line(data = sub, ggplot2::aes(y = .data$.upper,
-                                                  colour = factor(.data$.phase)),
-                         linetype = "dashed") +
-      ggplot2::geom_line(data = sub, ggplot2::aes(y = .data$.lower,
-                                                  colour = factor(.data$.phase)),
-                         linetype = "dashed")
+      ggplot2::geom_ribbon(
+        data = sub,
+        ggplot2::aes(ymin = .data$.lower, ymax = .data$.upper),
+        fill = col, alpha = 0.10, colour = NA
+      ) +
+      ggplot2::geom_line(
+        data = sub, ggplot2::aes(y = .data$.upper),
+        colour = col, linetype = "dashed", linewidth = 0.5, alpha = 0.7
+      ) +
+      ggplot2::geom_line(
+        data = sub, ggplot2::aes(y = .data$.lower),
+        colour = col, linetype = "dashed", linewidth = 0.5, alpha = 0.7
+      ) +
+      ggplot2::geom_line(
+        data = sub, ggplot2::aes(y = .data$.center,
+                                 colour = .data$.phase_f),
+        linewidth = 0.85
+      )
   }
 
+  # Observations (single grey series across all phases keeps the eye
+  # on the trajectory, not on per-phase line clutter).
+  p <- p +
+    ggplot2::geom_line(ggplot2::aes(y = .data$.value), colour = "grey55",
+                       linewidth = 0.35) +
+    ggplot2::geom_point(ggplot2::aes(y = .data$.value,
+                                     colour = .data$.phase_f),
+                        size = 1.7)
+
   if (show_violations && ".flag_any" %in% names(aug)) {
-    viol <- dplyr::filter(aug, .data$.flag_any)
+    viol <- aug[aug$.flag_any, , drop = FALSE]
     if (nrow(viol) > 0L) {
       p <- p + ggplot2::geom_point(
-        data = viol, colour = "firebrick", fill = "firebrick",
-        size = 2.5, shape = 21, stroke = 0.8)
+        data = viol,
+        ggplot2::aes(y = .data$.value),
+        colour = "firebrick", fill = "firebrick",
+        size = 2.6, shape = 21, stroke = 0.8)
     }
   }
 
   p +
-    ggplot2::scale_colour_brewer(name = tr("legend_phase", locale),
-                                 palette = "Set2") +
+    ggplot2::scale_colour_manual(
+      name   = tr("legend_phase", locale),
+      values = stats::setNames(pal, as.character(ph_lvls))
+    ) +
     ggplot2::labs(
       title = tr("title_regression", locale),
       x     = tr("label_index", locale),
       y     = tr("label_value", locale)
     ) +
     shewhart_theme()
+}
+
+#' Sequential phase palette
+#'
+#' Soft, ordered palette so the eye reads phases in time order rather
+#' than as unrelated categories. Baseline (phase 0) is always
+#' `steelblue4` to match the rest of the package; subsequent phases
+#' interpolate through warmer hues.
+#'
+#' @keywords internal
+#' @noRd
+shewhart_phase_palette <- function(n) {
+  if (n <= 1L) return("steelblue4")
+  base <- c("#1F4E79", "#2E75B6", "#5B9BD5",
+            "#A9D18E", "#E2C45F", "#ED7D31",
+            "#C00000", "#7030A0", "#404040")
+  if (n <= length(base)) return(base[seq_len(n)])
+  grDevices::colorRampPalette(base)(n)
 }
 
 # EWMA chart --------------------------------------------------------------
@@ -326,7 +392,7 @@ autoplot.shewhart_ewma <- function(object, show_violations = TRUE,
                                    locale = NULL, ...) {
   locale <- locale %||% object$metadata$locale %||% "en"
   aug    <- object$augmented
-  x_col  <- get_index_col(aug)
+  x_col  <- get_index_col(aug, chart = object)
 
   p <- ggplot2::ggplot(aug, ggplot2::aes(x = .data[[x_col]])) +
     # Raw observations as faded grey dots, EWMA as the foreground series
@@ -376,7 +442,7 @@ autoplot.shewhart_cusum <- function(object, show_violations = TRUE,
                                     locale = NULL, ...) {
   locale <- locale %||% object$metadata$locale %||% "en"
   aug    <- object$augmented
-  x_col  <- get_index_col(aug)
+  x_col  <- get_index_col(aug, chart = object)
   decision <- object$metadata$decision
 
   # CUSUM is plotted with C+ as positive bars and C- as negative,
@@ -433,7 +499,7 @@ autoplot.shewhart_hotelling <- function(object, show_violations = TRUE,
                                         locale = NULL, ...) {
   locale <- locale %||% object$metadata$locale %||% "en"
   aug    <- object$augmented
-  x_col  <- get_index_col(aug)
+  x_col  <- get_index_col(aug, chart = object)
   ucl    <- aug$.upper[1L]
 
   p <- ggplot2::ggplot(aug, ggplot2::aes(x = .data[[x_col]],

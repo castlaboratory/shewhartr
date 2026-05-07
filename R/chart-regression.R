@@ -340,6 +340,27 @@ predict_original <- function(fit, newdata, value_name) {
 detect_phases <- function(data, value_q, index_q, dummy_q, model, formula,
                           start_base, phase_rule, verbose) {
 
+  # Length of the run that the rule looks for, e.g. 7 for `we_seven_same`,
+  # 9 for `nelson_2_nine_same`. Used to set a minimum-phase-size threshold
+  # that prevents the greedy loop from cutting a phase the moment its
+  # first n_consec points happen to fall on the same side of the locally
+  # fitted centre line — see Ferraz et al. (2020), §3, on the
+  # "regra do deslocamento" requiring a sustained run inside an
+  # already-stable phase.
+  rule_n_consec <- function(rule_key) {
+    switch(rule_key,
+      we_seven_same       = 7L,
+      nelson_2_nine_same  = 9L,
+      nelson_3_six_trend  = 6L,
+      nelson_4_alternating = 14L,
+      nelson_7_stratification = 15L,
+      nelson_8_mixture    = 8L,
+      9L
+    )
+  }
+  n_consec  <- rule_n_consec(phase_rule)
+  min_phase <- 2L * n_consec   # minimum phase size to allow another cut
+
   v <- dplyr::pull(data, !!value_q)
   positions <- start_base + 1L      # first phase change is the end of base
   changed   <- TRUE
@@ -363,12 +384,20 @@ detect_phases <- function(data, value_q, index_q, dummy_q, model, formula,
     last_phase <- aug |>
       dplyr::filter(.data$.phase == max(.data$.phase))
 
-    if (nrow(last_phase) > 9L) {
+    if (nrow(last_phase) >= min_phase) {
       flag_col <- paste0(".flag_", phase_rule)
-      hit <- which(last_phase[[flag_col]])
+      # Skip the first n_consec rows of the phase: the run rule needs
+      # n_consec observations to even start firing, so any flag inside
+      # that window is just the rule's warm-up, not real evidence of a
+      # new phase.
+      hit <- which(last_phase[[flag_col]] &
+                   seq_len(nrow(last_phase)) > n_consec)
       if (length(hit) > 0L) {
         new_pos <- last_phase$.obs[hit[1]] + 1L
-        if (!new_pos %in% positions && new_pos < nrow(data)) {
+        # The piece left over after the cut must itself be large
+        # enough to estimate a regression model on.
+        leftover <- nrow(data) - new_pos + 1L
+        if (!new_pos %in% positions && leftover >= n_consec) {
           positions <- sort(unique(c(positions, new_pos)))
           changed   <- TRUE
         }
