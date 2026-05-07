@@ -83,8 +83,8 @@ summary(fit)
 #> 
 #> Residual standard error: 3.419 on 46 degrees of freedom
 #> 
-#> Number of iterations to convergence: 6 
-#> Achieved convergence tolerance: 1.35e-07
+#> Number of iterations to convergence: 4 
+#> Achieved convergence tolerance: 2.785e-07
 #> 
 # }
 ```

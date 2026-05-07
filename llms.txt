@@ -62,6 +62,7 @@ autoplot(fit)
 | Defect counts, variable inspection size | [`shewhart_u()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_u.html) |
 | Process with trend (drift, growth, decay) | [`shewhart_regression()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_regression.html) |
 | Small persistent shifts (memory-based) | [`shewhart_ewma()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_ewma.html), [`shewhart_cusum()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_cusum.html) |
+| Several correlated variables monitored jointly | [`shewhart_hotelling()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_hotelling.html) |
 
 ## Phase I vs Phase II
 
@@ -176,6 +177,15 @@ small persistent shifts faster than Shewhart-style charts.
   : Exponentially Weighted Moving Average (EWMA) control chart
 - [`shewhart_cusum()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_cusum.md)
   : Tabular CUSUM control chart
+
+## Multivariate charts
+
+Charts for jointly monitoring several correlated quality
+characteristics; sensitive to shifts in the correlation structure that
+univariate charts can miss.
+
+- [`shewhart_hotelling()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_hotelling.md)
+  : Hotelling T-squared multivariate control chart
 
 ## Phase I / Phase II workflow
 
@@ -296,6 +306,8 @@ by simulation, residual diagnostic panels, Box-Cox guidance.
   charts](https://castlaboratory.github.io/shewhartr/articles/regression-charts.md):
 - [Memory-based charts: EWMA and
   CUSUM](https://castlaboratory.github.io/shewhartr/articles/memory-based-charts.md):
+- [Multivariate charts: Hotelling
+  T²](https://castlaboratory.github.io/shewhartr/articles/multivariate-charts.md):
 
 ### Statistical workflow
 

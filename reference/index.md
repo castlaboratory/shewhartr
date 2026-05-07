@@ -45,6 +45,15 @@ small persistent shifts faster than Shewhart-style charts.
 - [`shewhart_cusum()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_cusum.md)
   : Tabular CUSUM control chart
 
+## Multivariate charts
+
+Charts for jointly monitoring several correlated quality
+characteristics; sensitive to shifts in the correlation structure that
+univariate charts can miss.
+
+- [`shewhart_hotelling()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_hotelling.md)
+  : Hotelling T-squared multivariate control chart
+
 ## Phase I / Phase II workflow
 
 Explicit calibration and monitoring step, following the Phase I / Phase

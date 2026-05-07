@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">shewhartr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,6 +43,29 @@
       <small>Source: <a href="https://github.com/castlaboratory/shewhartr/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.1.0" id="shewhartr-110-development-version">shewhartr 1.1.0 (development version)<a class="anchor" aria-label="anchor" href="#shewhartr-110-development-version"></a></h2>
+<p>This release closes most of the items left open in <code>dev/ROADMAP.md §11</code>.</p>
+<div class="section level3">
+<h3 id="new-chart-family-multivariate-1-1-0">New chart family: multivariate<a class="anchor" aria-label="anchor" href="#new-chart-family-multivariate-1-1-0"></a></h3>
+<ul><li>
+<code><a href="../reference/shewhart_hotelling.html">shewhart_hotelling()</a></code> is the package’s first multivariate chart — a Hotelling <code>T²</code> chart for jointly monitoring <code>p &gt; 1</code> correlated variables. Both individual observations (<code>subgroup = NULL</code>) and subgrouped data are supported, with the appropriate exact Phase I limits (Beta for individuals, F for subgroups) and the slightly wider Phase II limits as derived in Tracy, Young &amp; Mason (1992) and Montgomery (2019, Chapter 11). The implementation follows Mason &amp; Young (2002).</li>
+<li>The augmented tibble carries the <code>T²</code> statistic per row, its decomposition by variable (the contribution of each variable to the alarm — useful when <code>T²</code> signals but no univariate chart does), and a logical flag against the appropriate chart-level UCL.</li>
+<li>Vignette <code>multivariate-charts</code> walks through the standard worked example: a chemical process with three correlated quality characteristics, showing how the multivariate chart catches a correlation-breaking shift that any of the three univariate charts would miss.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="phase-ii-for-ewma-and-cusum-1-1-0">Phase II for EWMA and CUSUM<a class="anchor" aria-label="anchor" href="#phase-ii-for-ewma-and-cusum-1-1-0"></a></h3>
+<ul><li>
+<code><a href="../reference/monitor.html">monitor()</a></code> now dispatches to <code>monitor_ewma()</code> and <code>monitor_cusum()</code> (<code>R/calibrate.R</code>), so the <code>calibrate(..., chart = "ewma")</code> / <code>monitor(new_data, calib)</code> workflow now works uniformly across every chart in the package — not just the Shewhart-style ones.</li>
+<li>
+<code><a href="../reference/calibrate.html">calibrate()</a></code> accepts the new keys <code>"ewma"</code>, <code>"cusum"</code>, <code>"hotelling"</code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-1-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-1-0"></a></h3>
+<ul><li>
+<code>SSgompertzDummy</code> self-starter is more robust: starting values for <code>b2</code> and <code>b3</code> are now derived from the cumulative-mid-point heuristic rather than hard-coded constants, fixing the convergence failure with typical sample sizes that previously required <code>\dontrun{}</code> in the example.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.0" id="shewhartr-100">shewhartr 1.0.0<a class="anchor" aria-label="anchor" href="#shewhartr-100"></a></h2>
 <p>This release is a comprehensive reposition of the package. The original (<code>v0.1.x</code>, distributed as <code>Shewhart</code>) was COVID-focused and provided a single function family for regression-based control charts. <code>v1.0.0</code> is a full general-purpose SPC toolkit while preserving the regression-chart speciality that motivated the package.</p>

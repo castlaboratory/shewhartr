@@ -1,5 +1,47 @@
 # Changelog
 
+## shewhartr 1.1.0 (development version)
+
+This release closes most of the items left open in `dev/ROADMAP.md §11`.
+
+### New chart family: multivariate
+
+- [`shewhart_hotelling()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_hotelling.md)
+  is the package’s first multivariate chart — a Hotelling `T²` chart for
+  jointly monitoring `p > 1` correlated variables. Both individual
+  observations (`subgroup = NULL`) and subgrouped data are supported,
+  with the appropriate exact Phase I limits (Beta for individuals, F for
+  subgroups) and the slightly wider Phase II limits as derived in Tracy,
+  Young & Mason (1992) and Montgomery (2019, Chapter 11). The
+  implementation follows Mason & Young (2002).
+- The augmented tibble carries the `T²` statistic per row, its
+  decomposition by variable (the contribution of each variable to the
+  alarm — useful when `T²` signals but no univariate chart does), and a
+  logical flag against the appropriate chart-level UCL.
+- Vignette `multivariate-charts` walks through the standard worked
+  example: a chemical process with three correlated quality
+  characteristics, showing how the multivariate chart catches a
+  correlation-breaking shift that any of the three univariate charts
+  would miss.
+
+### Phase II for EWMA and CUSUM
+
+- [`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md)
+  now dispatches to `monitor_ewma()` and `monitor_cusum()`
+  (`R/calibrate.R`), so the `calibrate(..., chart = "ewma")` /
+  `monitor(new_data, calib)` workflow now works uniformly across every
+  chart in the package — not just the Shewhart-style ones.
+- [`calibrate()`](https://castlaboratory.github.io/shewhartr/reference/calibrate.md)
+  accepts the new keys `"ewma"`, `"cusum"`, `"hotelling"`.
+
+### Bug fixes
+
+- `SSgompertzDummy` self-starter is more robust: starting values for
+  `b2` and `b3` are now derived from the cumulative-mid-point heuristic
+  rather than hard-coded constants, fixing the convergence failure with
+  typical sample sizes that previously required `\dontrun{}` in the
+  example.
+
 ## shewhartr 1.0.0
 
 This release is a comprehensive reposition of the package. The original

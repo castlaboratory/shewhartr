@@ -15,6 +15,8 @@
   charts](https://castlaboratory.github.io/shewhartr/articles/regression-charts.md):
 - [Memory-based charts: EWMA and
   CUSUM](https://castlaboratory.github.io/shewhartr/articles/memory-based-charts.md):
+- [Multivariate charts: Hotelling
+  T²](https://castlaboratory.github.io/shewhartr/articles/multivariate-charts.md):
 
 ### Statistical workflow
 

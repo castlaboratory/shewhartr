@@ -20,12 +20,12 @@ Source:
 
 Leite, A., Vasconcelos, H., Ospina, R., & Ferraz, C. (2026). shewhartr:
 Statistical Process Control with Tidyverse-Native Workflows. R package
-version 1.0.0. https://castlaboratory.github.io/shewhartr/
+version 1.1.0. https://castlaboratory.github.io/shewhartr/
 
     @Manual{,
       title = {shewhartr: Statistical Process Control with Tidyverse-Native Workflows},
       author = {André Leite and Hugo Vasconcelos and Raydonal Ospina and Cristiano Ferraz},
       year = {2026},
-      note = {R package version 1.0.0},
+      note = {R package version 1.1.0},
       url = {https://castlaboratory.github.io/shewhartr/},
     }

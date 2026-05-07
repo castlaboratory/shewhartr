@@ -9,6 +9,7 @@
 <url><loc>https://castlaboratory.github.io/shewhartr/articles/getting-started.html</loc></url>
 <url><loc>https://castlaboratory.github.io/shewhartr/articles/index.html</loc></url>
 <url><loc>https://castlaboratory.github.io/shewhartr/articles/memory-based-charts.html</loc></url>
+<url><loc>https://castlaboratory.github.io/shewhartr/articles/multivariate-charts.html</loc></url>
 <url><loc>https://castlaboratory.github.io/shewhartr/articles/phase1-phase2.html</loc></url>
 <url><loc>https://castlaboratory.github.io/shewhartr/articles/regression-charts.html</loc></url>
 <url><loc>https://castlaboratory.github.io/shewhartr/articles/variables-charts.html</loc></url>
@@ -45,6 +46,7 @@
 <url><loc>https://castlaboratory.github.io/shewhartr/reference/shewhart_cusum.html</loc></url>
 <url><loc>https://castlaboratory.github.io/shewhartr/reference/shewhart_diagnostics.html</loc></url>
 <url><loc>https://castlaboratory.github.io/shewhartr/reference/shewhart_ewma.html</loc></url>
+<url><loc>https://castlaboratory.github.io/shewhartr/reference/shewhart_hotelling.html</loc></url>
 <url><loc>https://castlaboratory.github.io/shewhartr/reference/shewhart_i_mr.html</loc></url>
 <url><loc>https://castlaboratory.github.io/shewhartr/reference/shewhart_np.html</loc></url>
 <url><loc>https://castlaboratory.github.io/shewhartr/reference/shewhart_p.html</loc></url>
