@@ -1,0 +1,17 @@
+pandoc: 3.8.3
+pkgdown: 2.2.0
+pkgdown_sha: ~
+articles:
+  arl-simulation: arl-simulation.html
+  attributes-charts: attributes-charts.html
+  box-cox: box-cox.html
+  covid-recife: covid-recife.html
+  diagnostics: diagnostics.html
+  getting-started: getting-started.html
+  phase1-phase2: phase1-phase2.html
+  regression-charts: regression-charts.html
+  variables-charts: variables-charts.html
+last_built: 2026-05-07T01:11Z
+urls:
+  reference: https://castlaboratory.github.io/shewhartr/reference
+  article: https://castlaboratory.github.io/shewhartr/articles

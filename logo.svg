@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 518 600"
+     width="518" height="600"
+     role="img" aria-label="shewhartr hex logo">
+  <title>shewhartr</title>
+  <desc>Hex sticker for the shewhartr R package: a stylised Shewhart control chart with UCL, CL, LCL, in-control points, and one out-of-control point in red.</desc>
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#EEF2F7"/>
+    </linearGradient>
+
+    <clipPath id="hexClip">
+      <path d="M259 0 L518 150 L518 450 L259 600 L0 450 L0 150 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background hex (filled) -->
+  <path d="M259 0 L518 150 L518 450 L259 600 L0 450 L0 150 Z"
+        fill="url(#bg)"/>
+
+  <!-- Outer hex border, drawn inside the clip so the stroke isn't cut off -->
+  <g clip-path="url(#hexClip)">
+    <path d="M259 0 L518 150 L518 450 L259 600 L0 450 L0 150 Z"
+          fill="none"
+          stroke="#0054AD"
+          stroke-width="20"
+          stroke-linejoin="miter"/>
+  </g>
+
+  <!-- Inner hex hairline, decorative -->
+  <path d="M259 22 L498 161 L498 439 L259 578 L20 439 L20 161 Z"
+        fill="none"
+        stroke="#0054AD"
+        stroke-width="1"
+        opacity="0.25"/>
+
+  <!-- Control chart -->
+  <g transform="translate(85, 0)">
+    <!-- Plot area: x in [0, 348], y from 160 (UCL) to 340 (LCL); CL at 250 -->
+
+    <!-- UCL (dashed red) -->
+    <line x1="0" y1="180" x2="348" y2="180"
+          stroke="#D62828" stroke-width="3"
+          stroke-dasharray="9 5" stroke-linecap="round"/>
+
+    <!-- LCL (dashed red) -->
+    <line x1="0" y1="340" x2="348" y2="340"
+          stroke="#D62828" stroke-width="3"
+          stroke-dasharray="9 5" stroke-linecap="round"/>
+
+    <!-- Center line (CL) -->
+    <line x1="0" y1="260" x2="348" y2="260"
+          stroke="#0054AD" stroke-width="2.5"
+          opacity="0.55"/>
+
+    <!-- Connecting polyline through the data points -->
+    <polyline
+      points="0,240 38,225 76,255 114,215 152,275 190,245 228,210 266,160 304,240 342,255"
+      fill="none"
+      stroke="#0054AD"
+      stroke-width="3"
+      stroke-linejoin="round"
+      stroke-linecap="round"/>
+
+    <!-- In-control points -->
+    <g fill="#0054AD" stroke="#FFFFFF" stroke-width="1.5">
+      <circle cx="0"   cy="240" r="6"/>
+      <circle cx="38"  cy="225" r="6"/>
+      <circle cx="76"  cy="255" r="6"/>
+      <circle cx="114" cy="215" r="6"/>
+      <circle cx="152" cy="275" r="6"/>
+      <circle cx="190" cy="245" r="6"/>
+      <circle cx="228" cy="210" r="6"/>
+      <circle cx="304" cy="240" r="6"/>
+      <circle cx="342" cy="255" r="6"/>
+    </g>
+
+    <!-- Out-of-control point (above UCL): larger, red, with halo -->
+    <circle cx="266" cy="160" r="12" fill="#FFFFFF"/>
+    <circle cx="266" cy="160" r="9"  fill="#D62828" stroke="#FFFFFF" stroke-width="2"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="259" y="490"
+        text-anchor="middle"
+        font-family="Helvetica, Arial, 'Source Sans 3', 'Source Sans Pro', sans-serif"
+        font-weight="800"
+        font-size="64"
+        letter-spacing="-1.2"
+        fill="#0054AD">shewhartr</text>
+</svg>
