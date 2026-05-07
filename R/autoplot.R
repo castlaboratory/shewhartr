@@ -139,7 +139,7 @@ violation_layers <- function(data, y_col = ".value",
 #' @noRd
 shewhart_phase_label <- function(phase, locale = "en") {
   # Localised label like "Phase 1" / "Fase 1"; phase 0 (the baseline /
-  # calibration window) becomes "Phase 0 — Baseline" so the legend tells
+  # calibration window) becomes "Phase 0 - Baseline" so the legend tells
   # the reader what is happening.
   template <- tr("phase_n", locale)
   out <- vapply(phase,
@@ -435,7 +435,7 @@ autoplot.shewhart_regression <- function(object, show_violations = TRUE,
 
   p <- ggplot2::ggplot(aug, ggplot2::aes(x = .data[[x_col]]))
 
-  # Per-phase ribbon (alpha 0.07 — quieter than v1.2) + dashed limits
+  # Per-phase ribbon (alpha 0.07 -- quieter than v1.2) + dashed limits
   # + solid centre line. Limits and centre are drawn before the data
   # so the points sit on top.
   for (i in seq_along(ph_lvls)) {
@@ -490,7 +490,7 @@ autoplot.shewhart_regression <- function(object, show_violations = TRUE,
   n_phases <- length(object$fits)
   n_viol   <- nrow(object$violations)
   subtitle <- sprintf(
-    "%s model, rule(s): %s — %d phase%s, %d violation%s",
+    "%s model, rule(s): %s \u2014 %d phase%s, %d violation%s",
     object$metadata$model %||% "linear",
     rule_lbl %||% "(none)",
     n_phases, if (n_phases == 1L) "" else "s",
