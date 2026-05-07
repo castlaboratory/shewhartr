@@ -36,7 +36,7 @@
 #' @param ... Arguments passed to a chart constructor.
 #' @param chart A character key naming the chart constructor:
 #'   `"i_mr"` (default), `"xbar_r"`, `"xbar_s"`, `"p"`, `"np"`, `"c"`,
-#'   `"u"`, `"regression"`.
+#'   `"u"`, `"regression"`, `"ewma"`, `"cusum"`, `"hotelling"`.
 #' @param trim_outliers Logical. If `TRUE`, iteratively drop
 #'   observations that violate the rules and re-estimate limits
 #'   (Montgomery 2019, Section 6.2.3).
@@ -66,7 +66,8 @@ calibrate <- function(data, ..., chart = "i_mr",
   check_data(data)
   chart <- rlang::arg_match(
     chart,
-    values = c("i_mr", "xbar_r", "xbar_s", "p", "np", "c", "u", "regression")
+    values = c("i_mr", "xbar_r", "xbar_s", "p", "np", "c", "u",
+               "regression", "ewma", "cusum", "hotelling")
   )
 
   builder <- switch(chart,
@@ -77,7 +78,10 @@ calibrate <- function(data, ..., chart = "i_mr",
     np         = shewhart_np,
     c          = shewhart_c,
     u          = shewhart_u,
-    regression = shewhart_regression
+    regression = shewhart_regression,
+    ewma       = shewhart_ewma,
+    cusum      = shewhart_cusum,
+    hotelling  = shewhart_hotelling
   )
 
   fit <- builder(data, ...)
@@ -150,6 +154,9 @@ monitor <- function(data, chart) {
     xbar_r     = monitor_xbar_r(data, chart),
     xbar_s     = monitor_xbar_s(data, chart),
     regression = monitor_regression(data, chart),
+    ewma       = monitor_ewma(data, chart),
+    cusum      = monitor_cusum(data, chart),
+    hotelling  = monitor_hotelling(data, chart),
     cli::cli_abort(c(
       "Phase II monitoring not implemented for chart type {.val {chart$type}}."
     ))
@@ -572,6 +579,218 @@ monitor_regression <- function(data, chart) {
                               rules  = chart$rules,
                               center = fitted,
                               sigma  = rep(sigma, length(v)))
+
+  out <- chart
+  out$augmented  <- augmented
+  out$violations <- violations
+  out$phase      <- "phase_2"
+  out$n          <- nrow(augmented)
+  out
+}
+
+# Monitor: EWMA -----------------------------------------------------------
+
+#' @keywords internal
+#' @noRd
+monitor_ewma <- function(data, chart) {
+  m   <- chart$metadata
+  v_n <- m$value_name
+  check_column(data, v_n, arg = "value")
+  v <- data[[v_n]]; check_numeric(v, arg = v_n)
+
+  centre <- m$target
+  sigma  <- chart$sigma_hat
+  lambda <- m$lambda
+  L      <- m$L
+
+  # Continue the EWMA recursion from the last calibration point so that the
+  # Phase II series begins where Phase I left off.
+  z0   <- chart$augmented$.ewma[chart$n]
+  z    <- numeric(length(v))
+  prev <- z0
+  for (i in seq_along(v)) {
+    z[i] <- lambda * v[i] + (1 - lambda) * prev
+    prev <- z[i]
+  }
+
+  # Phase II uses steady-state (asymptotic) limits — the Phase I baseline
+  # has already absorbed the warm-up.
+  ratio <- lambda / (2 - lambda)
+  se    <- sigma * sqrt(ratio)
+  upper <- centre + L * se
+  lower <- centre - L * se
+
+  sigma_eq <- rep(se / L * 3, length(v))
+  flags <- flag_rules(z, rep(centre, length(v)), sigma_eq, chart$rules)
+
+  augmented <- tibble::tibble(
+    .obs    = seq_along(v),
+    .value  = v,
+    .ewma   = z,
+    .center = centre,
+    .sigma  = sigma,
+    .upper  = upper,
+    .lower  = lower
+  )
+  augmented[[m$index_name]] <- if (m$index_name %in% names(data)) {
+    data[[m$index_name]]
+  } else {
+    seq_along(v)
+  }
+  augmented <- dplyr::bind_cols(augmented, flags)
+
+  violations <- shewhart_runs(z, rules = chart$rules,
+                              center = centre, sigma = sigma_eq)
+
+  out <- chart
+  out$augmented  <- augmented
+  out$violations <- violations
+  out$phase      <- "phase_2"
+  out$n          <- nrow(augmented)
+  out
+}
+
+# Monitor: CUSUM ----------------------------------------------------------
+
+#' @keywords internal
+#' @noRd
+monitor_cusum <- function(data, chart) {
+  m   <- chart$metadata
+  v_n <- m$value_name
+  check_column(data, v_n, arg = "value")
+  v <- data[[v_n]]; check_numeric(v, arg = v_n)
+
+  centre <- m$target
+  sigma  <- chart$sigma_hat
+  k      <- m$k
+  decision <- m$decision
+
+  # Continue both accumulators from the final Phase I values.
+  c_pos <- numeric(length(v))
+  c_neg <- numeric(length(v))
+  prev_pos <- chart$augmented$.cusum_pos[chart$n]
+  prev_neg <- chart$augmented$.cusum_neg[chart$n]
+  ks <- k * sigma
+  for (i in seq_along(v)) {
+    c_pos[i] <- max(0,  prev_pos + (v[i] - centre) - ks)
+    c_neg[i] <- max(0,  prev_neg - (v[i] - centre) - ks)
+    prev_pos <- c_pos[i]
+    prev_neg <- c_neg[i]
+  }
+
+  flag_signal <- (c_pos > decision) | (c_neg > decision)
+
+  augmented <- tibble::tibble(
+    .obs         = seq_along(v),
+    .value       = v,
+    .cusum_pos   = c_pos,
+    .cusum_neg   = c_neg,
+    .center      = 0,
+    .sigma       = sigma,
+    .upper       = decision,
+    .lower       = -decision,
+    .flag_signal = flag_signal,
+    .flag_any    = flag_signal
+  )
+  augmented[[m$index_name]] <- if (m$index_name %in% names(data)) {
+    data[[m$index_name]]
+  } else {
+    seq_along(v)
+  }
+
+  pos_hits <- which(flag_signal)
+  violations <- if (length(pos_hits) == 0L) {
+    tibble::tibble(position = integer(0), rule = character(0),
+                   description = character(0), value = numeric(0),
+                   severity = character(0))
+  } else {
+    tibble::tibble(
+      position    = pos_hits,
+      rule        = "cusum_decision",
+      description = sprintf("CUSUM exceeds h*sigma = %.3f", decision),
+      value       = pmax(c_pos[pos_hits], c_neg[pos_hits]),
+      severity    = "alarm"
+    )
+  }
+
+  out <- chart
+  out$augmented  <- augmented
+  out$violations <- violations
+  out$phase      <- "phase_2"
+  out$n          <- nrow(augmented)
+  out
+}
+
+# Monitor: Hotelling T-squared --------------------------------------------
+
+#' @keywords internal
+#' @noRd
+monitor_hotelling <- function(data, chart) {
+  m <- chart$metadata
+  for (v in m$vars) check_column(data, v, arg = v)
+  X <- as.matrix(data[, m$vars, drop = FALSE])
+  if (!is.numeric(X) || anyNA(X)) {
+    cli::cli_abort("All monitored variables must be numeric and complete.")
+  }
+
+  # Use the Phase II UCL formula and the calibration covariance / mean.
+  if (m$n == 1L) {
+    centered <- sweep(X, 2L, m$mean_vec, "-")
+    t2 <- rowSums((centered %*% m$cov_inv) * centered)
+    fq <- stats::qf(1 - m$alpha, df1 = m$p, df2 = m$m - m$p)
+    ucl <- m$p * (m$m + 1) * (m$m - 1) / (m$m * (m$m - m$p)) * fq
+    idx_count <- nrow(X)
+  } else {
+    # Subgrouped: each row in `data` is one observation; reduce to per-
+    # subgroup means using the stored subgroup column name.
+    sub_col <- m$subgroup
+    if (is.null(sub_col) || !sub_col %in% names(data)) {
+      cli::cli_abort("Subgrouped Hotelling monitoring needs column {.field {sub_col}}.")
+    }
+    groups <- split(seq_len(nrow(X)), data[[sub_col]])
+    xbar_g <- do.call(rbind,
+                      lapply(groups,
+                             function(idx) colMeans(X[idx, , drop = FALSE])))
+    centered <- sweep(xbar_g, 2L, m$mean_vec, "-")
+    t2 <- m$n * rowSums((centered %*% m$cov_inv) * centered)
+    df2 <- m$m * m$n - m$m - m$p + 1L
+    fq  <- stats::qf(1 - m$alpha, df1 = m$p, df2 = df2)
+    ucl <- m$p * (m$m + 1) * (m$n - 1) / df2 * fq
+    idx_count <- length(groups)
+  }
+
+  flag <- t2 > ucl
+  augmented <- tibble::tibble(
+    .obs         = seq_len(idx_count),
+    .t2          = t2,
+    .center      = NA_real_,
+    .upper       = ucl,
+    .lower       = 0,
+    .flag_signal = flag,
+    .flag_any    = flag
+  )
+  augmented[[m$index_name]] <- if (m$index_name %in% names(data)) {
+    if (m$n == 1L) data[[m$index_name]] else
+      vapply(split(data[[m$index_name]], data[[m$subgroup]]),
+             function(z) z[1L], data[[m$index_name]][1L])
+  } else {
+    seq_len(idx_count)
+  }
+
+  pos_hits <- which(flag)
+  violations <- if (length(pos_hits) == 0L) {
+    tibble::tibble(position = integer(0), rule = character(0),
+                   description = character(0), value = numeric(0),
+                   severity = character(0))
+  } else {
+    tibble::tibble(
+      position    = pos_hits,
+      rule        = "hotelling_ucl",
+      description = sprintf("T2 exceeds UCL = %.3f", ucl),
+      value       = t2[pos_hits],
+      severity    = "alarm"
+    )
+  }
 
   out <- chart
   out$augmented  <- augmented

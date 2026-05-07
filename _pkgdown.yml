@@ -60,6 +60,14 @@ reference:
       - shewhart_ewma
       - shewhart_cusum
 
+  - title: "Multivariate charts"
+    desc: >
+      Charts for jointly monitoring several correlated quality
+      characteristics; sensitive to shifts in the correlation
+      structure that univariate charts can miss.
+    contents:
+      - shewhart_hotelling
+
   - title: "Phase I / Phase II workflow"
     desc: >
       Explicit calibration and monitoring step, following the
@@ -133,6 +141,7 @@ articles:
       - attributes-charts
       - regression-charts
       - memory-based-charts
+      - multivariate-charts
 
   - title: "Statistical workflow"
     contents:

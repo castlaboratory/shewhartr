@@ -425,6 +425,46 @@ autoplot.shewhart_cusum <- function(object, show_violations = TRUE,
     shewhart_theme()
 }
 
+# Hotelling T-squared chart -----------------------------------------------
+
+#' @exportS3Method ggplot2::autoplot shewhart_hotelling
+autoplot.shewhart_hotelling <- function(object, show_violations = TRUE,
+                                        show_sigma_zones = FALSE,
+                                        locale = NULL, ...) {
+  locale <- locale %||% object$metadata$locale %||% "en"
+  aug    <- object$augmented
+  x_col  <- get_index_col(aug)
+  ucl    <- aug$.upper[1L]
+
+  p <- ggplot2::ggplot(aug, ggplot2::aes(x = .data[[x_col]],
+                                         y = .data$.t2)) +
+    ggplot2::geom_line(colour = "grey70") +
+    ggplot2::geom_point(size = 1.6, colour = "steelblue4") +
+    ggplot2::geom_hline(yintercept = ucl, colour = "firebrick",
+                        linetype = "dashed", linewidth = 0.6) +
+    ggplot2::geom_hline(yintercept = 0, colour = "grey80")
+
+  if (show_violations && any(aug$.flag_signal)) {
+    viol <- dplyr::filter(aug, .data$.flag_signal)
+    p <- p + ggplot2::geom_point(
+      data   = viol,
+      colour = "firebrick", fill = "firebrick",
+      size   = 2.6, shape = 21, stroke = 0.8)
+  }
+
+  meta <- object$metadata
+  p +
+    ggplot2::labs(
+      title    = tr("title_hotelling", locale),
+      subtitle = sprintf("p = %d, m = %d, n = %d, phase = %s, alpha = %.4f",
+                         meta$p, meta$m, meta$n,
+                         object$phase, meta$alpha),
+      x        = tr("label_index", locale),
+      y        = tr("label_t2", locale)
+    ) +
+    shewhart_theme()
+}
+
 # Print method for two-panel charts ---------------------------------------
 
 #' @exportS3Method print shewhart_plot_pair

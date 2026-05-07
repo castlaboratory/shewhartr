@@ -1,7 +1,7 @@
 Package: shewhartr
 Type: Package
 Title: Statistical Process Control with Tidyverse-Native Workflows
-Version: 1.0.0
+Version: 1.1.0
 Authors@R: c(
     person("André", "Leite", , "leite@castlab.org",
            role = c("aut", "cre")),
@@ -38,6 +38,7 @@ Imports:
     dplyr (>= 1.1.0),
     purrr (>= 1.0.0),
     tibble (>= 3.2.0),
+    tidyselect (>= 1.2.0),
     ggplot2 (>= 3.5.0),
     broom (>= 1.0.0),
     slider (>= 0.3.0),

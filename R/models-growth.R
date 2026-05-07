@@ -104,12 +104,40 @@ SSgompertzDummy <- stats::selfStart(
     dummy_val <- eval(mCall[["dummy"]], data)
     y_val     <- eval(LHS,              data)
 
-    # Asym ~ max y where dummy is 0 (fallback to overall max)
+    # Restrict to the dummy-zero subset for the curve-shape estimates so
+    # the dummy effect (Beta) does not contaminate Asym, b2, b3.
     base_idx <- if (any(dummy_val == 0)) dummy_val == 0 else rep(TRUE, length(y_val))
-    Asym <- max(y_val[base_idx], na.rm = TRUE)
-    if (!is.finite(Asym) || Asym <= 0) Asym <- max(y_val, na.rm = TRUE)
+    xb <- x_val[base_idx];  yb <- y_val[base_idx]
 
-    list(Asym = Asym, b2 = 2, b3 = 0.1, Beta = 0)
+    Asym <- max(yb, na.rm = TRUE) * 1.05
+    if (!is.finite(Asym) || Asym <= 0) Asym <- max(y_val, na.rm = TRUE) * 1.05
+
+    # b2 controls the initial deficit: y(0) = Asym * exp(-b2). Use the
+    # smallest observed y in the baseline as a proxy for y(0).
+    y0 <- max(min(yb, na.rm = TRUE), Asym * 1e-4)   # avoid log(0)
+    b2_init <- max(0.1, -log(max(1e-4, y0 / Asym)))
+
+    # b3 is the rate parameter; estimate from the slope of
+    # log(-log(y/Asym)) vs x in the linear part of the baseline data
+    # where 0.1 < y/Asym < 0.9 so the double log is well-defined.
+    ratio   <- pmin(pmax(yb / Asym, 1e-4), 1 - 1e-4)
+    valid   <- ratio > 0.1 & ratio < 0.9 & is.finite(xb) & is.finite(ratio)
+    b3_init <- if (sum(valid) >= 2L) {
+      slope <- tryCatch(
+        unname(stats::coef(stats::lm(log(-log(ratio[valid])) ~ xb[valid]))[2L]),
+        error = function(e) NA_real_
+      )
+      if (is.finite(slope) && slope < 0) -slope else 0.1
+    } else 0.1
+
+    # Beta: rough estimate from the mean shift at non-zero dummy values.
+    Beta_init <- if (any(dummy_val != 0)) {
+      mean(y_val[dummy_val != 0], na.rm = TRUE) -
+      mean(y_val[base_idx],        na.rm = TRUE)
+    } else 0
+    if (!is.finite(Beta_init)) Beta_init <- 0
+
+    list(Asym = Asym, b2 = b2_init, b3 = b3_init, Beta = Beta_init)
   },
   parameters = c("Asym", "b2", "b3", "Beta")
 )

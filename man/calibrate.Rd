@@ -13,7 +13,7 @@ calibrate(data, ..., chart = "i_mr", trim_outliers = FALSE, max_trim_iter = 5L)
 
 \item{chart}{A character key naming the chart constructor:
 \code{"i_mr"} (default), \code{"xbar_r"}, \code{"xbar_s"}, \code{"p"}, \code{"np"}, \code{"c"},
-\code{"u"}, \code{"regression"}.}
+\code{"u"}, \code{"regression"}, \code{"ewma"}, \code{"cusum"}, \code{"hotelling"}.}
 
 \item{trim_outliers}{Logical. If \code{TRUE}, iteratively drop
 observations that violate the rules and re-estimate limits
