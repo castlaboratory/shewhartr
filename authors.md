@@ -10,7 +10,7 @@
 
 - **Cristiano Ferraz**. Author.
 
-- **[![Castlab](https://castlab.org/logo.png)](https://castlab.org)**.
+- **[![Castlab](https://castlab.org/img/icon.png)](https://castlab.org)**.
   Copyright holder, funder.
 
 ## Citation
