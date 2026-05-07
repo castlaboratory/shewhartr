@@ -67,6 +67,16 @@ and \code{"arl-simulation"} shows how to evaluate the operating
 characteristics of any chart configuration.
 }
 
+\section{Online documentation}{
+
+
+The full reference manual, articles for every chart family,
+diagnostics and the case study are at
+\url{https://castlaboratory.github.io/shewhartr/}.
+Source, issues and contribution guide are at
+\url{https://github.com/castlaboratory/shewhartr}.
+}
+
 \references{
 Shewhart, W. A. (1931). \emph{Economic Control of Quality of Manufactured
 Product}. D. Van Nostrand.
