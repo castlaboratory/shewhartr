@@ -135,10 +135,12 @@ reference:
 
 articles:
   - title: "Getting started"
+    navbar: ~
     contents:
       - getting-started
 
   - title: "Chart families"
+    navbar: ~
     contents:
       - variables-charts
       - attributes-charts
@@ -147,6 +149,7 @@ articles:
       - multivariate-charts
 
   - title: "Statistical workflow"
+    navbar: ~
     contents:
       - phase1-phase2
       - arl-simulation
@@ -154,6 +157,7 @@ articles:
       - box-cox
 
   - title: "Case studies"
+    navbar: ~
     contents:
       - covid-recife
 
