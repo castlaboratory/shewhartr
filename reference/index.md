@@ -35,6 +35,16 @@ logistic, custom formula).
 - [`shewhart_regression()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_regression.md)
   : Regression-based control chart for processes with trend
 
+## Memory-based charts
+
+Charts that accumulate information across observations and so detect
+small persistent shifts faster than Shewhart-style charts.
+
+- [`shewhart_ewma()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_ewma.md)
+  : Exponentially Weighted Moving Average (EWMA) control chart
+- [`shewhart_cusum()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_cusum.md)
+  : Tabular CUSUM control chart
+
 ## Phase I / Phase II workflow
 
 Explicit calibration and monitoring step, following the Phase I / Phase

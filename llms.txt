@@ -61,6 +61,7 @@ autoplot(fit)
 | Defect counts, constant inspection size | [`shewhart_c()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_c.html) |
 | Defect counts, variable inspection size | [`shewhart_u()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_u.html) |
 | Process with trend (drift, growth, decay) | [`shewhart_regression()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_regression.html) |
+| Small persistent shifts (memory-based) | [`shewhart_ewma()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_ewma.html), [`shewhart_cusum()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_cusum.html) |
 
 ## Phase I vs Phase II
 
@@ -165,6 +166,16 @@ logistic, custom formula).
 
 - [`shewhart_regression()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_regression.md)
   : Regression-based control chart for processes with trend
+
+## Memory-based charts
+
+Charts that accumulate information across observations and so detect
+small persistent shifts faster than Shewhart-style charts.
+
+- [`shewhart_ewma()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_ewma.md)
+  : Exponentially Weighted Moving Average (EWMA) control chart
+- [`shewhart_cusum()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_cusum.md)
+  : Tabular CUSUM control chart
 
 ## Phase I / Phase II workflow
 

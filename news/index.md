@@ -48,6 +48,14 @@ against `v0.1.x` will not run unchanged.
   extensible model menu (`auto`, `linear`, `log`, `loglog`, `gompertz`,
   `logistic`, plus user formulas), automatic phase detection via
   configurable runs rules, and proper handling of irregular time grids.
+- Memory-based charts:
+  [`shewhart_ewma()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_ewma.md)
+  (Roberts 1959) for the Exponentially Weighted Moving Average chart,
+  with both time-varying and steady-state limits, and
+  [`shewhart_cusum()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_cusum.md)
+  (Page 1954) for the two-sided tabular CUSUM chart with configurable
+  reference value `k` and decision interval `h`. Both fit in the same S3
+  / broom / autoplot pipeline as the classical charts.
 
 ### New methodology
 
