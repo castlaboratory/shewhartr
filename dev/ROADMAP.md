@@ -536,5 +536,45 @@ Três workflows:
 3. **Locale.** Mantém PT/EN hardcoded ou migra para sistema baseado em `LANGUAGE` do usuário (mais flexível, menos código)?
 4. **Plotly.** Mantém como cidadão de primeira classe (parâmetro `type = "plotly"`) ou move para método separado `as_plotly(chart)` em `Suggests`? Recomendação: o segundo, reduz dependências pesadas.
 5. **Nome do construtor da carta de regressão.** `shewhart_regression()`, `regression_chart()`, ou simplesmente manter `shewhart()` com `type = "regression"` como default?
-6. **Cartas modernas (EWMA, CUSUM)** — entram na v1.0.0 (sprint 9) ou ficam para v1.1.0?
+6. **Cartas modernas (EWMA, CUSUM)** — ✓ resolvido. Entraram na v1.0.0
+   (sprint 9): `shewhart_ewma()` (Roberts 1959, com limites time-varying
+   e steady-state) e `shewhart_cusum()` (Page 1954, two-sided tabular).
+   Vinheta `memory-based-charts.Rmd` cobre escolha de parâmetros e ARL.
 7. **Testes contra referência.** Vale comparar saídas de `shewhart_xbar_r()` contra exemplos do Montgomery (livro) ou contra `qcc::qcc()` para validação numérica?
+
+---
+
+## 11. Pós-v1.0.0 (priorizado)
+
+Itens que ficaram fora da v1.0.0 deliberadamente, em ordem de prioridade
+declarada:
+
+1. **Hotelling T² multivariado** (`shewhart_hotelling()`). Implementação
+   séria: distribuição beta exata em Phase I, aproximação F em Phase II,
+   decomposição T² para diagnóstico de qual variável drift, T² baseado em
+   PCA quando `p` é grande. Estimativa: 400-500 linhas de R + vinheta
+   dedicada + 15-20 testes. API a decidir: vetor de colunas via
+   `tidyselect`, ou múltiplas chamadas de `enquos(...)`. Equivalentes
+   existentes: `qcc::mqcc()`, pacote `MSQC`. **Justificativa de adiar:**
+   audiência minoritária; merece tempo de design dedicado em vez de ser
+   enxertado para destravar v1.0.0; CRAN não bloqueia.
+
+2. **Phase II para EWMA/CUSUM via `calibrate()`/`monitor()`.** Hoje a
+   API de monitoramento funciona via os argumentos `target`/`sigma`
+   diretamente nas funções construtoras; integração com o switch de
+   `monitor_*()` em `R/calibrate.R` é trabalho pequeno (~50 linhas por
+   chart) e dá uniformidade na superfície de API.
+
+3. **Validação numérica vs Montgomery / `qcc`** (#7 acima). Útil para
+   confiança do usuário; merece um arquivo
+   `tests/testthat/test-vs-montgomery.R` com casos do livro.
+
+4. **Suporte plotly.** Mantido em `Suggests` desde a v1.0.0; precisa de
+   um construtor `as_plotly()` que converta `autoplot()` para plotly
+   preservando rótulos / violations. Não bloqueia ninguém.
+
+5. **Bug numérico em `SSgompertzDummy` self-starter.** O initial-guesser
+   atual converge para os dados sintéticos do exemplo via
+   `fit_gompertz_dummy()` mas é frágil; revisão dos starting values
+   (especialmente `b2`, `b3`) merece atenção dedicada antes de promover
+   o exemplo de `\donttest{}` para `@examples` plain.

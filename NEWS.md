@@ -88,7 +88,9 @@ against `v0.1.x` will not run unchanged.
   (`tablet_weight`, `bottle_fill`, `pcb_solder`, `claims_p`,
   `temperature_drift`, `bacterial_growth`).
 * New documentation site built with `pkgdown` at
-  https://castlaboratory.github.io/shewhartr/.
+  https://castlaboratory.github.io/shewhartr/. Ten topical articles,
+  including a dedicated `memory-based-charts` vignette covering
+  EWMA, CUSUM and the trade-offs versus Shewhart-style charts.
 
 ## Breaking changes (full list)
 

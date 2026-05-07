@@ -132,6 +132,7 @@ articles:
       - variables-charts
       - attributes-charts
       - regression-charts
+      - memory-based-charts
 
   - title: "Statistical workflow"
     contents:
