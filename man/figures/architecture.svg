@@ -38,8 +38,15 @@
           class="lbl code" font-size="11">value, index, subgroup, ...</text>
   </g>
 
-  <!-- arrows from input to constructors -->
-  <path d="M 550 142 L 550 168" class="stroke" marker-end="url(#arrow)"/>
+  <!-- ============= Connectors: input → 4 constructors =============
+       T-junction: drop from input, span across, then branch with
+       arrows landing exactly on each constructor's top edge (y=178). -->
+  <path d="M 550 142 L 550 158"               class="stroke"/>
+  <path d="M 160 158 L 925 158"               class="stroke"/>
+  <path d="M 160 158 L 160 178"               class="stroke" marker-end="url(#arrow)"/>
+  <path d="M 415 158 L 415 178"               class="stroke" marker-end="url(#arrow)"/>
+  <path d="M 670 158 L 670 178"               class="stroke" marker-end="url(#arrow)"/>
+  <path d="M 925 158 L 925 178"               class="stroke" marker-end="url(#arrow)"/>
 
   <!-- ============= Layer 2: constructors ============= -->
   <g transform="translate(40, 178)">
@@ -113,11 +120,16 @@
     </g>
   </g>
 
-  <!-- four arrows converging into the chart object -->
-  <path d="M 160 338 L 160 360 L 530 360 L 530 386" class="stroke" marker-end="url(#arrow)"/>
-  <path d="M 415 338 L 415 360 L 540 360 L 540 386" class="stroke"/>
-  <path d="M 670 338 L 670 360 L 555 360 L 555 386" class="stroke"/>
-  <path d="M 925 338 L 925 360 L 565 360 L 565 386" class="stroke"/>
+  <!-- ============= Connectors: 4 constructors → chart object =============
+       Inverted T: each constructor drops to a shared rail, the rail
+       converges in the middle, then a single arrow lands on the
+       chart's top edge (y=388). -->
+  <path d="M 160 338 L 160 358"               class="stroke"/>
+  <path d="M 415 338 L 415 358"               class="stroke"/>
+  <path d="M 670 338 L 670 358"               class="stroke"/>
+  <path d="M 925 338 L 925 358"               class="stroke"/>
+  <path d="M 160 358 L 925 358"               class="stroke"/>
+  <path d="M 550 358 L 550 388"               class="stroke" marker-end="url(#arrow)"/>
 
   <!-- ============= Layer 3: shewhart_chart S3 object ============= -->
   <g transform="translate(290, 388)">
@@ -139,14 +151,22 @@
       <text x="115" y="118" fill="#94A3B8">tibble — (position, rule, description, value, severity)</text>
 
       <text x="22"  y="138">$fits, $rules, $sigma_hat, $phase, $metadata</text>
-      <text x="22"  y="151" fill="#94A3B8">                                                               state needed for monitor()</text>
+      <text x="22"  y="152" fill="#94A3B8">state carried over so monitor() can apply the same limits</text>
     </g>
   </g>
 
-  <!-- arrows out of the chart object -->
-  <path d="M 380 548 L 380 580" class="stroke" marker-end="url(#arrow)"/>
-  <path d="M 550 548 L 550 580" class="stroke" marker-end="url(#arrow)"/>
-  <path d="M 720 548 L 720 580" class="stroke" marker-end="url(#arrow)"/>
+  <!-- ============= Connectors: chart object → 3 consumers =============
+       T-split: drop from chart bottom, span across the three
+       consumer columns, then branch. Centres are calculated to land
+       exactly on each consumer's top-edge centre:
+         Inspect at x = 290 + 85 = 375
+         Plot    at x = 470 + 85 = 555
+         Tidy    at x = 650 + 80 = 730 -->
+  <path d="M 550 548 L 550 568"               class="stroke"/>
+  <path d="M 375 568 L 730 568"               class="stroke"/>
+  <path d="M 375 568 L 375 590"               class="stroke" marker-end="url(#arrow)"/>
+  <path d="M 555 568 L 555 590"               class="stroke" marker-end="url(#arrow)"/>
+  <path d="M 730 568 L 730 590"               class="stroke" marker-end="url(#arrow)"/>
 
   <!-- ============= Layer 4: consumers ============= -->
   <g transform="translate(290, 590)">
@@ -211,10 +231,12 @@
     <text x="14" y="182" class="lbl sub" font-size="11">→ phase = "phase_2"</text>
   </g>
 
-  <!-- arrow from chart to monitor -->
-  <path d="M 290 488 L 270 488" class="stroke" marker-end="url(#arrow)"/>
-  <text x="280" y="482" text-anchor="middle" class="lbl sub" font-size="10">store</text>
-  <text x="280" y="504" text-anchor="middle" class="lbl sub" font-size="10">limits</text>
+  <!-- ============= Connector: chart ↔ Phase I/Phase II =============
+       Bidirectional: calibrate() emits a chart, monitor() consumes one.
+       Label is omitted on the wire because both function names are
+       already inside the Phase I/II box. -->
+  <path d="M 290 488 L 260 488"               class="stroke"
+        marker-start="url(#arrow)" marker-end="url(#arrow)"/>
 
   <!-- ============= Cross-cutting: runs rules + i18n on the right ============= -->
   <g transform="translate(840, 388)">
@@ -233,12 +255,16 @@
     <text x="14" y="144" class="lbl ttl" font-size="11" fill="#16A34A">i18n locales</text>
     <text x="14" y="160" class="lbl sub" font-size="11">en / pt / es / fr</text>
 
-    <text x="14" y="184" class="lbl ttl" font-size="11" fill="#16A34A">Validation</text>
-    <text x="14" y="194" class="lbl sub" font-size="10.5">numerical match vs qcc on</text>
+    <text x="14" y="180" class="lbl ttl" font-size="11" fill="#16A34A">Validation</text>
+    <text x="14" y="194" class="lbl sub" font-size="10.5">match qcc to 1e-3 tolerance</text>
   </g>
 
-  <!-- arrow from chart to cross-cutting -->
-  <path d="M 810 488 L 840 488" class="stroke" marker-end="url(#arrow)"/>
+  <!-- ============= Connector: chart → cross-cutting =============
+       The chart stores rules / lambdas / locale that come from this
+       subsystem. Single arrow from chart's right edge to box's left edge. -->
+  <path d="M 810 488 L 840 488"               class="stroke" marker-end="url(#arrow)"/>
+  <text x="825" y="481" text-anchor="middle"
+        class="lbl sub" font-size="10">uses</text>
 
   <!-- footer -->
   <text x="550" y="744" text-anchor="middle"
