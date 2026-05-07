@@ -26,9 +26,12 @@ test_that("trim_outliers iteratively drops violations", {
   expect_lt(cal_trim$sigma_hat, cal_no_trim$sigma_hat)
 })
 
-test_that("monitor errors on unsupported chart type", {
+test_that("monitor on regression chart returns phase_2 with stored fit", {
   set.seed(1)
-  df <- data.frame(t = 1:50, y = rnorm(50))
+  df  <- data.frame(t = 1:50, y = 0.1 * (1:50) + rnorm(50))
   cal <- shewhart_regression(df, value = y, index = t, model = "linear")
-  expect_error(monitor(df, cal), "not yet implemented")
+  new <- data.frame(t = 51:60, y = 0.1 * (51:60) + rnorm(10))
+  mon <- monitor(new, cal)
+  expect_equal(mon$phase, "phase_2")
+  expect_s3_class(mon, c("shewhart_regression", "shewhart_chart"))
 })

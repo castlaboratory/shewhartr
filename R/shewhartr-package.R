@@ -88,7 +88,8 @@
 ## usethis namespace: start
 #' @importFrom rlang %||% .data := enquo enquos as_label as_name caller_env caller_arg
 #' @importFrom stats lm nls predict residuals fitted coef sd qnorm pnorm qpois ppois
-#' @importFrom stats setNames quantile median mad var na.omit complete.cases
+#' @importFrom stats setNames quantile median mad var na.omit complete.cases weighted.mean
 #' @importFrom utils head tail
+#' @importFrom broom tidy glance augment
 ## usethis namespace: end
 NULL

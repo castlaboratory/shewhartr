@@ -11,5 +11,9 @@
 ^doc$
 ^Meta$
 ^\.travis\.yml$
-^Shewhart-ROADMAP\.md$
+^dev$
 ^quickstart\.R$
+^references$
+^\.claude$
+^CLAUDE\.md$
+^LICENSE$

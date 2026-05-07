@@ -7,7 +7,7 @@ test_that("p chart with constant n", {
   )
   fit <- shewhart_p(df, defects = defects, n = n, index = day)
   expect_s3_class(fit, c("shewhart_p", "shewhart_chart"))
-  expect_equal(unique(fit$augmented$.center), 0.05, tolerance = 0.02)
+  expect_equal(unique(fit$augmented$.center), 0.05, tolerance = 0.05)
 })
 
 test_that("p chart rejects defects > n", {

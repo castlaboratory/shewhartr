@@ -222,9 +222,10 @@ check_locale <- function(locale, arg = rlang::caller_arg(locale),
     )
   }
   if (!locale %in% .shewhart_supported_locales) {
+    supported <- .shewhart_supported_locales
     cli::cli_abort(
       c("{.arg {arg}} = {.val {locale}} is not supported.",
-        "i" = "Supported locales: {.val {.shewhart_supported_locales}}."),
+        "i" = "Supported locales: {.val {supported}}."),
       call = call
     )
   }

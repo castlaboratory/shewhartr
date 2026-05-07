@@ -4,8 +4,7 @@ Title: Statistical Process Control with Tidyverse-Native Workflows
 Version: 1.0.0
 Authors@R: c(
     person("André", "Leite", , "leite@castlab.org",
-           role = c("aut", "cre"),
-           comment = c(ORCID = "0000-0000-0000-0000")),
+           role = c("aut", "cre")),
     person("Hugo", "Vasconcelos", , "hugo.vasconcelos@ufpe.br",
            role = "aut"),
     person("Raydonal", "Ospina", , "raydonal@castlab.org", role = "aut"),
@@ -37,7 +36,6 @@ Imports:
     rlang (>= 1.1.0),
     cli (>= 3.6.0),
     dplyr (>= 1.1.0),
-    tidyr (>= 1.3.0),
     purrr (>= 1.0.0),
     tibble (>= 3.2.0),
     ggplot2 (>= 3.5.0),
@@ -58,6 +56,6 @@ Suggests:
     pkgdown,
     MASS
 Config/testthat/edition: 3
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)

@@ -1,3 +1,6 @@
+year <- if (!is.null(meta$Date)) sub("-.*", "", meta$Date) else format(Sys.Date(), "%Y")
+ver  <- meta$Version
+
 bibentry(
   bibtype = "Manual",
   title   = "shewhartr: Statistical Process Control with Tidyverse-Native Workflows",
@@ -11,15 +14,13 @@ bibentry(
     person("Cristiano", "Ferraz",       email = "cferraz@castlab.org",
            role = "aut")
   ),
-  year    = format(Sys.Date(), "%Y"),
-  note    = sprintf("R package version %s", utils::packageVersion("shewhartr")),
+  year    = year,
+  note    = sprintf("R package version %s", ver),
   url     = "https://castlaboratory.github.io/shewhartr/",
   textVersion = paste0(
-    "Leite, A., Vasconcelos, H., Ospina, R., & Ferraz, C. (",
-    format(Sys.Date(), "%Y"),
+    "Leite, A., Vasconcelos, H., Ospina, R., & Ferraz, C. (", year,
     "). shewhartr: Statistical Process Control with Tidyverse-Native ",
-    "Workflows. R package version ",
-    utils::packageVersion("shewhartr"),
+    "Workflows. R package version ", ver,
     ". https://castlaboratory.github.io/shewhartr/"
   )
 )

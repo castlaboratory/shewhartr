@@ -117,7 +117,7 @@ shewhart_regression <- function(data, value, index,
   call <- sys.call()
   check_data(data)
   check_locale(locale)
-  if (is.null(formula)) model <- rlang::arg_match(model)
+  model <- rlang::arg_match(model)
   sigma_method <- rlang::arg_match(sigma_method)
   start_base   <- check_scalar_int(start_base, min = 5L)
 
@@ -406,6 +406,7 @@ build_phases <- function(data, value_q, index_q, dummy_q, model, formula,
 
   for (p in unique(phase)) {
     sub <- d[d$.phase == p, , drop = FALSE]
+    sub$.N <- seq_len(nrow(sub))
     if (nrow(sub) < 3L) {
       # Not enough data; reuse previous phase's fit
       fit <- if (p > 0L) fits[[p]] else NULL

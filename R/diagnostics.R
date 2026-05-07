@@ -35,7 +35,7 @@
 #' @return An object of class `shewhart_box_cox` with components
 #'   `profile` (tibble of lambda vs. log-likelihood), `lambda_hat`
 #'   (the maximiser), `ci` (95% CI). The object has its own
-#'   [print()][print.shewhart_box_cox] method.
+#'   `print()` method.
 #'
 #' @references
 #' Box, G. E. P., & Cox, D. R. (1964). An Analysis of Transformations.

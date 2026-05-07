@@ -173,12 +173,18 @@ fit_gompertz_dummy <- function(data, x, y, dummy, start = NULL, ...) {
     dummy = data[[d_n]]
   )
 
-  if (is.null(start)) start <- list(Asym = NA, b2 = NA, b3 = NA, Beta = NA)
-
-  stats::nls(
-    formula = y ~ SSgompertzDummy(x, dummy, Asym, b2, b3, Beta),
-    data    = df,
-    start   = start,
-    ...
-  )
+  if (is.null(start)) {
+    stats::nls(
+      formula = y ~ SSgompertzDummy(x, dummy, Asym, b2, b3, Beta),
+      data    = df,
+      ...
+    )
+  } else {
+    stats::nls(
+      formula = y ~ SSgompertzDummy(x, dummy, Asym, b2, b3, Beta),
+      data    = df,
+      start   = start,
+      ...
+    )
+  }
 }
