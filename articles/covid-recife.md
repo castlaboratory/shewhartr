@@ -158,6 +158,16 @@ chart families and the cleaner default rule (Nelson 2 — 9 points).
 
 ## References
 
+- Perla, R. J., Provost, S. M., Parry, G. J., Little, K., & Provost, L.
+  (2020). Understanding variation in reported COVID-19 deaths with a
+  novel Shewhart chart application. *International Journal for Quality
+  in Health Care*, 32(S1), 49-55. — the methodological blueprint for the
+  regression chart with phase detection used in this case study.
+- Ferraz, C., Petenate, A. J., Wanderley, A. L., Ospina, R., Torres, J.,
+  & Moreira, A. P. (2020). COVID-19: Monitoramento por gráficos de
+  Shewhart. *Revista Brasileira de Estatística*. — the Brazilian
+  adaptation, the source of the `cvd_recife` dataset and of the legacy
+  7-points-in-a-row rule (`we_seven_same`) used above.
 - Cori, A., Ferguson, N. M., Fraser, C., & Cauchemez, S. (2013). A New
   Framework and Software to Estimate Time-Varying Reproduction Numbers
   During Epidemics. *American Journal of Epidemiology*, 178(9),
