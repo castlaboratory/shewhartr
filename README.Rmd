@@ -187,3 +187,10 @@ If you use `shewhartr` in academic work, please cite:
 - Tukey, J. W. (1977). *Exploratory Data Analysis*. Addison-Wesley.
 - Wheeler, D. J., & Chambers, D. S. (1992). *Understanding Statistical
   Process Control* (2nd ed.). SPC Press.
+- Perla, R. J., Provost, S. M., Parry, G. J., Little, K., & Provost,
+  L. (2020). Understanding variation in reported COVID-19 deaths
+  with a novel Shewhart chart application. *International Journal
+  for Quality in Health Care*, 32(S1), 49-55.
+- Ferraz, C., Petenate, A. J., Wanderley, A. L., Ospina, R., Torres,
+  J., & Moreira, A. P. (2020). COVID-19: Monitoramento por gráficos
+  de Shewhart. *Revista Brasileira de Estatística*.
