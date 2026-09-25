@@ -29,6 +29,8 @@
     <li><a class="dropdown-item" href="../articles/diagnostics.html">Residual diagnostics, Tukey style</a></li>
     <li><a class="dropdown-item" href="../articles/box-cox.html">Choosing a transformation: Box-Cox in practice</a></li>
     <li><a class="dropdown-item" href="../articles/covid-recife.html">Case study: epidemiological monitoring (COVID-19, Recife)</a></li>
+    <li><a class="dropdown-item" href="../articles/article-charts.html">Reproducing the charts of Ferraz et al. (2020)</a></li>
+    <li><a class="dropdown-item" href="../articles/prospective-replay.html">Simulating prospective monitoring with the seven-point rule</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -53,6 +55,34 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.3.1" id="shewhartr-131-development-version">shewhartr 1.3.1 (development version)<a class="anchor" aria-label="anchor" href="#shewhartr-131-development-version"></a></h2>
+<div class="section level3">
+<h3 id="new-features-reproducing-ferraz-et-al-github-issues-1-3-1">New features: reproducing Ferraz et al. (2020) (GitHub issues <a href="https://github.com/castlaboratory/shewhartr/issues/2" class="external-link">#2</a>, <a href="https://github.com/castlaboratory/shewhartr/issues/3" class="external-link">#3</a>)<a class="anchor" aria-label="anchor" href="#new-features-reproducing-ferraz-et-al-github-issues-1-3-1"></a></h3>
+<ul><li>
+<code><a href="../reference/shewhart_regression.html">shewhart_regression()</a></code> gains <code>limits_scale = c("original", "model")</code>. With <code>"model"</code>, sigma comes from the moving ranges of the residuals on the transformed scale of the model’s left-hand side, the band <code>g_hat +- 3 sigma</code> is formed there and back-transformed: for <code>model = "log"</code> the multiplicative, asymmetric bands of Perla et al.
+<ol start="2020" style="list-style-type: decimal"><li>and Ferraz et al. (2020), whose lower limit never falls below</li>
+</ol><ol start="0" style="list-style-type: decimal"><li>
+<code>.sigma</code> is then on the model scale, the new columns <code>.model_value</code> / <code>.model_center</code> hold what the runs rules are applied to, and the rules run on that scale. For linear, Gompertz and logistic models both options coincide. The default is unchanged.</li>
+</ol></li>
+<li>User formulas whose left-hand side is <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">log()</a></code>, <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10()</a></code>, <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">log2()</a></code>, <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">log1p()</a></code> or <code><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt()</a></code> of the response (plus a constant, optionally in <code><a href="https://rdrr.io/r/base/AsIs.html" class="external-link">I()</a></code>) now have their fitted values back-transformed to the scale of the data; previously the centre line stayed on the model scale.</li>
+<li>
+<code><a href="../reference/monitor.html">monitor()</a></code> on a regression chart honours the stored <code>limits_scale</code> and <code>lower_bound</code> (both now kept in <code>metadata</code>), so Phase II limits are exactly the constructor’s forward projection of the last phase.</li>
+<li>
+<code>shewhart_regression(phase_changes = integer(0))</code> fits a single phase without detection and needs only 3 observations, so a prospective replay can calibrate one phase at a time with <code><a href="../reference/calibrate.html">calibrate()</a></code> and judge the following days with <code><a href="../reference/monitor.html">monitor()</a></code>.</li>
+<li>
+<code>"log"</code>, <code>"loglog"</code> and <code>"auto"</code> (when it picks log) stop with a clear error naming the first negative value instead of producing <code>NaN</code> limits; also in <code><a href="../reference/monitor.html">monitor()</a></code>.</li>
+<li>
+<code>.phase_label</code> of a regression chart with a <code>Date</code> (or date-time) index carries the end of each phase: “Base (until 2020-05-11)”, “Phase 1 (until 2020-05-18)”, …, “Monitoring” (pt “até”, es “hasta”, fr “jusqu’au”).</li>
+<li>
+<code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> for regression charts gains <code>phase_dates</code> (<code>NULL</code>: automatic for a date index; <code>TRUE</code> / <code>FALSE</code> force it) and <code>legend_position = c("top", "inside")</code>; <code>"inside"</code> stacks the legend in the top-left corner of the panel, as in the articles’ figures. Dated labels at the top wrap to rows of three.</li>
+<li>New dataset <code>cvd_brazil</code>: daily new COVID-19 deaths for Brazil, Pernambuco and Sao Paulo, 2020-02-25 to 2020-12-31, from Wesley Cota’s covid19br compilation of the Ministry of Health bulletins. The raw values are kept, including one PE correction of -37 deaths on 2020-09-03.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="new-vignettes-closes-1-3-1">New vignettes (closes <a href="https://github.com/castlaboratory/shewhartr/issues/2" class="external-link">#2</a>, <a href="https://github.com/castlaboratory/shewhartr/issues/3" class="external-link">#3</a>)<a class="anchor" aria-label="anchor" href="#new-vignettes-closes-1-3-1"></a></h3>
+<ul><li>
+<code><a href="../articles/article-charts.html">vignette("article-charts")</a></code>: reproduces the charts of Ferraz et al. (2020, SBPO and Revista Brasileira de Estatistica) – the unadapted individuals chart, Brazil and Recife with the articles’ phases (legend identical to the figures) and with automatic detection, Pernambuco and Sao Paulo, and the “Monitoramento” segment as a <code><a href="../reference/calibrate.html">calibrate()</a></code> + <code><a href="../reference/monitor.html">monitor()</a></code> projection – with a table of what differs from the originals (closes <a href="https://github.com/castlaboratory/shewhartr/issues/2" class="external-link">#2</a>).</li>
+<li>
+<code><a href="../articles/prospective-replay.html">vignette("prospective-replay")</a></code>: replays the articles’ “simulation” of prospective monitoring day by day with <code><a href="../reference/calibrate.html">calibrate()</a></code> / <code><a href="../reference/monitor.html">monitor()</a></code> (frozen limits and daily refits), compares the phase dates with the articles’ and with <code>phase_rule</code>, and adds a Monte Carlo study of the strategy on Poisson counts with known change points: spurious phases, detection delays, and the in-control ARL of the seven- and nine-point rules against 2^k - 1 (closes <a href="https://github.com/castlaboratory/shewhartr/issues/3" class="external-link">#3</a>).</li>
+</ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-audit-of-1-3-1">Bug fixes (audit of 2026-09-25)<a class="anchor" aria-label="anchor" href="#bug-fixes-audit-of-1-3-1"></a></h3>
 <ul><li>

@@ -97,6 +97,8 @@ by simulation, residual diagnostic panels, Box-Cox guidance.
   : Compact tibble-like summary
 - [`autoplot.shewhart_chart()`](https://castlaboratory.github.io/shewhartr/reference/autoplot.shewhart_chart.md)
   : Plot a Shewhart chart with ggplot2
+- [`autoplot.shewhart_regression()`](https://castlaboratory.github.io/shewhartr/reference/autoplot.shewhart_regression.md)
+  : Plot a regression control chart
 - [`tidy(`*`<shewhart_chart>`*`)`](https://castlaboratory.github.io/shewhartr/reference/tidy.shewhart_chart.md)
   : Tidy the control limits of a Shewhart chart
 - [`glance(`*`<shewhart_chart>`*`)`](https://castlaboratory.github.io/shewhartr/reference/glance.shewhart_chart.md)
@@ -174,6 +176,8 @@ that matches the rest of the package.
   : Bacterial growth curve (optical density)
 - [`cvd_recife`](https://castlaboratory.github.io/shewhartr/reference/cvd_recife.md)
   : COVID-19 daily mortality, Recife, Brazil, 2020
+- [`cvd_brazil`](https://castlaboratory.github.io/shewhartr/reference/cvd_brazil.md)
+  : COVID-19 daily mortality, Brazil, Pernambuco and Sao Paulo, 2020
 
 ## Class predicates
 

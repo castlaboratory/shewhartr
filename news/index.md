@@ -2,6 +2,87 @@
 
 ## shewhartr 1.3.1 (development version)
 
+### New features: reproducing Ferraz et al. (2020) (GitHub issues [\#2](https://github.com/castlaboratory/shewhartr/issues/2), [\#3](https://github.com/castlaboratory/shewhartr/issues/3))
+
+- [`shewhart_regression()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_regression.md)
+  gains `limits_scale = c("original", "model")`. With `"model"`, sigma
+  comes from the moving ranges of the residuals on the transformed scale
+  of the model’s left-hand side, the band `g_hat +- 3 sigma` is formed
+  there and back-transformed: for `model = "log"` the multiplicative,
+  asymmetric bands of Perla et al.
+  2020. and Ferraz et al. (2020), whose lower limit never falls below
+
+  &nbsp;
+
+  0.  `.sigma` is then on the model scale, the new columns
+      `.model_value` / `.model_center` hold what the runs rules are
+      applied to, and the rules run on that scale. For linear, Gompertz
+      and logistic models both options coincide. The default is
+      unchanged.
+- User formulas whose left-hand side is
+  [`log()`](https://rdrr.io/r/base/Log.html),
+  [`log10()`](https://rdrr.io/r/base/Log.html),
+  [`log2()`](https://rdrr.io/r/base/Log.html),
+  [`log1p()`](https://rdrr.io/r/base/Log.html) or
+  [`sqrt()`](https://rdrr.io/r/base/MathFun.html) of the response (plus
+  a constant, optionally in [`I()`](https://rdrr.io/r/base/AsIs.html))
+  now have their fitted values back-transformed to the scale of the
+  data; previously the centre line stayed on the model scale.
+- [`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md)
+  on a regression chart honours the stored `limits_scale` and
+  `lower_bound` (both now kept in `metadata`), so Phase II limits are
+  exactly the constructor’s forward projection of the last phase.
+- `shewhart_regression(phase_changes = integer(0))` fits a single phase
+  without detection and needs only 3 observations, so a prospective
+  replay can calibrate one phase at a time with
+  [`calibrate()`](https://castlaboratory.github.io/shewhartr/reference/calibrate.md)
+  and judge the following days with
+  [`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md).
+- `"log"`, `"loglog"` and `"auto"` (when it picks log) stop with a clear
+  error naming the first negative value instead of producing `NaN`
+  limits; also in
+  [`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md).
+- `.phase_label` of a regression chart with a `Date` (or date-time)
+  index carries the end of each phase: “Base (until 2020-05-11)”, “Phase
+  1 (until 2020-05-18)”, …, “Monitoring” (pt “até”, es “hasta”, fr
+  “jusqu’au”).
+- [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+  for regression charts gains `phase_dates` (`NULL`: automatic for a
+  date index; `TRUE` / `FALSE` force it) and
+  `legend_position = c("top", "inside")`; `"inside"` stacks the legend
+  in the top-left corner of the panel, as in the articles’ figures.
+  Dated labels at the top wrap to rows of three.
+- New dataset `cvd_brazil`: daily new COVID-19 deaths for Brazil,
+  Pernambuco and Sao Paulo, 2020-02-25 to 2020-12-31, from Wesley Cota’s
+  covid19br compilation of the Ministry of Health bulletins. The raw
+  values are kept, including one PE correction of -37 deaths on
+  2020-09-03.
+
+### New vignettes (closes [\#2](https://github.com/castlaboratory/shewhartr/issues/2), [\#3](https://github.com/castlaboratory/shewhartr/issues/3))
+
+- [`vignette("article-charts")`](https://castlaboratory.github.io/shewhartr/articles/article-charts.md):
+  reproduces the charts of Ferraz et al. (2020, SBPO and Revista
+  Brasileira de Estatistica) – the unadapted individuals chart, Brazil
+  and Recife with the articles’ phases (legend identical to the figures)
+  and with automatic detection, Pernambuco and Sao Paulo, and the
+  “Monitoramento” segment as a
+  [`calibrate()`](https://castlaboratory.github.io/shewhartr/reference/calibrate.md) +
+  [`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md)
+  projection – with a table of what differs from the originals (closes
+  [\#2](https://github.com/castlaboratory/shewhartr/issues/2)).
+- [`vignette("prospective-replay")`](https://castlaboratory.github.io/shewhartr/articles/prospective-replay.md):
+  replays the articles’ “simulation” of prospective monitoring day by
+  day with
+  [`calibrate()`](https://castlaboratory.github.io/shewhartr/reference/calibrate.md)
+  /
+  [`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md)
+  (frozen limits and daily refits), compares the phase dates with the
+  articles’ and with `phase_rule`, and adds a Monte Carlo study of the
+  strategy on Poisson counts with known change points: spurious phases,
+  detection delays, and the in-control ARL of the seven- and nine-point
+  rules against 2^k - 1 (closes
+  [\#3](https://github.com/castlaboratory/shewhartr/issues/3)).
+
 ### Bug fixes (audit of 2026-09-25)
 
 - [`shewhart_capability()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_capability.md)

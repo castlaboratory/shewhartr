@@ -51,6 +51,8 @@
     <li><a class="dropdown-item" href="../articles/diagnostics.html">Residual diagnostics, Tukey style</a></li>
     <li><a class="dropdown-item" href="../articles/box-cox.html">Choosing a transformation: Box-Cox in practice</a></li>
     <li><a class="dropdown-item" href="../articles/covid-recife.html">Case study: epidemiological monitoring (COVID-19, Recife)</a></li>
+    <li><a class="dropdown-item" href="../articles/article-charts.html">Reproducing the charts of Ferraz et al. (2020)</a></li>
+    <li><a class="dropdown-item" href="../articles/prospective-replay.html">Simulating prospective monitoring with the seven-point rule</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -206,6 +208,11 @@ residual spread growing with the level. A maximiser near 0.5 calls for a
 choosing between <code>log</code>
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>&lt;</mo><mn>0.25</mn></mrow><annotation encoding="application/x-tex">\hat\lambda &lt; 0.25</annotation></semantics></math>)
 and <code>linear</code>.</p>
+<p>For the charts of the two 2020 articles by Ferraz et al., rebuilt
+with the log-scale limits of the original method, see
+<code><a href="../articles/article-charts.html">vignette("article-charts")</a></code>; for the day-by-day replay of
+their seven-point rule and a Monte Carlo study of it, see
+<code><a href="../articles/prospective-replay.html">vignette("prospective-replay")</a></code>.</p>
 </div>
 <div class="section level2">
 <h2 id="methodological-caveats">Methodological caveats<a class="anchor" aria-label="anchor" href="#methodological-caveats"></a>

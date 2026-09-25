@@ -33,3 +33,7 @@
 
 - [Case study: epidemiological monitoring (COVID-19,
   Recife)](https://castlaboratory.github.io/shewhartr/articles/covid-recife.md):
+- [Reproducing the charts of Ferraz et al.
+  (2020)](https://castlaboratory.github.io/shewhartr/articles/article-charts.md):
+- [Simulating prospective monitoring with the seven-point
+  rule](https://castlaboratory.github.io/shewhartr/articles/prospective-replay.md):

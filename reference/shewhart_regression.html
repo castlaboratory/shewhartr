@@ -39,6 +39,8 @@ phase."><meta property="og:image" content="https://castlaboratory.github.io/shew
     <li><a class="dropdown-item" href="../articles/diagnostics.html">Residual diagnostics, Tukey style</a></li>
     <li><a class="dropdown-item" href="../articles/box-cox.html">Choosing a transformation: Box-Cox in practice</a></li>
     <li><a class="dropdown-item" href="../articles/covid-recife.html">Case study: epidemiological monitoring (COVID-19, Recife)</a></li>
+    <li><a class="dropdown-item" href="../articles/article-charts.html">Reproducing the charts of Ferraz et al. (2020)</a></li>
+    <li><a class="dropdown-item" href="../articles/prospective-replay.html">Simulating prospective monitoring with the seven-point rule</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -86,6 +88,7 @@ phase.</p>
 <span>  rules <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nelson_1_beyond_3s"</span>, <span class="st">"nelson_2_nine_same"</span><span class="op">)</span>,</span>
 <span>  sigma_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mr"</span>, <span class="st">"median_mr"</span>, <span class="st">"biweight"</span>, <span class="st">"sd"</span><span class="op">)</span>,</span>
 <span>  lower_bound <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
+<span>  limits_scale <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"original"</span>, <span class="st">"model"</span><span class="op">)</span>,</span>
 <span>  locale <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"shewhart.locale"</span>, <span class="st">"en"</span><span class="op">)</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -122,7 +125,13 @@ transform than log and is never chosen automatically).</p></dd>
 
 <dt id="arg-formula">formula<a class="anchor" aria-label="anchor" href="#arg-formula"></a></dt>
 <dd><p>Optional one-sided or two-sided formula referencing
-columns in <code>data</code>. If provided, overrides <code>model</code>.</p></dd>
+columns in <code>data</code>. If provided, overrides <code>model</code>. The model may
+reference <code>.N</code>, the position of the observation within its phase.
+When the left-hand side is a recognised transformation of the
+response – <code>log(y)</code>, <code>log(y + c)</code>, <code>log(y, base)</code>, <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10()</a></code>,
+<code><a href="https://rdrr.io/r/base/Log.html" class="external-link">log2()</a></code>, <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">log1p()</a></code> or <code><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt()</a></code>, optionally wrapped in <code><a href="https://rdrr.io/r/base/AsIs.html" class="external-link">I()</a></code> –
+the fitted values are back-transformed to the scale of the data
+and <code>limits_scale = "model"</code> is available.</p></dd>
 
 
 <dt id="arg-dummy">dummy<a class="anchor" aria-label="anchor" href="#arg-dummy"></a></dt>
@@ -145,7 +154,10 @@ observation <code>start_base + 1</code> in addition to <code>phase_changes</code
 <dd><p>Optional vector of index values at which to
 force a phase change (the observation whose index equals the value
 starts the new phase). If <code>NULL</code>, phase changes are detected
-automatically using the supplied <code>phase_rule</code>.</p></dd>
+automatically using the supplied <code>phase_rule</code>. A zero-length
+vector (e.g. <code>integer(0)</code>) fits a single phase without detection;
+it then needs only 3 observations, which is what a prospective
+replay needs to calibrate one phase at a time (see Details).</p></dd>
 
 
 <dt id="arg-phase-rule">phase_rule<a class="anchor" aria-label="anchor" href="#arg-phase-rule"></a></dt>
@@ -167,7 +179,28 @@ v0.1.x, use <code>"we_seven_same"</code> (7 points; ARL_0 = 2^7 - 1 = 127).</p><
 <dt id="arg-lower-bound">lower_bound<a class="anchor" aria-label="anchor" href="#arg-lower-bound"></a></dt>
 <dd><p>Numeric scalar or <code>NA</code>. If non-<code>NA</code>, lower limit
 is clipped at this value (commonly 0 for counts). Default <code>NA</code>
-(no clipping).</p></dd>
+(no clipping). Stored in <code>metadata</code> and honoured by <code><a href="monitor.html">monitor()</a></code>.</p></dd>
+
+
+<dt id="arg-limits-scale">limits_scale<a class="anchor" aria-label="anchor" href="#arg-limits-scale"></a></dt>
+<dd><p>Scale on which the limits are built. With
+<code>"original"</code> (default), sigma is estimated from the residuals on
+the scale of the data and the band <code>fitted +- 3 sigma</code> is
+symmetric. With <code>"model"</code>, sigma is estimated from the moving
+ranges of the residuals on the transformed scale of the model's
+left-hand side <code>g(y)</code>; the band <code>g_hat +- 3 sigma</code> is formed there
+and centre line and limits are back-transformed with <code>g^-1</code>. With
+<code>model = "log"</code> this gives the multiplicative, asymmetric bands of
+Perla et al. (2020) and Ferraz et al. (2020) – an individuals
+chart on the residuals of <code>log(1 + y) ~ t</code> – whose lower limit
+never falls below 0. For models whose left-hand side is the raw
+response (<code>"linear"</code>, <code>"gompertz"</code>, <code>"logistic"</code>, or a formula
+such as <code>y ~ .N</code>) the two options coincide. With <code>"model"</code>, the
+<code>.sigma</code> column of the augmented tibble (and
+<code>metadata$phase_sigma</code>, <code>sigma_hat</code>) is on the model scale, and
+two extra columns hold what the runs rules are applied to:
+<code>.model_value</code> (the transformed observation <code>g(y)</code>) and
+<code>.model_center</code> (the fitted value <code>g_hat</code>).</p></dd>
 
 
 <dt id="arg-locale">locale<a class="anchor" aria-label="anchor" href="#arg-locale"></a></dt>
@@ -186,8 +219,14 @@ phase; a phase with fewer than 3 observations reuses the previous
 phase's fit). The <code>metadata</code> slot additionally stores
 <code>phase_n_end</code> (the last within-phase position <code>.N</code> reached by each
 phase's fit) and <code>phase_sigma</code> (the residual sigma of each phase),
-which <code><a href="monitor.html">monitor()</a></code> uses to extrapolate the last phase. The
-<code>sigma_hat</code> slot is the median of the per-phase sigmas.</p>
+which <code><a href="monitor.html">monitor()</a></code> uses to extrapolate the last phase, together
+with <code>limits_scale</code> and <code>lower_bound</code>. The <code>sigma_hat</code> slot is the
+median of the per-phase sigmas.</p>
+<p>The <code>.phase_label</code> column names the phases "Base", "Phase 1", ...,
+"Monitoring" (localised). When the index column is a <code>Date</code> (or a
+date-time), every phase but the last also carries its end date,
+e.g. "Base (until 2020-05-11)". The first index value of each
+phase is the date on which it starts.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -195,6 +234,24 @@ which <code><a href="monitor.html">monitor()</a></code> uses to extrapolate the 
 non-stationary processes for which classical Shewhart charts give
 systematically wrong limits. See the vignette
 <code>regression-charts</code> for a thorough discussion and examples.</p>
+<p>Models that take the logarithm of the response (<code>"log"</code>,
+<code>"loglog"</code>, and <code>"auto"</code> whenever it selects <code>"log"</code>) require
+non-negative values: <code>log(1 + y)</code> is undefined for a negative count
+such as a bulletin that revises a cumulative total downwards. The
+function stops with an error naming the offending row instead of
+returning <code>NaN</code> limits; filter or reconcile such rows first.</p>
+<p>A Phase I chart refits every phase, including the last one (labelled
+"Monitoring"). To judge new observations against the limits of the
+last phase <em>projected forward</em>, as in a prospective analysis,
+calibrate on the data up to the end of the last phase with
+<code><a href="calibrate.html">calibrate()</a></code> and pass the rest to <code><a href="monitor.html">monitor()</a></code>: it continues <code>.N</code>,
+uses the stored sigma, and honours <code>limits_scale</code> and <code>lower_bound</code>.
+A prospective replay in the manner of Ferraz et al. (2020) chains
+these steps one phase at a time: calibrate a single phase
+(<code>phase_changes = integer(0)</code>) on its first observations, monitor
+the rows that follow, and start the next phase at the first index
+after the first run flagged by <code>"we_seven_same"</code> (column
+<code>.flag_we_seven_same</code> of the monitored chart, with <code>rules = "we_seven_same"</code>).</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -203,6 +260,15 @@ Quality Technology</em>, 1(1), 1-9.
 <a href="https://doi.org/10.1080/00224065.1969.11980341" class="external-link">doi:10.1080/00224065.1969.11980341</a></p>
 <p>Wheeler, D. J., &amp; Chambers, D. S. (1992). <em>Understanding Statistical
 Process Control</em> (2nd ed.). SPC Press.</p>
+<p>Perla, R. J., Provost, S. M., Parry, G. J., Little, K., &amp; Provost,
+L. P. (2020). Understanding variation in reported COVID-19 deaths
+with a novel Shewhart chart application. <em>International Journal for
+Quality in Health Care</em>, 32(10), 685-688.
+<a href="https://doi.org/10.1093/intqhc/mzaa069" class="external-link">doi:10.1093/intqhc/mzaa069</a></p>
+<p>Ferraz, C., Petenate, A. J., Leite Wanderley, A., Ospina, R.,
+Torres, J., &amp; Peruzzi Moreira, A. (2020). COVID-19: monitoramento
+por graficos de Shewhart. <em>Revista Brasileira de Estatistica</em>,
+78(245), 23-41.</p>
 <p>Box, G. E. P., &amp; Cox, D. R. (1964). An Analysis of Transformations.
 <em>Journal of the Royal Statistical Society, Series B</em>, 26(2),
 211-252. <a href="https://doi.org/10.1111/j.2517-6161.1964.tb00553.x" class="external-link">doi:10.1111/j.2517-6161.1964.tb00553.x</a></p>
@@ -240,6 +306,16 @@ Process Control</em> (2nd ed.). SPC Press.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">nelson_1_beyond_3s</span>: <span style="color: #0000BB;">1</span> hit.</span>
 <span class="r-in"><span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="shewhart_regression-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Multiplicative limits built on the log scale (Perla et al. 2020;</span></span></span>
+<span class="r-in"><span><span class="co"># Ferraz et al. 2020): base of 10 days, 7-point shift rule</span></span></span>
+<span class="r-in"><span><span class="va">br</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">cvd_brazil</span>, <span class="va">region</span> <span class="op">==</span> <span class="st">"BR"</span> <span class="op">&amp;</span> <span class="va">date</span> <span class="op">&gt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-03-17"</span><span class="op">)</span> <span class="op">&amp;</span></span></span>
+<span class="r-in"><span>               <span class="va">date</span> <span class="op">&lt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-06-20"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">fit_log</span> <span class="op">&lt;-</span> <span class="fu">shewhart_regression</span><span class="op">(</span><span class="va">br</span>, value <span class="op">=</span> <span class="va">new_deaths</span>, index <span class="op">=</span> <span class="va">date</span>,</span></span>
+<span class="r-in"><span>                               model <span class="op">=</span> <span class="st">"log"</span>, limits_scale <span class="op">=</span> <span class="st">"model"</span>,</span></span>
+<span class="r-in"><span>                               phase_rule <span class="op">=</span> <span class="st">"we_seven_same"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">fit_log</span>, legend_position <span class="op">=</span> <span class="st">"inside"</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="shewhart_regression-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

@@ -22,6 +22,7 @@ shewhart_regression(
   rules = c("nelson_1_beyond_3s", "nelson_2_nine_same"),
   sigma_method = c("mr", "median_mr", "biweight", "sd"),
   lower_bound = NA_real_,
+  limits_scale = c("original", "model"),
   locale = getOption("shewhart.locale", "en"),
   verbose = NULL
 )
@@ -57,7 +58,17 @@ shewhart_regression(
 - formula:
 
   Optional one-sided or two-sided formula referencing columns in `data`.
-  If provided, overrides `model`.
+  If provided, overrides `model`. The model may reference `.N`, the
+  position of the observation within its phase. When the left-hand side
+  is a recognised transformation of the response – `log(y)`,
+  `log(y + c)`, `log(y, base)`,
+  [`log10()`](https://rdrr.io/r/base/Log.html),
+  [`log2()`](https://rdrr.io/r/base/Log.html),
+  [`log1p()`](https://rdrr.io/r/base/Log.html) or
+  [`sqrt()`](https://rdrr.io/r/base/MathFun.html), optionally wrapped in
+  [`I()`](https://rdrr.io/r/base/AsIs.html) – the fitted values are
+  back-transformed to the scale of the data and `limits_scale = "model"`
+  is available.
 
 - dummy:
 
@@ -80,7 +91,10 @@ shewhart_regression(
   Optional vector of index values at which to force a phase change (the
   observation whose index equals the value starts the new phase). If
   `NULL`, phase changes are detected automatically using the supplied
-  `phase_rule`.
+  `phase_rule`. A zero-length vector (e.g. `integer(0)`) fits a single
+  phase without detection; it then needs only 3 observations, which is
+  what a prospective replay needs to calibrate one phase at a time (see
+  Details).
 
 - phase_rule:
 
@@ -102,7 +116,29 @@ shewhart_regression(
 - lower_bound:
 
   Numeric scalar or `NA`. If non-`NA`, lower limit is clipped at this
-  value (commonly 0 for counts). Default `NA` (no clipping).
+  value (commonly 0 for counts). Default `NA` (no clipping). Stored in
+  `metadata` and honoured by
+  [`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md).
+
+- limits_scale:
+
+  Scale on which the limits are built. With `"original"` (default),
+  sigma is estimated from the residuals on the scale of the data and the
+  band `fitted +- 3 sigma` is symmetric. With `"model"`, sigma is
+  estimated from the moving ranges of the residuals on the transformed
+  scale of the model's left-hand side `g(y)`; the band
+  `g_hat +- 3 sigma` is formed there and centre line and limits are
+  back-transformed with `g^-1`. With `model = "log"` this gives the
+  multiplicative, asymmetric bands of Perla et al. (2020) and Ferraz et
+  al. (2020) – an individuals chart on the residuals of `log(1 + y) ~ t`
+  – whose lower limit never falls below 0. For models whose left-hand
+  side is the raw response (`"linear"`, `"gompertz"`, `"logistic"`, or a
+  formula such as `y ~ .N`) the two options coincide. With `"model"`,
+  the `.sigma` column of the augmented tibble (and
+  `metadata$phase_sigma`, `sigma_hat`) is on the model scale, and two
+  extra columns hold what the runs rules are applied to: `.model_value`
+  (the transformed observation `g(y)`) and `.model_center` (the fitted
+  value `g_hat`).
 
 - locale:
 
@@ -123,8 +159,15 @@ additionally stores `phase_n_end` (the last within-phase position `.N`
 reached by each phase's fit) and `phase_sigma` (the residual sigma of
 each phase), which
 [`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md)
-uses to extrapolate the last phase. The `sigma_hat` slot is the median
-of the per-phase sigmas.
+uses to extrapolate the last phase, together with `limits_scale` and
+`lower_bound`. The `sigma_hat` slot is the median of the per-phase
+sigmas.
+
+The `.phase_label` column names the phases "Base", "Phase 1", ...,
+"Monitoring" (localised). When the index column is a `Date` (or a
+date-time), every phase but the last also carries its end date, e.g.
+"Base (until 2020-05-11)". The first index value of each phase is the
+date on which it starts.
 
 ## Details
 
@@ -132,6 +175,28 @@ This is the package's flagship chart, intended for trended or
 non-stationary processes for which classical Shewhart charts give
 systematically wrong limits. See the vignette `regression-charts` for a
 thorough discussion and examples.
+
+Models that take the logarithm of the response (`"log"`, `"loglog"`, and
+`"auto"` whenever it selects `"log"`) require non-negative values:
+`log(1 + y)` is undefined for a negative count such as a bulletin that
+revises a cumulative total downwards. The function stops with an error
+naming the offending row instead of returning `NaN` limits; filter or
+reconcile such rows first.
+
+A Phase I chart refits every phase, including the last one (labelled
+"Monitoring"). To judge new observations against the limits of the last
+phase *projected forward*, as in a prospective analysis, calibrate on
+the data up to the end of the last phase with
+[`calibrate()`](https://castlaboratory.github.io/shewhartr/reference/calibrate.md)
+and pass the rest to
+[`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md):
+it continues `.N`, uses the stored sigma, and honours `limits_scale` and
+`lower_bound`. A prospective replay in the manner of Ferraz et al.
+(2020) chains these steps one phase at a time: calibrate a single phase
+(`phase_changes = integer(0)`) on its first observations, monitor the
+rows that follow, and start the next phase at the first index after the
+first run flagged by `"we_seven_same"` (column `.flag_we_seven_same` of
+the monitored chart, with `rules = "we_seven_same"`).
 
 ## References
 
@@ -141,6 +206,16 @@ Technology*, 1(1), 1-9.
 
 Wheeler, D. J., & Chambers, D. S. (1992). *Understanding Statistical
 Process Control* (2nd ed.). SPC Press.
+
+Perla, R. J., Provost, S. M., Parry, G. J., Little, K., & Provost, L. P.
+(2020). Understanding variation in reported COVID-19 deaths with a novel
+Shewhart chart application. *International Journal for Quality in Health
+Care*, 32(10), 685-688.
+[doi:10.1093/intqhc/mzaa069](https://doi.org/10.1093/intqhc/mzaa069)
+
+Ferraz, C., Petenate, A. J., Leite Wanderley, A., Ospina, R., Torres,
+J., & Peruzzi Moreira, A. (2020). COVID-19: monitoramento por graficos
+de Shewhart. *Revista Brasileira de Estatistica*, 78(245), 23-41.
 
 Box, G. E. P., & Cox, D. R. (1964). An Analysis of Transformations.
 *Journal of the Royal Statistical Society, Series B*, 26(2), 211-252.
@@ -178,6 +253,16 @@ print(fit)
 #> ! 1 violation across 2 rules.
 #> nelson_1_beyond_3s: 1 hit.
 ggplot2::autoplot(fit)
+
+
+# Multiplicative limits built on the log scale (Perla et al. 2020;
+# Ferraz et al. 2020): base of 10 days, 7-point shift rule
+br <- subset(cvd_brazil, region == "BR" & date >= as.Date("2020-03-17") &
+               date <= as.Date("2020-06-20"))
+fit_log <- shewhart_regression(br, value = new_deaths, index = date,
+                               model = "log", limits_scale = "model",
+                               phase_rule = "we_seven_same")
+ggplot2::autoplot(fit_log, legend_position = "inside")
 
 # }
 ```

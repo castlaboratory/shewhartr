@@ -130,6 +130,13 @@ transform than log, never for log-log. The `model = "auto"` setting
 applies this reading per phase, choosing between `log`
 ($`\hat\lambda < 0.25`$) and `linear`.
 
+For the charts of the two 2020 articles by Ferraz et al., rebuilt with
+the log-scale limits of the original method, see
+[`vignette("article-charts")`](https://castlaboratory.github.io/shewhartr/articles/article-charts.md);
+for the day-by-day replay of their seven-point rule and a Monte Carlo
+study of it, see
+[`vignette("prospective-replay")`](https://castlaboratory.github.io/shewhartr/articles/prospective-replay.md).
+
 ## Methodological caveats
 
 A regression chart applied to time-series counts pushes against several

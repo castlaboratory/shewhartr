@@ -3,6 +3,7 @@ pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   arl-simulation: arl-simulation.html
+  article-charts: article-charts.html
   attributes-charts: attributes-charts.html
   box-cox: box-cox.html
   covid-recife: covid-recife.html
@@ -11,9 +12,10 @@ articles:
   memory-based-charts: memory-based-charts.html
   multivariate-charts: multivariate-charts.html
   phase1-phase2: phase1-phase2.html
+  prospective-replay: prospective-replay.html
   regression-charts: regression-charts.html
   variables-charts: variables-charts.html
-last_built: 2026-09-25T13:54Z
+last_built: 2026-09-25T14:56Z
 urls:
   reference: https://castlaboratory.github.io/shewhartr/reference
   article: https://castlaboratory.github.io/shewhartr/articles
