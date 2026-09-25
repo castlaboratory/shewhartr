@@ -58,6 +58,7 @@
     phase_base            = "Base",
     phase_monitoring      = "Monitoring",
     phase_n               = "Phase %d",
+    phase_until           = "%s (until %s)",
     # regression subtitle / CUSUM legend
     subtitle_regression   = "%s model, rule(s): %s \u2014 %d %s, %d %s",
     rules_none            = "(none)",
@@ -118,6 +119,7 @@
     phase_base            = "Base",
     phase_monitoring      = "Monitorando",
     phase_n               = "Fase %d",
+    phase_until           = "%s (at\u00e9 %s)",
     # regression subtitle / CUSUM legend
     subtitle_regression   = "modelo %s, regra(s): %s \u2014 %d %s, %d %s",
     rules_none            = "(nenhuma)",
@@ -177,6 +179,7 @@
     phase_base            = "Base",
     phase_monitoring      = "Monitoreo",
     phase_n               = "Fase %d",
+    phase_until           = "%s (hasta %s)",
     # regression subtitle / CUSUM legend
     subtitle_regression   = "modelo %s, regla(s): %s \u2014 %d %s, %d %s",
     rules_none            = "(ninguna)",
@@ -236,6 +239,7 @@
     phase_base            = "Base",
     phase_monitoring      = "Surveillance",
     phase_n               = "Phase %d",
+    phase_until           = "%s (jusqu'au %s)",
     # regression subtitle / CUSUM legend
     subtitle_regression   = "mod\u00e8le %s, r\u00e8gle(s) : %s \u2014 %d %s, %d %s",
     rules_none            = "(aucune)",

@@ -622,7 +622,9 @@ monitor_xbar_s <- function(data, chart) {
 #' residuals with the same runs rules used in Phase I. The
 #' implementation follows Mandel (1969) and Hawkins (1991): the
 #' calibration model is treated as fixed for the purpose of detecting
-#' future shifts.
+#' future shifts. The stored `limits_scale` and `lower_bound` are
+#' honoured, so the Phase II band continues the one the constructor
+#' draws for the last phase.
 #'
 #' @keywords internal
 #' @noRd
@@ -671,15 +673,36 @@ monitor_regression <- function(data, chart) {
   newd[[i_n]] <- data[[i_n]]
   if (!is.null(d_n)) newd[[d_n]] <- data[[d_n]]
 
-  # Predict on response scale using the helper used internally in Phase I
-  fitted <- unname(predict_original(last_fit, newd, v_n))
+  # Limits on the scale the chart was calibrated on. With
+  # limits_scale = "model" the stored sigma is a model-scale sigma: the
+  # band is projected on the transformed scale and back-transformed,
+  # exactly as build_phases() draws it, and the rules run on that scale.
+  if ((last_fit$.shewhart_model %||% "") %in% c("log", "loglog")) {
+    check_log_response(v, last_fit$.shewhart_model, v_n, data[[i_n]], i_n)
+  }
+  model_scale <- identical(m$limits_scale, "model")
+  tf <- regression_transform(last_fit)
+  if (model_scale && tf$known && !tf$identity) {
+    c_s    <- unname(stats::predict(last_fit, newdata = newd))
+    y_s    <- tf$forward(v)
+    fitted <- tf$inverse(c_s)
+    upper  <- tf$inverse(c_s + 3 * sigma)
+    lower  <- tf$inverse(c_s - 3 * sigma)
+  } else {
+    # Predict on response scale using the helper used internally in Phase I
+    fitted <- unname(predict_original(last_fit, newd, v_n))
+    y_s    <- v
+    c_s    <- fitted
+    upper  <- fitted + 3 * sigma
+    lower  <- fitted - 3 * sigma
+  }
+  lower_bound <- m$lower_bound %||% NA_real_
+  if (!is.na(lower_bound)) lower <- pmax(lower_bound, lower)
 
   resid <- v - fitted
-  upper <- fitted + 3 * sigma
-  lower <- fitted - 3 * sigma
 
-  flags <- flag_rules(v,
-                      fitted,
+  flags <- flag_rules(y_s,
+                      c_s,
                       rep(sigma, length(v)),
                       chart$rules)
 
@@ -695,12 +718,16 @@ monitor_regression <- function(data, chart) {
     .phase    = factor("phase_2"),
     .phase_label = "phase_2"
   )
+  if (model_scale) {
+    augmented$.model_value  <- y_s
+    augmented$.model_center <- c_s
+  }
   if (i_n %in% names(data)) augmented[[i_n]] <- data[[i_n]]
   augmented <- dplyr::bind_cols(augmented, flags)
 
-  violations <- shewhart_runs(v,
+  violations <- shewhart_runs(y_s,
                               rules  = chart$rules,
-                              center = fitted,
+                              center = c_s,
                               sigma  = rep(sigma, length(v)))
 
   out <- chart
