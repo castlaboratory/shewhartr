@@ -7,6 +7,19 @@ test_that("Gompertz returns finite values across the canonical range", {
   expect_lt(max(y), 100 + 1e-6)            # bounded by ymax
 })
 
+test_that("Gompertz k is the maximum slope and lag the tangent intercept (audit #26)", {
+  y0 <- 2; ymax <- 102; k <- 5; lag <- 5
+  x  <- seq(0, 60, by = 1e-3)
+  y  <- Gompertz(x, y0 = y0, ymax = ymax, k = k, lag = lag)
+  slope <- diff(y) / diff(x)
+  i  <- which.max(slope)
+  # Zwietering et al. (1990): maximum slope equals k (was k / e)
+  expect_equal(max(slope), k, tolerance = 1e-4)
+  # Tangent at the inflection point crosses the lower asymptote at lag
+  x_i <- x[i]; y_i <- y[i]
+  expect_equal(x_i - (y_i - y0) / slope[i], lag, tolerance = 1e-3)
+})
+
 test_that("Gompertz aborts when ymax <= y0", {
   expect_error(
     Gompertz(0:10, y0 = 50, ymax = 50, k = 1, lag = 1),

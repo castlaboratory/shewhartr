@@ -35,3 +35,34 @@ test_that("monitor on regression chart returns phase_2 with stored fit", {
   expect_equal(mon$phase, "phase_2")
   expect_s3_class(mon, c("shewhart_regression", "shewhart_chart"))
 })
+
+test_that("trim_outliers never re-admits a dropped observation (audit #4)", {
+  set.seed(1)
+  x <- rnorm(60, 100, 2)
+  # Row 40 only stands out once row 1 has been trimmed. Before the fix,
+  # iteration 2 dropped original row 39 and re-admitted row 1, and the
+  # loop oscillated until max_trim_iter.
+  x[c(1, 40)] <- c(160, 108)
+  df <- data.frame(y = x)
+  cal <- suppressMessages(
+    calibrate(df, value = y, chart = "i_mr", trim_outliers = TRUE,
+              max_trim_iter = 10L)
+  )
+  expect_equal(nrow(cal$violations), 0L)
+  expect_false(any(c(160, 108) %in% cal$augmented$.value))
+  expect_equal(cal$n, 58L)
+})
+
+test_that("trim_outliers drops whole subgroups for Xbar-R (audit #4)", {
+  set.seed(2)
+  d <- data.frame(g = rep(sprintf("S%02d", 1:25), each = 5),
+                  y = rnorm(125, 50, 1))
+  d$y[d$g == "S07"] <- d$y[d$g == "S07"] + 6
+  cal <- suppressMessages(
+    calibrate(d, value = y, subgroup = g, chart = "xbar_r",
+              trim_outliers = TRUE)
+  )
+  expect_false("S07" %in% cal$augmented$g)
+  # Every remaining subgroup keeps its full size (no "unequal sizes" abort)
+  expect_true(all(cal$augmented$.n == 5L))
+})

@@ -145,3 +145,54 @@ test_that("monitor() works for Hotelling charts (individual obs)", {
   mon_bad   <- monitor(new_bad, cal)
   expect_gt(sum(mon_bad$augmented$.flag_signal), 0)
 })
+
+# Regression Phase II (audit 2026-09-25, findings 1, 11 and 35) ---------
+
+test_that("monitor() on regression continues .N past the last phase (audit #1)", {
+  set.seed(42)
+  df  <- data.frame(t = 1:20, y = 10 + 2 * (1:20) + rnorm(20, sd = 0.3))
+  cal <- calibrate(df, value = y, index = t, chart = "regression",
+                   model = "linear")
+  new <- data.frame(t = 21:23, y = 10 + 2 * (21:23))
+  mon <- monitor(new, cal)
+  # Before the fix .N restarted at 1 and the centre was ~12, 14, 16.
+  expect_equal(mon$augmented$.fitted, c(52, 54, 56), tolerance = 0.02)
+  expect_equal(nrow(mon$violations), 0L)
+  expect_false(any(mon$augmented$.flag_any))
+})
+
+test_that("monitor() on regression uses the last phase's sigma (audit #11)", {
+  set.seed(1)
+  d <- data.frame(
+    t = 1:40,
+    y = c(5  + 0.5 * (1:20) + rnorm(20, sd = 0.2),
+          20 + 0.5 * (1:20) + rnorm(20, sd = 9))
+  )
+  cal <- shewhart_regression(d, value = y, index = t, model = "linear",
+                             phase_changes = 21)
+  s   <- cal$metadata$phase_sigma
+  expect_length(s, 2L)
+  expect_gt(s[2], 10 * s[1])
+  mon <- monitor(data.frame(t = 41:45, y = 30 + rnorm(5)), cal)
+  expect_equal(unique(mon$augmented$.sigma), s[2])
+  expect_equal(mon$sigma_hat, s[2])
+  # Limits are last-phase fit +/- 3 * last-phase sigma
+  expect_equal(mon$augmented$.upper - mon$augmented$.fitted, rep(3 * s[2], 5))
+})
+
+test_that("monitor() on a growth-curve chart differences C(.N) - C(.N - 1) (audit #1, #35)", {
+  t   <- 1:40
+  cum <- 1000 / (1 + exp(-(t - 20) / 4))
+  d   <- data.frame(t = t, y = c(cum[1], diff(cum)) + c(0.3, -0.3))
+  cal <- shewhart_regression(d, value = y, index = t, model = "logistic",
+                             phase_changes = 999)   # no cut: one phase
+  fit <- cal$fits[[1]]
+  expect_equal(fit$.shewhart_model, "logistic")
+  n_last <- cal$metadata$phase_n_end[1]
+  expect_equal(n_last, 40L)
+
+  new <- data.frame(t = 41:43, y = c(1, 1, 1))
+  mon <- monitor(new, cal)
+  C   <- function(n) as.vector(stats::predict(fit, newdata = data.frame(.N = n)))
+  expect_equal(mon$augmented$.fitted, C(41:43) - C(40:42))
+})

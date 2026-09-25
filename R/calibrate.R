@@ -93,22 +93,66 @@ calibrate <- function(data, ..., chart = "i_mr",
 
   if (!trim_outliers) return(fit)
 
+  # Trimming works on a *running* dataset: the violation positions of
+  # each fit refer to the rows (or subgroups) of the data that fit was
+  # built on, so they must be mapped back to that same data, not to
+  # the original input (which made a point dropped at iteration 1
+  # re-enter at iteration 2). For subgrouped charts a position is a
+  # subgroup, so the whole subgroup is dropped.
+  work <- data
   for (iter in seq_len(max_trim_iter)) {
     if (nrow(fit$violations) == 0L) break
-    drop_pos <- unique(fit$violations$position)
+    drop_pos  <- sort(unique(fit$violations$position))
+    unit      <- trim_units(fit, work)
+    drop_unit <- unique(unit$labels[drop_pos])
+    keep      <- !unit$row_unit %in% drop_unit
+    noun      <- if (unit$subgrouped) "subgroup" else "observation"
+    n_drop    <- length(drop_unit)
     cli::cli_alert_info(
-      "Trim iteration {.val {iter}}: dropping {.val {length(drop_pos)}} observation{?s}."
+      "Trim iteration {.val {iter}}: dropping {.val {n_drop}} {noun}{cli::qty(n_drop)}{?s}."
     )
-    keep <- setdiff(seq_len(nrow(data)), drop_pos)
-    if (length(keep) < 10L) {
-      cli::cli_warn("Fewer than 10 observations remain; stopping trim early.")
+    if (length(unique(unit$row_unit[keep])) < 10L) {
+      cli::cli_warn("Fewer than 10 {noun}s remain; stopping trim early.")
       break
     }
-    fit <- builder(data[keep, , drop = FALSE], ...)
+    work <- work[keep, , drop = FALSE]
+    fit  <- builder(work, ...)
     fit$phase <- "phase_1"
   }
 
   fit
+}
+
+#' Map chart positions to rows of the data the chart was built on
+#'
+#' Returns `labels` (one per chart position: row number, or subgroup
+#' label for subgrouped charts), `row_unit` (the unit each data row
+#' belongs to) and `subgrouped`.
+#'
+#' @keywords internal
+#' @noRd
+trim_units <- function(fit, work) {
+  m <- fit$metadata
+  g <- switch(fit$type,
+    xbar_r    = ,
+    xbar_s    = m$group_name,
+    hotelling = m$subgroup,
+    NULL
+  )
+  if (is.null(g)) {
+    rows <- seq_len(nrow(work))
+    return(list(labels = rows, row_unit = rows, subgrouped = FALSE))
+  }
+  row_unit <- work[[g]]
+  labels <- if (g %in% names(fit$augmented)) {
+    fit$augmented[[g]]
+  } else {
+    # Hotelling does not store the subgroup label: mirror the order in
+    # which t2_subgrouped() splits the data.
+    names(split(seq_len(nrow(work)), row_unit))
+  }
+  list(labels = as.character(labels), row_unit = as.character(row_unit),
+       subgrouped = TRUE)
 }
 
 #' Phase II monitoring against pre-calibrated limits
@@ -546,18 +590,34 @@ monitor_regression <- function(data, chart) {
       "i" = "Was the chart calibrated successfully?"
     ))
   }
-  last_fit <- fits[[length(fits)]]
+  k        <- length(fits)
+  last_fit <- fits[[k]]
+  if (is.null(last_fit)) {
+    cli::cli_abort(c(
+      "Cannot monitor: the last Phase I phase has no fitted model.",
+      "i" = "Recalibrate with more observations in the last phase."
+    ))
+  }
+
+  # The menu models regress on `.N`, the position within the phase.
+  # Phase II extrapolates the last phase, so `.N` continues from the
+  # last position that phase reached in Phase I (not from 1), and the
+  # limits use that phase's own residual sigma. Charts built before
+  # these slots existed fall back to the size of the last phase and to
+  # the pooled `sigma_hat`.
+  n_last <- m$phase_n_end[k] %||%
+    sum(chart$augmented$.phase == max(chart$augmented$.phase))
+  sigma  <- m$phase_sigma[k] %||% chart$sigma_hat
 
   # Build a one-row-per-obs tibble matching the column names used at fit time
-  newd <- tibble::tibble(.N = seq_len(nrow(data)))
+  newd <- tibble::tibble(.N = n_last + seq_len(nrow(data)))
   newd[[i_n]] <- data[[i_n]]
   if (!is.null(d_n)) newd[[d_n]] <- data[[d_n]]
 
   # Predict on response scale using the helper used internally in Phase I
-  fitted <- predict_original(last_fit, newd, v_n)
+  fitted <- unname(predict_original(last_fit, newd, v_n))
 
   resid <- v - fitted
-  sigma <- chart$sigma_hat
   upper <- fitted + 3 * sigma
   lower <- fitted - 3 * sigma
 
@@ -589,6 +649,7 @@ monitor_regression <- function(data, chart) {
   out <- chart
   out$augmented  <- augmented
   out$violations <- violations
+  out$sigma_hat  <- sigma
   out$phase      <- "phase_2"
   out$n          <- nrow(augmented)
   out

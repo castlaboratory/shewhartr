@@ -12,14 +12,17 @@
 #' Computes the value of the Gompertz curve parameterised in terms of
 #' starting value, asymptote, growth rate and lag:
 #' \deqn{G(x) = y_0 + (y_{\max} - y_0)\,
-#'   \exp\!\left[-\exp\!\left(\frac{k(\mathrm{lag} - x)}{y_{\max} - y_0}
+#'   \exp\!\left[-\exp\!\left(\frac{k\,e\,(\mathrm{lag} - x)}{y_{\max} - y_0}
 #'   + 1\right)\right].}
 #'
 #' This parameterisation, often called the "Zwietering Gompertz" form
-#' after Zwietering et al. (1990), gives directly interpretable
+#' after Zwietering et al. (1990, eq. 3), gives directly interpretable
 #' parameters: `y0` is the lower asymptote, `ymax` the upper
-#' asymptote, `k` the maximum specific growth rate, and `lag` the lag
-#' time before exponential growth.
+#' asymptote, `k` the maximum growth rate (the slope of the curve at
+#' its inflection point), and `lag` the lag time (where the tangent
+#' at the inflection point crosses `y0`). The factor \eqn{e} is what
+#' makes `k` the maximum slope; versions of shewhartr up to 1.3.0
+#' omitted it, so their curves had maximum slope \eqn{k/e}.
 #'
 #' @param x Numeric vector. The independent variable (e.g. time).
 #' @param y0 Lower asymptote.
@@ -52,7 +55,7 @@ Gompertz <- function(x, y0, ymax, k, lag) {
   check_numeric(x); check_numeric(y0); check_numeric(ymax)
   check_numeric(k); check_numeric(lag)
   if (any(ymax <= y0)) cli::cli_abort("{.arg ymax} must exceed {.arg y0}.")
-  y0 + (ymax - y0) * exp(-exp(k * (lag - x) / (ymax - y0) + 1))
+  y0 + (ymax - y0) * exp(-exp(k * exp(1) * (lag - x) / (ymax - y0) + 1))
 }
 
 #' Self-starting Gompertz with an additive dummy term

@@ -1,5 +1,58 @@
 # shewhartr 1.3.0 (development version)
 
+## Bug fixes: regression chart and `calibrate()` (audit 2026-09-25)
+
+* `monitor()` on a regression chart no longer restarts the
+  within-phase position `.N` at 1: Phase II continues from the last
+  position of the last Phase I phase, so an in-control continuation is
+  predicted on the extrapolated trend instead of the start of the
+  phase (audit #1). The last-phase `.N` is stored in
+  `metadata$phase_n_end`.
+* `monitor()` on a regression chart now uses the residual sigma of the
+  last phase (the phase whose fit it extrapolates), stored in
+  `metadata$phase_sigma`, instead of the median sigma across phases
+  (audit #11). `sigma_hat` of the Phase II object is that sigma.
+* A phase with fewer than 3 observations now extrapolates the previous
+  phase's fit (continuing `.N`) and inherits its sigma, instead of
+  restarting the previous curve at `.N = 1` with a sigma estimated
+  from 1-2 residuals. A `NULL` fit no longer deletes its slot in
+  `$fits`, which shifted every later phase (audit #34).
+* `calibrate(trim_outliers = TRUE)` now trims a running copy of the
+  data, so violation positions of a trimmed fit are mapped to the rows
+  that fit was built on. Previously an observation dropped in one
+  iteration could come back in the next and the loop oscillated until
+  `max_trim_iter`. Subgrouped charts (Xbar-R, Xbar-S, subgrouped
+  Hotelling) drop whole subgroups instead of individual rows, which
+  used to abort with "unequal sizes" (audit #4).
+* `shewhart_regression(start_base = )` is no longer ignored when
+  `phase_changes` is supplied. `start_base` now defaults to `NULL`:
+  10 with automatic detection; with `phase_changes`, the base phase
+  ends at the first supplied change unless `start_base` is given
+  explicitly, in which case it adds a cut (audit #21).
+* `model = "auto"` no longer maps a square-root Box-Cox lambda (~0.5)
+  to `"loglog"`, a transform *stronger* than log. Lambda is rounded to
+  the nearest rung the menu offers: `< 0.25` gives `"log"`, anything
+  else `"linear"`. Rounding also removes the floating-point asymmetry
+  that treated lambda = -0.1 and 0.1 differently. The `covid-recife`
+  and `box-cox` vignettes are corrected accordingly (audit #22).
+* Gompertz / logistic regression charts: the first fitted increment
+  of each phase no longer carries the `+1` offset of the cumulative
+  fit (`cumsum(y) + 1`); increments are `C(.N) - C(.N - 1)` with
+  `C(0) = 1` (audit #35).
+* `Gompertz()` now includes the factor `e` of the Zwietering et al.
+  (1990) parameterisation, so `k` is the maximum slope and `lag` the
+  tangent intercept, as documented. Previous curves had maximum slope
+  `k / e` (audit #26).
+* Documented in-control ARL of the phase rules corrected from 64 / 256
+  to 127 / 511 (`2^k - 1` for a run of `k` same-side points) in
+  `?shewhart_regression` and the `regression-charts` and
+  `arl-simulation` vignettes (audit #27).
+* `covid-recife` vignette: death-count limits are now clipped with
+  `lower_bound = 0`, and the Perla et al. (2020) and Ferraz et al.
+  (2020) citations now match the published papers (audit #25).
+* Removed the R CMD check NOTE "no visible binding for global
+  variable '.phase'" (audit #31).
+
 ## New chart family
 
 The multivariate side of the package now has the natural pair of
