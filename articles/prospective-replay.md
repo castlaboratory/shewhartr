@@ -145,7 +145,7 @@ system.time(runs <- list(
                 one_shot  = one_shot(br))
 ))
 #>    user  system elapsed 
-#>   2.664   0.023   2.688
+#>   2.488   0.028   2.516
 ```
 
 ``` r

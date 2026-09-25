@@ -92,6 +92,7 @@ shewhart_arl(shift = c(0, 0.5, 1, 1.5, 2),
              n_sim = 2000)
 #> Simulating ARL ■■■■■■■                           20% | ETA:  6m
 #> Simulating ARL ■■■■■■■■■■■■■                     40% | ETA:  2m
+#> Simulating ARL ■■■■■■■■■■■■■■■■■■■               60% | ETA:  1m
 #> Simulating ARL ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■  100% | ETA:  0s
 #> # A tibble: 5 × 6
 #>   shift    arl arl_se arl_lower arl_upper n_truncated

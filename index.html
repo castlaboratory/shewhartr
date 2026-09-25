@@ -30,7 +30,7 @@
 
     <a class="navbar-brand me-2" href="index.html">shewhartr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -88,7 +88,7 @@
 </div>
 <!-- badges: start -->
 
-<p><code>shewhartr</code> is a tidyverse-native toolkit for Statistical Process Control (SPC). It implements the classical Shewhart chart family — variables (I-MR, Xbar-R, Xbar-S) and attributes (p, np, c, u) — alongside a flagship <strong>regression-based control chart</strong> for processes with trend, where stationarity is too strong an assumption to make.</p>
+<p><code>shewhartr</code> is a tidyverse-native toolkit for Statistical Process Control (SPC). It implements the classical Shewhart chart family — variables (I-MR, Xbar-R, Xbar-S) and attributes (p, np, c, u) — memory-based charts (EWMA, CUSUM), multivariate charts (Hotelling T², MEWMA, MCUSUM), and a flagship <strong>regression-based control chart</strong> for processes with trend, where stationarity is too strong an assumption to make.</p>
 <p>The package is built around a small set of design choices:</p>
 <ul>
 <li>
@@ -106,7 +106,10 @@
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Development version</span></span>
+<code class="sourceCode R"><span><span class="co"># Released version from CRAN</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"shewhartr"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Development version</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"castlaboratory/shewhartr"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -183,7 +186,7 @@
 <div class="section level2">
 <h2 id="multi-phase-regression-chart">Multi-phase regression chart<a class="anchor" aria-label="anchor" href="#multi-phase-regression-chart"></a>
 </h2>
-<p>The flagship chart for trended processes splits the series into phases when a runs rule fires, fits a local model in each, and flags points that depart from the local trend. The example below uses the COVID-19 mortality series for Recife (<code>cvd_recife</code>) with the original analysis settings from Ferraz et al. (2020):</p>
+<p>The flagship chart for trended processes splits the series into phases when a runs rule fires, fits a local model in each, and flags points that depart from the local trend. The example below uses the COVID-19 mortality series for Recife (<code>cvd_recife</code>), the case study of Ferraz et al. (2020). A faithful reproduction of the articles’ figures, with limits computed on the log scale (<code>limits_scale = "model"</code>) and the Brazil, Pernambuco and São Paulo series (<code>cvd_brazil</code>), is in the <a href="https://castlaboratory.github.io/shewhartr/articles/article-charts.html">article-charts</a> vignette:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/shewhart_regression.html">shewhart_regression</a></span><span class="op">(</span></span>
 <span>  <span class="va">cvd_recife</span>,</span>
@@ -236,8 +239,8 @@
 <p>The <a href="https://castlaboratory.github.io/shewhartr/">website</a> hosts:</p>
 <ul>
 <li>A full reference for every exported function.</li>
-<li>Topical articles: <a href="https://castlaboratory.github.io/shewhartr/articles/variables-charts.html">variables charts</a>, <a href="https://castlaboratory.github.io/shewhartr/articles/attributes-charts.html">attributes charts</a>, <a href="https://castlaboratory.github.io/shewhartr/articles/regression-charts.html">regression charts</a>, <a href="https://castlaboratory.github.io/shewhartr/articles/phase1-phase2.html">Phase I/II</a>, <a href="https://castlaboratory.github.io/shewhartr/articles/arl-simulation.html">ARL by simulation</a>, <a href="https://castlaboratory.github.io/shewhartr/articles/diagnostics.html">residual diagnostics</a>, <a href="https://castlaboratory.github.io/shewhartr/articles/box-cox.html">Box-Cox guidance</a>.</li>
-<li>A case study on epidemiological monitoring with the regression chart.</li>
+<li>Topical articles: <a href="https://castlaboratory.github.io/shewhartr/articles/variables-charts.html">variables charts</a>, <a href="https://castlaboratory.github.io/shewhartr/articles/attributes-charts.html">attributes charts</a>, <a href="https://castlaboratory.github.io/shewhartr/articles/regression-charts.html">regression charts</a>, <a href="https://castlaboratory.github.io/shewhartr/articles/memory-based-charts.html">memory-based charts</a>, <a href="https://castlaboratory.github.io/shewhartr/articles/multivariate-charts.html">multivariate charts</a>, <a href="https://castlaboratory.github.io/shewhartr/articles/phase1-phase2.html">Phase I/II</a>, <a href="https://castlaboratory.github.io/shewhartr/articles/arl-simulation.html">ARL by simulation</a>, <a href="https://castlaboratory.github.io/shewhartr/articles/diagnostics.html">residual diagnostics</a>, <a href="https://castlaboratory.github.io/shewhartr/articles/box-cox.html">Box-Cox guidance</a>.</li>
+<li>Case studies: <a href="https://castlaboratory.github.io/shewhartr/articles/covid-recife.html">COVID-19 in Recife</a>, <a href="https://castlaboratory.github.io/shewhartr/articles/article-charts.html">reproducing the charts of Ferraz et al. (2020)</a>, and <a href="https://castlaboratory.github.io/shewhartr/articles/prospective-replay.html">simulating prospective monitoring with the seven-point rule</a>.</li>
 </ul>
 </div>
 <div class="section level2">
@@ -245,7 +248,7 @@
 </h2>
 <p>If you use <code>shewhartr</code> in academic work, please cite:</p>
 <blockquote>
-<p>Leite, A., Vasconcelos, H., Ospina, R., &amp; Ferraz, C. (2025). <em>shewhartr: Statistical Process Control with Tidyverse-Native Workflows</em>. R package version 1.0.0. <a href="https://castlaboratory.github.io/shewhartr/" class="uri">https://castlaboratory.github.io/shewhartr/</a></p>
+<p>Leite, A., Vasconcelos, H., Ospina, R., &amp; Ferraz, C. (2026). <em>shewhartr: Statistical Process Control with Tidyverse-Native Workflows</em>. R package version 1.4.0. <a href="https://castlaboratory.github.io/shewhartr/" class="uri">https://castlaboratory.github.io/shewhartr/</a></p>
 </blockquote>
 </div>
 <div class="section level2">

@@ -3,8 +3,10 @@
 `shewhartr` is a tidyverse-native toolkit for Statistical Process
 Control (SPC). It implements the classical Shewhart chart family —
 variables (I-MR, Xbar-R, Xbar-S) and attributes (p, np, c, u) —
-alongside a flagship **regression-based control chart** for processes
-with trend, where stationarity is too strong an assumption to make.
+memory-based charts (EWMA, CUSUM), multivariate charts (Hotelling T²,
+MEWMA, MCUSUM), and a flagship **regression-based control chart** for
+processes with trend, where stationarity is too strong an assumption to
+make.
 
 The package is built around a small set of design choices:
 
@@ -30,6 +32,9 @@ The package is built around a small set of design choices:
 ## Installation
 
 ``` r
+
+# Released version from CRAN
+install.packages("shewhartr")
 
 # Development version
 remotes::install_github("castlaboratory/shewhartr")
@@ -69,8 +74,12 @@ autoplot(fit)
 The flagship chart for trended processes splits the series into phases
 when a runs rule fires, fits a local model in each, and flags points
 that depart from the local trend. The example below uses the COVID-19
-mortality series for Recife (`cvd_recife`) with the original analysis
-settings from Ferraz et al. (2020):
+mortality series for Recife (`cvd_recife`), the case study of Ferraz et
+al. (2020). A faithful reproduction of the articles’ figures, with
+limits computed on the log scale (`limits_scale = "model"`) and the
+Brazil, Pernambuco and São Paulo series (`cvd_brazil`), is in the
+[article-charts](https://castlaboratory.github.io/shewhartr/articles/article-charts.html)
+vignette:
 
 ``` r
 
@@ -160,6 +169,10 @@ The [website](https://castlaboratory.github.io/shewhartr/) hosts:
   charts](https://castlaboratory.github.io/shewhartr/articles/attributes-charts.html),
   [regression
   charts](https://castlaboratory.github.io/shewhartr/articles/regression-charts.html),
+  [memory-based
+  charts](https://castlaboratory.github.io/shewhartr/articles/memory-based-charts.html),
+  [multivariate
+  charts](https://castlaboratory.github.io/shewhartr/articles/multivariate-charts.html),
   [Phase
   I/II](https://castlaboratory.github.io/shewhartr/articles/phase1-phase2.html),
   [ARL by
@@ -168,15 +181,20 @@ The [website](https://castlaboratory.github.io/shewhartr/) hosts:
   diagnostics](https://castlaboratory.github.io/shewhartr/articles/diagnostics.html),
   [Box-Cox
   guidance](https://castlaboratory.github.io/shewhartr/articles/box-cox.html).
-- A case study on epidemiological monitoring with the regression chart.
+- Case studies: [COVID-19 in
+  Recife](https://castlaboratory.github.io/shewhartr/articles/covid-recife.html),
+  [reproducing the charts of Ferraz et
+  al. (2020)](https://castlaboratory.github.io/shewhartr/articles/article-charts.html),
+  and [simulating prospective monitoring with the seven-point
+  rule](https://castlaboratory.github.io/shewhartr/articles/prospective-replay.html).
 
 ## Citation
 
 If you use `shewhartr` in academic work, please cite:
 
-> Leite, A., Vasconcelos, H., Ospina, R., & Ferraz, C. (2025).
+> Leite, A., Vasconcelos, H., Ospina, R., & Ferraz, C. (2026).
 > *shewhartr: Statistical Process Control with Tidyverse-Native
-> Workflows*. R package version 1.0.0.
+> Workflows*. R package version 1.4.0.
 > <https://castlaboratory.github.io/shewhartr/>
 
 ## References

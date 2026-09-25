@@ -1,6 +1,6 @@
 # Changelog
 
-## shewhartr 1.3.1 (development version)
+## shewhartr 1.4.0
 
 ### New features: reproducing Ferraz et al. (2020) (GitHub issues [\#2](https://github.com/castlaboratory/shewhartr/issues/2), [\#3](https://github.com/castlaboratory/shewhartr/issues/3))
 

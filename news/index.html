@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">shewhartr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -54,9 +54,9 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="1.3.1" id="shewhartr-131-development-version">shewhartr 1.3.1 (development version)<a class="anchor" aria-label="anchor" href="#shewhartr-131-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="1.4.0" id="shewhartr-140">shewhartr 1.4.0<a class="anchor" aria-label="anchor" href="#shewhartr-140"></a></h2>
 <div class="section level3">
-<h3 id="new-features-reproducing-ferraz-et-al-github-issues-1-3-1">New features: reproducing Ferraz et al. (2020) (GitHub issues <a href="https://github.com/castlaboratory/shewhartr/issues/2" class="external-link">#2</a>, <a href="https://github.com/castlaboratory/shewhartr/issues/3" class="external-link">#3</a>)<a class="anchor" aria-label="anchor" href="#new-features-reproducing-ferraz-et-al-github-issues-1-3-1"></a></h3>
+<h3 id="new-features-reproducing-ferraz-et-al-github-issues-1-4-0">New features: reproducing Ferraz et al. (2020) (GitHub issues <a href="https://github.com/castlaboratory/shewhartr/issues/2" class="external-link">#2</a>, <a href="https://github.com/castlaboratory/shewhartr/issues/3" class="external-link">#3</a>)<a class="anchor" aria-label="anchor" href="#new-features-reproducing-ferraz-et-al-github-issues-1-4-0"></a></h3>
 <ul><li>
 <code><a href="../reference/shewhart_regression.html">shewhart_regression()</a></code> gains <code>limits_scale = c("original", "model")</code>. With <code>"model"</code>, sigma comes from the moving ranges of the residuals on the transformed scale of the model’s left-hand side, the band <code>g_hat +- 3 sigma</code> is formed there and back-transformed: for <code>model = "log"</code> the multiplicative, asymmetric bands of Perla et al.
 <ol start="2020" style="list-style-type: decimal"><li>and Ferraz et al. (2020), whose lower limit never falls below</li>
@@ -77,14 +77,14 @@
 <li>New dataset <code>cvd_brazil</code>: daily new COVID-19 deaths for Brazil, Pernambuco and Sao Paulo, 2020-02-25 to 2020-12-31, from Wesley Cota’s covid19br compilation of the Ministry of Health bulletins. The raw values are kept, including one PE correction of -37 deaths on 2020-09-03.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="new-vignettes-closes-1-3-1">New vignettes (closes <a href="https://github.com/castlaboratory/shewhartr/issues/2" class="external-link">#2</a>, <a href="https://github.com/castlaboratory/shewhartr/issues/3" class="external-link">#3</a>)<a class="anchor" aria-label="anchor" href="#new-vignettes-closes-1-3-1"></a></h3>
+<h3 id="new-vignettes-closes-1-4-0">New vignettes (closes <a href="https://github.com/castlaboratory/shewhartr/issues/2" class="external-link">#2</a>, <a href="https://github.com/castlaboratory/shewhartr/issues/3" class="external-link">#3</a>)<a class="anchor" aria-label="anchor" href="#new-vignettes-closes-1-4-0"></a></h3>
 <ul><li>
 <code><a href="../articles/article-charts.html">vignette("article-charts")</a></code>: reproduces the charts of Ferraz et al. (2020, SBPO and Revista Brasileira de Estatistica) – the unadapted individuals chart, Brazil and Recife with the articles’ phases (legend identical to the figures) and with automatic detection, Pernambuco and Sao Paulo, and the “Monitoramento” segment as a <code><a href="../reference/calibrate.html">calibrate()</a></code> + <code><a href="../reference/monitor.html">monitor()</a></code> projection – with a table of what differs from the originals (closes <a href="https://github.com/castlaboratory/shewhartr/issues/2" class="external-link">#2</a>).</li>
 <li>
 <code><a href="../articles/prospective-replay.html">vignette("prospective-replay")</a></code>: replays the articles’ “simulation” of prospective monitoring day by day with <code><a href="../reference/calibrate.html">calibrate()</a></code> / <code><a href="../reference/monitor.html">monitor()</a></code> (frozen limits and daily refits), compares the phase dates with the articles’ and with <code>phase_rule</code>, and adds a Monte Carlo study of the strategy on Poisson counts with known change points: spurious phases, detection delays, and the in-control ARL of the seven- and nine-point rules against 2^k - 1 (closes <a href="https://github.com/castlaboratory/shewhartr/issues/3" class="external-link">#3</a>).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="bug-fixes-audit-of-1-3-1">Bug fixes (audit of 2026-09-25)<a class="anchor" aria-label="anchor" href="#bug-fixes-audit-of-1-3-1"></a></h3>
+<h3 id="bug-fixes-audit-of-1-4-0">Bug fixes (audit of 2026-09-25)<a class="anchor" aria-label="anchor" href="#bug-fixes-audit-of-1-4-0"></a></h3>
 <ul><li>
 <code><a href="../reference/shewhart_capability.html">shewhart_capability()</a></code> on Xbar-R / Xbar-S charts no longer multiplies the chart’s sigma by <code>sqrt(n)</code> (it is already the per-individual sigma), and computes the mean and Pp/Ppk from the individual measurements instead of the subgroup means. Cp was depressed by <code>sqrt(n)</code> and Pp could be <code>Inf</code>. Subgroup charts now carry their individual measurements in <code>metadata$values</code> (<a href="https://github.com/castlaboratory/shewhartr/issues/2" class="external-link">#2</a>).</li>
 <li>
@@ -108,7 +108,7 @@
 <li>The regression legend uses the phase labels the constructor computes (“Base”, “Phase 1”, …, “Monitoring”); the regression subtitle and the CUSUM “Positive” / “Negative” legend are translated through the locale table (<a href="https://github.com/castlaboratory/shewhartr/issues/36" class="external-link">#36</a>).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="release-hygiene-1-3-1">Release hygiene<a class="anchor" aria-label="anchor" href="#release-hygiene-1-3-1"></a></h3>
+<h3 id="release-hygiene-1-4-0">Release hygiene<a class="anchor" aria-label="anchor" href="#release-hygiene-1-4-0"></a></h3>
 <ul><li>
 <code>lubridate</code> and <code>vdiffr</code> removed from <code>Suggests</code> (unused).</li>
 <li>
@@ -116,7 +116,7 @@
 <li>Plot chunks re-enabled in the <code>phase1-phase2</code>, <code>getting-started</code>, <code>variables-charts</code>, <code>attributes-charts</code>, <code>diagnostics</code> and <code>box-cox</code> vignettes (<a href="https://github.com/castlaboratory/shewhartr/issues/37" class="external-link">#37</a>).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="bug-fixes-regression-chart-and-calibrate-audit-1-3-1">Bug fixes: regression chart and <code>calibrate()</code> (audit 2026-09-25)<a class="anchor" aria-label="anchor" href="#bug-fixes-regression-chart-and-calibrate-audit-1-3-1"></a></h3>
+<h3 id="bug-fixes-regression-chart-and-calibrate-audit-1-4-0">Bug fixes: regression chart and <code>calibrate()</code> (audit 2026-09-25)<a class="anchor" aria-label="anchor" href="#bug-fixes-regression-chart-and-calibrate-audit-1-4-0"></a></h3>
 <ul><li>
 <code><a href="../reference/monitor.html">monitor()</a></code> on a regression chart no longer restarts the within-phase position <code>.N</code> at 1: Phase II continues from the last position of the last Phase I phase, so an in-control continuation is predicted on the extrapolated trend instead of the start of the phase (audit <a href="https://github.com/castlaboratory/shewhartr/issues/1" class="external-link">#1</a>). The last-phase <code>.N</code> is stored in <code>metadata$phase_n_end</code>.</li>
 <li>
@@ -141,7 +141,7 @@
 <li>Removed the R CMD check NOTE “no visible binding for global variable ‘.phase’” (audit <a href="https://github.com/castlaboratory/shewhartr/issues/31" class="external-link">#31</a>).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="bug-fixes-memory-based-and-multivariate-charts-audit-1-3-1">Bug fixes: memory-based and multivariate charts (audit 2026-09-25)<a class="anchor" aria-label="anchor" href="#bug-fixes-memory-based-and-multivariate-charts-audit-1-3-1"></a></h3>
+<h3 id="bug-fixes-memory-based-and-multivariate-charts-audit-1-4-0">Bug fixes: memory-based and multivariate charts (audit 2026-09-25)<a class="anchor" aria-label="anchor" href="#bug-fixes-memory-based-and-multivariate-charts-audit-1-4-0"></a></h3>
 <ul><li>
 <code><a href="../reference/shewhart_mcusum.html">shewhart_mcusum()</a></code>: the default decision intervals (k = 0.5) held <code>ARL_0 ~ 200</code> only for p = 2; with the old table ARL_0 was ~140 at p = 3 and ~85 at p = 5. The table for p = 2..10 was re-derived by Monte Carlo (<code>dev/calibrate-h-tables.R</code>, 20,000 paths per cell); p = 2 reproduces Crosier’s 5.50 (5.48). Default <code>h</code> is larger for every p &gt; 2 (finding 5).</li>
 <li>
