@@ -17,6 +17,7 @@ shewhart_regression(
   rules = c("nelson_1_beyond_3s", "nelson_2_nine_same"),
   sigma_method = c("mr", "median_mr", "biweight", "sd"),
   lower_bound = NA_real_,
+  limits_scale = c("original", "model"),
   locale = getOption("shewhart.locale", "en"),
   verbose = NULL
 )
@@ -40,7 +41,13 @@ no dedicated model and maps to \code{"linear"}; \code{"loglog"} is a stronger
 transform than log and is never chosen automatically).}
 
 \item{formula}{Optional one-sided or two-sided formula referencing
-columns in \code{data}. If provided, overrides \code{model}.}
+columns in \code{data}. If provided, overrides \code{model}. The model may
+reference \code{.N}, the position of the observation within its phase.
+When the left-hand side is a recognised transformation of the
+response -- \code{log(y)}, \code{log(y + c)}, \code{log(y, base)}, \code{log10()},
+\code{log2()}, \code{log1p()} or \code{sqrt()}, optionally wrapped in \code{I()} --
+the fitted values are back-transformed to the scale of the data
+and \code{limits_scale = "model"} is available.}
 
 \item{dummy}{Optional tidy-eval column reference for an additive
 covariate (a "dummy" in the original v0.1 nomenclature; can be
@@ -57,7 +64,10 @@ observation \code{start_base + 1} in addition to \code{phase_changes}.}
 \item{phase_changes}{Optional vector of index values at which to
 force a phase change (the observation whose index equals the value
 starts the new phase). If \code{NULL}, phase changes are detected
-automatically using the supplied \code{phase_rule}.}
+automatically using the supplied \code{phase_rule}. A zero-length
+vector (e.g. \code{integer(0)}) fits a single phase without detection;
+it then needs only 3 observations, which is what a prospective
+replay needs to calibrate one phase at a time (see Details).}
 
 \item{phase_rule}{Character. Runs rule used to detect new phases.
 See \code{\link[=shewhart_rules_available]{shewhart_rules_available()}}. Default Nelson 2 (9 points
@@ -71,7 +81,26 @@ v0.1.x, use \code{"we_seven_same"} (7 points; ARL_0 = 2^7 - 1 = 127).}
 
 \item{lower_bound}{Numeric scalar or \code{NA}. If non-\code{NA}, lower limit
 is clipped at this value (commonly 0 for counts). Default \code{NA}
-(no clipping).}
+(no clipping). Stored in \code{metadata} and honoured by \code{\link[=monitor]{monitor()}}.}
+
+\item{limits_scale}{Scale on which the limits are built. With
+\code{"original"} (default), sigma is estimated from the residuals on
+the scale of the data and the band \verb{fitted +- 3 sigma} is
+symmetric. With \code{"model"}, sigma is estimated from the moving
+ranges of the residuals on the transformed scale of the model's
+left-hand side \code{g(y)}; the band \verb{g_hat +- 3 sigma} is formed there
+and centre line and limits are back-transformed with \code{g^-1}. With
+\code{model = "log"} this gives the multiplicative, asymmetric bands of
+Perla et al. (2020) and Ferraz et al. (2020) -- an individuals
+chart on the residuals of \code{log(1 + y) ~ t} -- whose lower limit
+never falls below 0. For models whose left-hand side is the raw
+response (\code{"linear"}, \code{"gompertz"}, \code{"logistic"}, or a formula
+such as \code{y ~ .N}) the two options coincide. With \code{"model"}, the
+\code{.sigma} column of the augmented tibble (and
+\code{metadata$phase_sigma}, \code{sigma_hat}) is on the model scale, and
+two extra columns hold what the runs rules are applied to:
+\code{.model_value} (the transformed observation \code{g(y)}) and
+\code{.model_center} (the fitted value \code{g_hat}).}
 
 \item{locale}{Character. One of \code{"en"}, \code{"pt"}, \code{"es"}, \code{"fr"}.}
 
@@ -84,8 +113,15 @@ phase; a phase with fewer than 3 observations reuses the previous
 phase's fit). The \code{metadata} slot additionally stores
 \code{phase_n_end} (the last within-phase position \code{.N} reached by each
 phase's fit) and \code{phase_sigma} (the residual sigma of each phase),
-which \code{\link[=monitor]{monitor()}} uses to extrapolate the last phase. The
-\code{sigma_hat} slot is the median of the per-phase sigmas.
+which \code{\link[=monitor]{monitor()}} uses to extrapolate the last phase, together
+with \code{limits_scale} and \code{lower_bound}. The \code{sigma_hat} slot is the
+median of the per-phase sigmas.
+
+The \code{.phase_label} column names the phases "Base", "Phase 1", ...,
+"Monitoring" (localised). When the index column is a \code{Date} (or a
+date-time), every phase but the last also carries its end date,
+e.g. "Base (until 2020-05-11)". The first index value of each
+phase is the date on which it starts.
 }
 \description{
 Fits a chosen model to the data (linear, log, log-log, Gompertz,
@@ -100,6 +136,26 @@ This is the package's flagship chart, intended for trended or
 non-stationary processes for which classical Shewhart charts give
 systematically wrong limits. See the vignette
 \code{regression-charts} for a thorough discussion and examples.
+
+Models that take the logarithm of the response (\code{"log"},
+\code{"loglog"}, and \code{"auto"} whenever it selects \code{"log"}) require
+non-negative values: \code{log(1 + y)} is undefined for a negative count
+such as a bulletin that revises a cumulative total downwards. The
+function stops with an error naming the offending row instead of
+returning \code{NaN} limits; filter or reconcile such rows first.
+
+A Phase I chart refits every phase, including the last one (labelled
+"Monitoring"). To judge new observations against the limits of the
+last phase \emph{projected forward}, as in a prospective analysis,
+calibrate on the data up to the end of the last phase with
+\code{\link[=calibrate]{calibrate()}} and pass the rest to \code{\link[=monitor]{monitor()}}: it continues \code{.N},
+uses the stored sigma, and honours \code{limits_scale} and \code{lower_bound}.
+A prospective replay in the manner of Ferraz et al. (2020) chains
+these steps one phase at a time: calibrate a single phase
+(\code{phase_changes = integer(0)}) on its first observations, monitor
+the rows that follow, and start the next phase at the first index
+after the first run flagged by \code{"we_seven_same"} (column
+\code{.flag_we_seven_same} of the monitored chart, with \code{rules = "we_seven_same"}).
 }
 \examples{
 \donttest{
@@ -112,6 +168,15 @@ df <- data.frame(
 fit <- shewhart_regression(df, value = y, index = t, model = "linear")
 print(fit)
 ggplot2::autoplot(fit)
+
+# Multiplicative limits built on the log scale (Perla et al. 2020;
+# Ferraz et al. 2020): base of 10 days, 7-point shift rule
+br <- subset(cvd_brazil, region == "BR" & date >= as.Date("2020-03-17") &
+               date <= as.Date("2020-06-20"))
+fit_log <- shewhart_regression(br, value = new_deaths, index = date,
+                               model = "log", limits_scale = "model",
+                               phase_rule = "we_seven_same")
+ggplot2::autoplot(fit_log, legend_position = "inside")
 }
 
 }
@@ -122,6 +187,17 @@ Quality Technology}, 1(1), 1-9.
 
 Wheeler, D. J., & Chambers, D. S. (1992). \emph{Understanding Statistical
 Process Control} (2nd ed.). SPC Press.
+
+Perla, R. J., Provost, S. M., Parry, G. J., Little, K., & Provost,
+L. P. (2020). Understanding variation in reported COVID-19 deaths
+with a novel Shewhart chart application. \emph{International Journal for
+Quality in Health Care}, 32(10), 685-688.
+\doi{10.1093/intqhc/mzaa069}
+
+Ferraz, C., Petenate, A. J., Leite Wanderley, A., Ospina, R.,
+Torres, J., & Peruzzi Moreira, A. (2020). COVID-19: monitoramento
+por graficos de Shewhart. \emph{Revista Brasileira de Estatistica},
+78(245), 23-41.
 
 Box, G. E. P., & Cox, D. R. (1964). An Analysis of Transformations.
 \emph{Journal of the Royal Statistical Society, Series B}, 26(2),

@@ -112,3 +112,30 @@ cvd_recife <- tibble::tibble(
 )
 cvd_recife$.t <- seq_len(nrow(cvd_recife))
 usethis::use_data(cvd_recife, overwrite = TRUE)
+
+# cvd_brazil -------------------------------------------------------------
+# Daily new COVID-19 deaths for Brazil (BR), Pernambuco (PE) and Sao
+# Paulo (SP), 2020, the series behind Ferraz et al. (2020, Revista
+# Brasileira de Estatistica 78(245)) and the Brazil figure of the SBPO
+# 2020 paper. The raw snapshot `inst/extdata/cvd_states_raw.rds` was
+# taken from Wesley Cota's covid19br compilation
+# (https://github.com/wcota/covid19br, file cases-brazil-states.csv),
+# which follows the Ministry of Health bulletins; its columns are
+# `date`, `state` ("TOTAL" = Brazil) and `newDeaths`. Values are kept
+# as published: one PE bulletin (2020-09-03) carries -37, a correction
+# of the cumulative total, and is NOT altered here.
+
+raw_rds <- system.file("extdata", "cvd_states_raw.rds", package = "shewhartr")
+if (!nzchar(raw_rds)) raw_rds <- "inst/extdata/cvd_states_raw.rds"
+
+states_raw <- readRDS(raw_rds)
+region <- ifelse(states_raw[["state"]] == "TOTAL", "BR", states_raw[["state"]])
+cvd_brazil <- tibble::tibble(
+  date       = as.Date(states_raw[["date"]]),
+  region     = factor(region, levels = c("BR", "PE", "SP")),
+  new_deaths = as.integer(states_raw[["newDeaths"]])
+)
+cvd_brazil <- cvd_brazil[order(cvd_brazil$region, cvd_brazil$date), ]
+stopifnot(!anyNA(cvd_brazil$region),
+          !anyDuplicated(cvd_brazil[c("region", "date")]))
+usethis::use_data(cvd_brazil, overwrite = TRUE)

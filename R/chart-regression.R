@@ -26,6 +26,32 @@
 #     phase (`metadata$phase_n_end`) and uses that phase's sigma
 #     (`metadata$phase_sigma`), never restarting at `.N = 1`.
 #
+# Scale of the limits (`limits_scale`): with "original" (the default)
+# sigma is estimated from the residuals y - fitted on the scale of the
+# data, so the band fitted +- 3 sigma is symmetric. With "model" the
+# band is built where the model is linear -- on the transformed scale
+# of the left-hand side g(y) -- and then carried back with g^-1:
+#
+#   e_t      = g(y_t) - g_hat_t                     (model-scale residual)
+#   sigma_g  = MR_bar(e) / d2                       (or median_mr, ...)
+#   CL_t     = g^-1(g_hat_t)
+#   UCL_t    = g^-1(g_hat_t + 3 sigma_g)
+#   LCL_t    = g^-1(g_hat_t - 3 sigma_g)
+#
+# For g = log(1 + y) the band is multiplicative and asymmetric on the
+# original scale (UCL - CL > CL - LCL), and the lower limit never falls
+# below 0. This is the algorithm of Perla et al. (2020) and Ferraz et
+# al. (2020), steps i-v: an individuals chart on the residuals of
+# log10(1 + y) ~ t, limits added to the fitted line, then
+# exponentiated. The base of the logarithm cancels (sigma_g scales by
+# the same constant as g_hat), so log(1 + y) reproduces their charts.
+# Because g is monotone, the runs rules are evaluated on the model
+# scale (g(y) against g_hat with sigma_g): the same-side rules give the
+# same answer as on the original scale, and the 3-sigma rule flags
+# exactly the points outside the back-transformed band. For models
+# whose left-hand side is the raw response (linear, gompertz,
+# logistic) the two scales coincide.
+#
 # `model = "auto"` maps the Box-Cox lambda of the phase to the
 # nearest rung of Tukey's ladder that the menu offers: lambda < 0.25
 # (rungs 0 and below) -> "log"; otherwise -> "linear". The square-root
@@ -43,6 +69,15 @@
 #     <doi:10.1080/00401706.1991.10484770>
 #   Mason, R. L., & Young, J. C. (2002). Multivariate Statistical
 #     Process Control with Industrial Applications. SIAM/ASA.
+#   Perla, R. J., Provost, S. M., Parry, G. J., Little, K., &
+#     Provost, L. P. (2020). Understanding variation in reported
+#     COVID-19 deaths with a novel Shewhart chart application.
+#     International Journal for Quality in Health Care, 32(10),
+#     685-688. <doi:10.1093/intqhc/mzaa069>
+#   Ferraz, C., Petenate, A. J., Leite Wanderley, A., Ospina, R.,
+#     Torres, J., & Peruzzi Moreira, A. (2020). COVID-19:
+#     monitoramento por graficos de Shewhart. Revista Brasileira de
+#     Estatistica, 78(245), 23-41.
 
 #' Regression-based control chart for processes with trend
 #'
@@ -72,7 +107,13 @@
 #'   no dedicated model and maps to `"linear"`; `"loglog"` is a stronger
 #'   transform than log and is never chosen automatically).
 #' @param formula Optional one-sided or two-sided formula referencing
-#'   columns in `data`. If provided, overrides `model`.
+#'   columns in `data`. If provided, overrides `model`. The model may
+#'   reference `.N`, the position of the observation within its phase.
+#'   When the left-hand side is a recognised transformation of the
+#'   response -- `log(y)`, `log(y + c)`, `log(y, base)`, `log10()`,
+#'   `log2()`, `log1p()` or `sqrt()`, optionally wrapped in `I()` --
+#'   the fitted values are back-transformed to the scale of the data
+#'   and `limits_scale = "model"` is available.
 #' @param dummy Optional tidy-eval column reference for an additive
 #'   covariate (a "dummy" in the original v0.1 nomenclature; can be
 #'   any factor or numeric covariate the user wants to adjust for,
@@ -86,7 +127,10 @@
 #' @param phase_changes Optional vector of index values at which to
 #'   force a phase change (the observation whose index equals the value
 #'   starts the new phase). If `NULL`, phase changes are detected
-#'   automatically using the supplied `phase_rule`.
+#'   automatically using the supplied `phase_rule`. A zero-length
+#'   vector (e.g. `integer(0)`) fits a single phase without detection;
+#'   it then needs only 3 observations, which is what a prospective
+#'   replay needs to calibrate one phase at a time (see Details).
 #' @param phase_rule Character. Runs rule used to detect new phases.
 #'   See [shewhart_rules_available()]. Default Nelson 2 (9 points
 #'   same side; ARL_0 = 2^9 - 1 = 511). For backward compatibility with
@@ -96,7 +140,25 @@
 #'   `"biweight"` (Tukey-style robust), or `"sd"`.
 #' @param lower_bound Numeric scalar or `NA`. If non-`NA`, lower limit
 #'   is clipped at this value (commonly 0 for counts). Default `NA`
-#'   (no clipping).
+#'   (no clipping). Stored in `metadata` and honoured by [monitor()].
+#' @param limits_scale Scale on which the limits are built. With
+#'   `"original"` (default), sigma is estimated from the residuals on
+#'   the scale of the data and the band `fitted +- 3 sigma` is
+#'   symmetric. With `"model"`, sigma is estimated from the moving
+#'   ranges of the residuals on the transformed scale of the model's
+#'   left-hand side `g(y)`; the band `g_hat +- 3 sigma` is formed there
+#'   and centre line and limits are back-transformed with `g^-1`. With
+#'   `model = "log"` this gives the multiplicative, asymmetric bands of
+#'   Perla et al. (2020) and Ferraz et al. (2020) -- an individuals
+#'   chart on the residuals of `log(1 + y) ~ t` -- whose lower limit
+#'   never falls below 0. For models whose left-hand side is the raw
+#'   response (`"linear"`, `"gompertz"`, `"logistic"`, or a formula
+#'   such as `y ~ .N`) the two options coincide. With `"model"`, the
+#'   `.sigma` column of the augmented tibble (and
+#'   `metadata$phase_sigma`, `sigma_hat`) is on the model scale, and
+#'   two extra columns hold what the runs rules are applied to:
+#'   `.model_value` (the transformed observation `g(y)`) and
+#'   `.model_center` (the fitted value `g_hat`).
 #' @param locale Character. One of `"en"`, `"pt"`, `"es"`, `"fr"`.
 #' @param verbose Logical. Print progress messages?
 #'
@@ -106,8 +168,37 @@
 #'   phase's fit). The `metadata` slot additionally stores
 #'   `phase_n_end` (the last within-phase position `.N` reached by each
 #'   phase's fit) and `phase_sigma` (the residual sigma of each phase),
-#'   which [monitor()] uses to extrapolate the last phase. The
-#'   `sigma_hat` slot is the median of the per-phase sigmas.
+#'   which [monitor()] uses to extrapolate the last phase, together
+#'   with `limits_scale` and `lower_bound`. The `sigma_hat` slot is the
+#'   median of the per-phase sigmas.
+#'
+#'   The `.phase_label` column names the phases "Base", "Phase 1", ...,
+#'   "Monitoring" (localised). When the index column is a `Date` (or a
+#'   date-time), every phase but the last also carries its end date,
+#'   e.g. "Base (until 2020-05-11)". The first index value of each
+#'   phase is the date on which it starts.
+#'
+#' @details
+#' Models that take the logarithm of the response (`"log"`,
+#' `"loglog"`, and `"auto"` whenever it selects `"log"`) require
+#' non-negative values: `log(1 + y)` is undefined for a negative count
+#' such as a bulletin that revises a cumulative total downwards. The
+#' function stops with an error naming the offending row instead of
+#' returning `NaN` limits; filter or reconcile such rows first.
+#'
+#' A Phase I chart refits every phase, including the last one (labelled
+#' "Monitoring"). To judge new observations against the limits of the
+#' last phase *projected forward*, as in a prospective analysis,
+#' calibrate on the data up to the end of the last phase with
+#' [calibrate()] and pass the rest to [monitor()]: it continues `.N`,
+#' uses the stored sigma, and honours `limits_scale` and `lower_bound`.
+#' A prospective replay in the manner of Ferraz et al. (2020) chains
+#' these steps one phase at a time: calibrate a single phase
+#' (`phase_changes = integer(0)`) on its first observations, monitor
+#' the rows that follow, and start the next phase at the first index
+#' after the first run flagged by `"we_seven_same"` (column
+#' `.flag_we_seven_same` of the monitored chart, with `rules =
+#' "we_seven_same"`).
 #'
 #' @references
 #' Mandel, B. J. (1969). The Regression Control Chart. *Journal of
@@ -116,6 +207,17 @@
 #'
 #' Wheeler, D. J., & Chambers, D. S. (1992). *Understanding Statistical
 #' Process Control* (2nd ed.). SPC Press.
+#'
+#' Perla, R. J., Provost, S. M., Parry, G. J., Little, K., & Provost,
+#' L. P. (2020). Understanding variation in reported COVID-19 deaths
+#' with a novel Shewhart chart application. *International Journal for
+#' Quality in Health Care*, 32(10), 685-688.
+#' \doi{10.1093/intqhc/mzaa069}
+#'
+#' Ferraz, C., Petenate, A. J., Leite Wanderley, A., Ospina, R.,
+#' Torres, J., & Peruzzi Moreira, A. (2020). COVID-19: monitoramento
+#' por graficos de Shewhart. *Revista Brasileira de Estatistica*,
+#' 78(245), 23-41.
 #'
 #' Box, G. E. P., & Cox, D. R. (1964). An Analysis of Transformations.
 #' *Journal of the Royal Statistical Society, Series B*, 26(2),
@@ -132,6 +234,15 @@
 #' fit <- shewhart_regression(df, value = y, index = t, model = "linear")
 #' print(fit)
 #' ggplot2::autoplot(fit)
+#'
+#' # Multiplicative limits built on the log scale (Perla et al. 2020;
+#' # Ferraz et al. 2020): base of 10 days, 7-point shift rule
+#' br <- subset(cvd_brazil, region == "BR" & date >= as.Date("2020-03-17") &
+#'                date <= as.Date("2020-06-20"))
+#' fit_log <- shewhart_regression(br, value = new_deaths, index = date,
+#'                                model = "log", limits_scale = "model",
+#'                                phase_rule = "we_seven_same")
+#' ggplot2::autoplot(fit_log, legend_position = "inside")
 #' }
 #'
 #' @export
@@ -148,7 +259,8 @@ shewhart_regression <- function(data, value, index,
                                 sigma_method  = c("mr", "median_mr",
                                                   "biweight", "sd"),
                                 lower_bound   = NA_real_,
-                                locale        = getOption("shewhart.locale", "en"),
+                                limits_scale  = c("original", "model"),
+                                locale      = getOption("shewhart.locale", "en"),
                                 verbose       = NULL) {
 
   call <- sys.call()
@@ -156,6 +268,7 @@ shewhart_regression <- function(data, value, index,
   check_locale(locale)
   model <- rlang::arg_match(model)
   sigma_method <- rlang::arg_match(sigma_method)
+  limits_scale <- rlang::arg_match(limits_scale)
   explicit_base <- !is.null(start_base)
   start_base    <- if (explicit_base) check_scalar_int(start_base, min = 5L)
                    else 10L
@@ -174,9 +287,26 @@ shewhart_regression <- function(data, value, index,
     d_n <- NULL
   }
 
-  if (nrow(data) <= start_base) {
+  if (is.null(formula) && model %in% c("log", "loglog")) {
+    check_log_response(data[[v_n]], model, v_n, data[[i_n]], i_n)
+  }
+  if (!is.null(formula) && limits_scale == "model" &&
+      !parse_lhs_transform(formula, v_n)$known) {
     cli::cli_abort(c(
-      "Need more than {.val {start_base}} observations.",
+      "{.code limits_scale = \"model\"} needs an invertible left-hand side.",
+      "x" = "Cannot invert {.code {deparse(formula[[2L]])}}.",
+      "i" = "Supported: the response itself, or {.fn log}, {.fn log10},
+             {.fn log2}, {.fn log1p} or {.fn sqrt} of the response plus a
+             constant."
+    ))
+  }
+
+  # A supplied `phase_changes` (even an empty one: a single phase, no
+  # detection) only needs enough rows to fit the first phase.
+  min_rows <- if (is.null(phase_changes) || explicit_base) start_base + 1L else 3L
+  if (nrow(data) < min_rows) {
+    cli::cli_abort(c(
+      "Need at least {.val {min_rows}} observations.",
       "i" = "Got {.val {nrow(data)}}."
     ))
   }
@@ -193,7 +323,9 @@ shewhart_regression <- function(data, value, index,
       formula     = formula,
       start_base  = start_base,
       phase_rule  = phase_rule,
-      verbose     = verbose
+      limits_scale = limits_scale,
+      verbose     = verbose,
+      call        = rlang::current_env()
     )
   } else {
     # Convert user-supplied phase_changes to integer positions. An
@@ -222,7 +354,9 @@ shewhart_regression <- function(data, value, index,
     sigma_method    = sigma_method,
     lower_bound     = lower_bound,
     rules           = rules,
-    locale          = locale
+    locale          = locale,
+    limits_scale    = limits_scale,
+    call            = rlang::current_env()
   )
 
   fits <- attr(augmented, "fits")
@@ -243,10 +377,12 @@ shewhart_regression <- function(data, value, index,
       .groups    = "drop"
     )
 
+  # Runs rules live on the scale the limits were built on
+  model_scale <- limits_scale == "model"
   violations <- shewhart_runs(
-    augmented$.value,
+    if (model_scale) augmented$.model_value else augmented$.value,
     rules  = rules,
-    center = augmented$.center,
+    center = if (model_scale) augmented$.model_center else augmented$.center,
     sigma  = augmented$.sigma
   )
 
@@ -270,7 +406,9 @@ shewhart_regression <- function(data, value, index,
       phase_rule = phase_rule,
       locale     = locale,
       phase_n_end = phase_info$n_end,
-      phase_sigma = phase_info$sigma
+      phase_sigma = phase_info$sigma,
+      limits_scale = limits_scale,
+      lower_bound  = lower_bound
     )
   )
 }
@@ -281,7 +419,8 @@ shewhart_regression <- function(data, value, index,
 #'
 #' @keywords internal
 #' @noRd
-fit_one_phase <- function(d, value_q, index_q, dummy_q, model, formula) {
+fit_one_phase <- function(d, value_q, index_q, dummy_q, model, formula,
+                          call = rlang::caller_env()) {
   v_n <- rlang::as_name(value_q)
   i_n <- rlang::as_name(index_q)
   has_dummy <- !is_quo_null(dummy_q)
@@ -290,10 +429,16 @@ fit_one_phase <- function(d, value_q, index_q, dummy_q, model, formula) {
   # Position within the phase
   d$.N <- seq_len(nrow(d))
 
+  user_formula <- !is.null(formula)
+
   # Build formula if not supplied -----------------------------------------
   if (is.null(formula)) {
     if (model == "auto") {
       model <- auto_model_from_lambda(shewhart_box_cox_lambda(d[[v_n]] + 1))
+      if (model == "log") {
+        check_log_response(d[[v_n]], "auto", v_n, d[[i_n]], i_n,
+                           call = call)
+      }
     }
     rhs <- if (has_dummy) paste0(".N + ", d_n) else ".N"
     lhs <- switch(model,
@@ -312,7 +457,14 @@ fit_one_phase <- function(d, value_q, index_q, dummy_q, model, formula) {
 
   if (!is.null(formula)) {
     fit <- stats::lm(formula, data = d)
-    fit$.shewhart_model <- model
+    if (user_formula) {
+      # A user formula is not a menu model: record how to undo its
+      # left-hand side instead of reusing the (default) `model` label.
+      fit$.shewhart_model <- "formula"
+      fit$.shewhart_lhs   <- parse_lhs_transform(formula, v_n)
+    } else {
+      fit$.shewhart_model <- model
+    }
     fit$.shewhart_formula <- formula
     return(fit)
   }
@@ -392,6 +544,7 @@ predict_original <- function(fit, newdata, value_name) {
     linear   = pred,
     log      = pmax(0, exp(pred) - 1),
     loglog   = pmax(0, iloglog(pred)),
+    formula  = regression_transform(fit)$inverse(pred),
     gompertz = ,
     logistic = {
       prev_data    <- newdata
@@ -409,7 +562,9 @@ predict_original <- function(fit, newdata, value_name) {
 #' @keywords internal
 #' @noRd
 detect_phases <- function(data, value_q, index_q, dummy_q, model, formula,
-                          start_base, phase_rule, verbose) {
+                          start_base, phase_rule, verbose,
+                          limits_scale = "original",
+                          call = rlang::caller_env()) {
 
   # Length of the run that the rule looks for, e.g. 7 for `we_seven_same`,
   # 9 for `nelson_2_nine_same`. Used to set a minimum-phase-size threshold
@@ -450,7 +605,9 @@ detect_phases <- function(data, value_q, index_q, dummy_q, model, formula,
       sigma_method    = "mr",
       lower_bound     = NA_real_,
       rules           = phase_rule,
-      locale          = "en"
+      locale          = "en",
+      limits_scale    = limits_scale,
+      call            = call
     )
     last_phase <- aug |>
       dplyr::filter(.data$.phase == max(.data$.phase))
@@ -484,12 +641,15 @@ detect_phases <- function(data, value_q, index_q, dummy_q, model, formula,
 #' @noRd
 build_phases <- function(data, value_q, index_q, dummy_q, model, formula,
                          start_base, phase_positions, sigma_method,
-                         lower_bound, rules, locale) {
+                         lower_bound, rules, locale,
+                         limits_scale = "original",
+                         call = rlang::caller_env()) {
 
   v_n <- rlang::as_name(value_q)
   i_n <- rlang::as_name(index_q)
   has_dummy <- !is_quo_null(dummy_q)
   d_n <- if (has_dummy) rlang::as_name(dummy_q) else NULL
+  model_scale <- identical(limits_scale, "model")
 
   cols <- c(i_n, v_n, d_n)
   d <- data[, cols, drop = FALSE]
@@ -519,7 +679,8 @@ build_phases <- function(data, value_q, index_q, dummy_q, model, formula,
       fit <- if (nrow(sub) < 3L) {
         NULL
       } else {
-        fit_one_phase(sub, value_q, index_q, dummy_q, model, formula)
+        fit_one_phase(sub, value_q, index_q, dummy_q, model, formula,
+                      call = call)
       }
       offset <- 0L
     }
@@ -529,32 +690,47 @@ build_phases <- function(data, value_q, index_q, dummy_q, model, formula,
     fits[p + 1L]  <- list(fit)
     n_end[p + 1L] <- offset + nrow(sub)
 
+    # Scale on which residuals, sigma and limits are computed: the
+    # model's left-hand side g(y) when limits_scale = "model" and g is
+    # a genuine transform, otherwise the scale of the data.
+    tf <- regression_transform(fit)
+    on_model <- model_scale && !is.null(fit) && tf$known && !tf$identity
+
     if (is.null(fit)) {
       sub$.fitted <- NA_real_
+      y_s <- sub[[v_n]]
+      c_s <- rep(NA_real_, nrow(sub))
+    } else if (on_model) {
+      c_s <- unname(stats::predict(fit, newdata = sub))
+      y_s <- tf$forward(sub[[v_n]])
+      sub$.fitted <- tf$inverse(c_s)
     } else {
       sub$.fitted <- predict_original(fit, sub, v_n)
+      y_s <- sub[[v_n]]
+      c_s <- sub$.fitted
     }
 
     if (inherit) {
       sigma_hat <- sigma[p]
     } else {
-      # Sigma from residuals (on original scale, simple choice)
-      resid <- sub[[v_n]] - sub$.fitted
-      sigma_hat <- switch(
-        sigma_method,
-        mr        = mr_bar(resid) / 1.128,
-        median_mr = stats::median(moving_range(resid), na.rm = TRUE) / 0.954,
-        biweight  = unname(biweight(resid)["scale"]),
-        sd        = stats::sd(resid, na.rm = TRUE)
-      )
+      sigma_hat <- residual_sigma(y_s - c_s, sigma_method)
     }
     if (!is.finite(sigma_hat) || sigma_hat <= 0) sigma_hat <- 1
     sigma[p + 1L] <- sigma_hat
     sub$.center <- sub$.fitted
     sub$.sigma  <- sigma_hat
-    sub$.upper  <- sub$.fitted + 3 * sigma_hat
-    sub$.lower  <- sub$.fitted - 3 * sigma_hat
+    if (on_model) {
+      sub$.upper <- tf$inverse(c_s + 3 * sigma_hat)
+      sub$.lower <- tf$inverse(c_s - 3 * sigma_hat)
+    } else {
+      sub$.upper <- sub$.fitted + 3 * sigma_hat
+      sub$.lower <- sub$.fitted - 3 * sigma_hat
+    }
     if (!is.na(lower_bound)) sub$.lower <- pmax(lower_bound, sub$.lower)
+    if (model_scale) {
+      sub$.model_value  <- y_s
+      sub$.model_center <- c_s
+    }
 
     out[[p + 1L]] <- sub
   }
@@ -562,21 +738,236 @@ build_phases <- function(data, value_q, index_q, dummy_q, model, formula,
   augmented <- dplyr::bind_rows(out)
   augmented$.value <- augmented[[v_n]]
 
-  # Phase labels (locale-aware). Explicit `augmented$` references
-  # rather than `with()` keep R CMD check free of global-variable NOTEs.
-  ph <- augmented$.phase
-  augmented$.phase_label <- ifelse(
-    ph == 0L, tr("phase_base", locale),
-    ifelse(ph == max(ph), tr("phase_monitoring", locale),
-           vapply(ph, function(p) tr("phase_n", locale, p),
-                  character(1L)))
+  # Phase labels (locale-aware), with the end date of each phase when
+  # the index is a date.
+  idx <- augmented[[i_n]]
+  augmented$.phase_label <- regression_phase_text(
+    augmented$.phase, idx, locale, dates = is_date_index(idx)
   )
 
-  # Apply rule flags -------------------------------------------------------
-  flags <- flag_rules(augmented$.value, augmented$.center, augmented$.sigma, rules)
+  # Apply rule flags (on the scale the limits were built on) ------------
+  flags <- if (model_scale) {
+    flag_rules(augmented$.model_value, augmented$.model_center,
+               augmented$.sigma, rules)
+  } else {
+    flag_rules(augmented$.value, augmented$.center, augmented$.sigma, rules)
+  }
   augmented <- dplyr::bind_cols(augmented, flags)
 
   attr(augmented, "fits") <- fits
   attr(augmented, "phase_info") <- list(n_end = n_end, sigma = sigma)
   augmented
+}
+
+#' Residual sigma by the chosen estimator
+#'
+#' @keywords internal
+#' @noRd
+residual_sigma <- function(resid, sigma_method) {
+  switch(
+    sigma_method,
+    mr        = mr_bar(resid) / 1.128,
+    median_mr = stats::median(moving_range(resid), na.rm = TRUE) / 0.954,
+    biweight  = unname(biweight(resid)["scale"]),
+    sd        = stats::sd(resid, na.rm = TRUE)
+  )
+}
+
+# Phase labels ------------------------------------------------------------
+
+#' Is an index vector a date (Date or date-time)?
+#'
+#' @keywords internal
+#' @noRd
+is_date_index <- function(x) inherits(x, c("Date", "POSIXt"))
+
+#' Per-row phase labels for a regression chart
+#'
+#' "Base", "Phase 1", ..., "Monitoring" (localised). With
+#' `dates = TRUE`, every phase except the last is suffixed with the
+#' index value of its last row, e.g. "Phase 1 (until 2020-05-18)".
+#' Date-times are shown as dates. Returns one label per element of
+#' `phase`.
+#'
+#' @keywords internal
+#' @noRd
+regression_phase_text <- function(phase, index, locale, dates = FALSE) {
+  ph_lvls <- sort(unique(phase))
+  max_ph  <- max(ph_lvls)
+  lbl <- vapply(ph_lvls, function(p) {
+    if (p == 0L) tr("phase_base", locale)
+    else if (p == max_ph) tr("phase_monitoring", locale)
+    else tr("phase_n", locale, as.integer(p))
+  }, character(1L))
+  if (isTRUE(dates) && !is.null(index)) {
+    ends <- vapply(ph_lvls, function(p) {
+      last <- utils::tail(index[phase == p], 1L)
+      if (inherits(last, "POSIXt")) last <- as.Date(last)
+      format(last)
+    }, character(1L))
+    add <- ph_lvls < max_ph
+    lbl[add] <- vapply(which(add), function(j) {
+      tr("phase_until", locale, lbl[j], ends[j])
+    }, character(1L))
+  }
+  unname(lbl[match(phase, ph_lvls)])
+}
+
+# Transformations of the response -----------------------------------------
+
+#' The response transformation of a fitted phase
+#'
+#' Returns a list with `forward` (g), `inverse` (g^-1), `identity`
+#' (TRUE when the model's left-hand side is the raw response) and
+#' `known` (FALSE when a user formula has a left-hand side that cannot
+#' be inverted). The log-family inverses are clipped at 0 for the menu
+#' models, whose response is a non-negative count; the fitted value
+#' already was (`predict_original()`).
+#'
+#' @keywords internal
+#' @noRd
+regression_transform <- function(fit) {
+  m <- if (is.null(fit)) "linear" else fit$.shewhart_model %||% "linear"
+  switch(m,
+    log = list(
+      forward  = function(y) log(y + 1),
+      inverse  = function(x) pmax(0, exp(x) - 1),
+      identity = FALSE, known = TRUE
+    ),
+    loglog = list(
+      forward  = function(y) log(log(y + 1) + 1),
+      inverse  = function(x) pmax(0, iloglog(x)),
+      identity = FALSE, known = TRUE
+    ),
+    formula = fit$.shewhart_lhs %||% identity_transform(),
+    identity_transform()
+  )
+}
+
+#' @keywords internal
+#' @noRd
+identity_transform <- function(known = TRUE) {
+  list(forward = function(y) y, inverse = function(x) x,
+       identity = known, known = known)
+}
+
+#' Recognise an invertible transform on the left-hand side of a formula
+#'
+#' Accepts the response itself, or `log()` (with an optional `base`),
+#' `log10()`, `log2()`, `log1p()` or `sqrt()` of the response plus or
+#' minus a numeric constant, optionally wrapped in `I()` or
+#' parentheses. Anything else returns `known = FALSE` with identity
+#' functions, so the legacy behaviour (fitted values left on the model
+#' scale) is kept.
+#'
+#' @keywords internal
+#' @noRd
+parse_lhs_transform <- function(formula, v_n) {
+  unknown <- identity_transform(known = FALSE)
+  if (length(formula) < 3L) return(identity_transform())
+  lhs <- strip_wrappers(formula[[2L]])
+  if (is.name(lhs)) {
+    return(if (identical(as.character(lhs), v_n)) identity_transform()
+           else unknown)
+  }
+  if (!is.call(lhs) || !is.name(lhs[[1L]])) return(unknown)
+  fn   <- as.character(lhs[[1L]])
+  args <- as.list(lhs)[-1L]
+  if (!fn %in% c("log", "log10", "log2", "log1p", "sqrt") ||
+      length(args) < 1L) {
+    return(unknown)
+  }
+  nms <- names(args) %||% rep("", length(args))
+  x_arg <- if ("x" %in% nms) args[[which(nms == "x")]] else args[[1L]]
+  shift <- lhs_shift(x_arg, v_n)
+  if (is.null(shift)) return(unknown)
+
+  base <- switch(fn, log10 = 10, log2 = 2, exp(1))
+  if (fn == "log" && length(args) >= 2L) {
+    b_arg <- if ("base" %in% nms) args[[which(nms == "base")]] else args[[2L]]
+    # The base comes from the user's own formula, which lm() evaluates
+    # anyway; evaluating it in baseenv() only resolves constants.
+    base <- tryCatch(eval(b_arg, baseenv()), error = function(e) NA_real_)
+    if (!is.numeric(base) || length(base) != 1L || !is.finite(base) ||
+        base <= 0) {
+      return(unknown)
+    }
+  } else if (fn != "log" && length(args) > 1L) {
+    return(unknown)
+  }
+
+  forward <- switch(fn,
+    log1p = function(y) log1p(y + shift),
+    sqrt  = function(y) sqrt(y + shift),
+    function(y) log(y + shift, base = base)
+  )
+  inverse <- switch(fn,
+    log1p = function(x) expm1(x) - shift,
+    sqrt  = function(x) pmax(0, x)^2 - shift,
+    function(x) base^x - shift
+  )
+  list(forward = forward, inverse = inverse, identity = FALSE, known = TRUE)
+}
+
+#' @keywords internal
+#' @noRd
+strip_wrappers <- function(e) {
+  while (is.call(e) && (identical(e[[1L]], as.name("I")) ||
+                        identical(e[[1L]], as.name("(")))) {
+    e <- e[[2L]]
+  }
+  e
+}
+
+#' Constant added to the response in `y`, `y + c`, `c + y` or `y - c`
+#'
+#' @keywords internal
+#' @noRd
+lhs_shift <- function(e, v_n) {
+  e <- strip_wrappers(e)
+  is_resp  <- function(z) is.name(z) && identical(as.character(z), v_n)
+  as_const <- function(z) {
+    z <- strip_wrappers(z)
+    if (is.numeric(z) && length(z) == 1L && is.finite(z)) return(z)
+    if (is.call(z) && identical(z[[1L]], as.name("-")) && length(z) == 2L &&
+        is.numeric(z[[2L]])) {
+      return(-z[[2L]])
+    }
+    NULL
+  }
+  if (is_resp(e)) return(0)
+  if (!is.call(e) || length(e) != 3L) return(NULL)
+  op <- as.character(e[[1L]])
+  if (op == "+") {
+    if (is_resp(e[[2L]])) return(as_const(e[[3L]]))
+    if (is_resp(e[[3L]])) return(as_const(e[[2L]]))
+  }
+  if (op == "-" && is_resp(e[[2L]])) {
+    k <- as_const(e[[3L]])
+    return(if (is.null(k)) NULL else -k)
+  }
+  NULL
+}
+
+#' Stop when a log-type model meets a negative response
+#'
+#' `log(1 + y)` is `NaN` for `y < -1` and the loglog transform for
+#' `y < exp(-1) - 1`; a negative count (typically a bulletin that
+#' revised a cumulative total downwards) has no place on these scales.
+#'
+#' @keywords internal
+#' @noRd
+check_log_response <- function(y, model, v_n, index, i_n,
+                               call = rlang::caller_env()) {
+  bad <- which(!is.na(y) & y < 0)
+  if (length(bad) == 0L) return(invisible(TRUE))
+  first <- bad[1L]
+  at <- if (is.null(index)) first else format(index[first])
+  cli::cli_abort(c(
+    "{.code model = \"{model}\"} needs a non-negative response.",
+    "x" = "{.field {v_n}} has {length(bad)} negative value{?s}; the
+           first is {.val {y[first]}} at {.field {i_n}} = {.val {at}}.",
+    "i" = "A negative count is usually a correction to a cumulative
+           series. Filter or reconcile it, or use {.code model = \"linear\"}."
+  ), call = call)
 }

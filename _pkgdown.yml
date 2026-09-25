@@ -100,6 +100,7 @@ reference:
       - print.shewhart_chart
       - summary.shewhart_chart
       - autoplot.shewhart_chart
+      - autoplot.shewhart_regression
       - tidy.shewhart_chart
       - glance.shewhart_chart
       - augment.shewhart_chart
@@ -139,6 +140,7 @@ reference:
       - temperature_drift
       - bacterial_growth
       - cvd_recife
+      - cvd_brazil
 
   - title: "Class predicates"
     contents:

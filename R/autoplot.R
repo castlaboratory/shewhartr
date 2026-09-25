@@ -138,24 +138,27 @@ violation_layers <- function(data, y_col = ".value",
 #' Legend labels for the phases of a regression chart
 #'
 #' Uses the `.phase_label` column computed by the constructor ("Base",
-#' "Phase 1", ..., "Monitoring") when the plot is drawn in the chart's
-#' own locale; otherwise rebuilds the same labels in the requested
-#' locale. Returns a named character vector (names = phase ids, as
-#' character) of unique labels, ordered by phase.
+#' "Phase 1", ..., "Monitoring", with end dates when the index is a
+#' date) when the plot is drawn in the chart's own locale and
+#' `dates = NA` (automatic); otherwise rebuilds the labels in the
+#' requested locale, with (`dates = TRUE`) or without (`FALSE`) the end
+#' index of each phase. Returns a named character vector (names = phase
+#' ids, as character) of unique labels, ordered by phase.
 #'
 #' @keywords internal
 #' @noRd
-regression_phase_labels <- function(aug, locale, stored_locale = locale) {
+regression_phase_labels <- function(aug, locale, stored_locale = locale,
+                                    index = NULL, dates = NA) {
   ph_lvls <- sort(unique(aug$.phase))
-  if (".phase_label" %in% names(aug) && identical(locale, stored_locale)) {
+  use_stored <- ".phase_label" %in% names(aug) &&
+    identical(locale, stored_locale) && is.na(dates)
+  if (use_stored || !is.numeric(aug$.phase)) {
     lbl <- as.character(aug$.phase_label[match(ph_lvls, aug$.phase)])
   } else {
-    max_ph <- max(ph_lvls)
-    lbl <- vapply(ph_lvls, function(p) {
-      if (p == 0L) tr("phase_base", locale)
-      else if (p == max_ph) tr("phase_monitoring", locale)
-      else tr("phase_n", locale, as.integer(p))
-    }, character(1L))
+    idx <- if (!is.null(index) && index %in% names(aug)) aug[[index]]
+    if (is.na(dates)) dates <- is_date_index(idx)
+    full <- regression_phase_text(aug$.phase, idx, locale, dates = dates)
+    lbl  <- full[match(ph_lvls, aug$.phase)]
   }
   lbl[is.na(lbl)] <- shewhart_phase_label(ph_lvls[is.na(lbl)], locale)
   lbl <- make.unique(lbl, sep = " ")
@@ -165,12 +168,13 @@ regression_phase_labels <- function(aug, locale, stored_locale = locale) {
 #' Legend layout for a legend with `n` keys
 #'
 #' Up to five keys fit on one row at the top of a 7-inch plot; beyond
-#' that, wrap to rows of five (issue #1).
+#' that, wrap to rows of five (issue #1). Longer labels (phase names
+#' with their end dates) pass a smaller `per_row`.
 #'
 #' @keywords internal
 #' @noRd
-legend_nrow <- function(n) {
-  if (n <= 5L) 1L else as.integer(ceiling(n / 5))
+legend_nrow <- function(n, per_row = 5L) {
+  if (n <= per_row) 1L else as.integer(ceiling(n / per_row))
 }
 
 #' @keywords internal
@@ -201,6 +205,7 @@ get_index_col <- function(aug, fallback = ".obs", chart = NULL) {
   }
   internal <- c(".obs", ".value", ".center", ".sigma", ".upper", ".lower",
                 ".fitted", ".phase", ".phase_f", ".phase_label", ".N",
+                ".residual", ".model_value", ".model_center",
                 ".ewma", ".cusum_pos", ".cusum_neg", ".t2",
                 ".mr", ".mr_center", ".mr_upper", ".mr_lower",
                 ".range", ".r_center", ".r_upper", ".r_lower",
@@ -473,20 +478,66 @@ autoplot.shewhart_xbar_s <- function(object, show_violations = TRUE,
 
 # Regression chart with phases --------------------------------------------
 
+#' Plot a regression control chart
+#'
+#' The `autoplot()` method for [shewhart_regression()] charts: per
+#' phase, a shaded band between dashed limits and a solid centre line;
+#' observations coloured by phase; out-of-control points ringed.
+#'
+#' @param object A `shewhart_regression` chart.
+#' @param show_violations Logical. Ring out-of-control points?
+#' @param show_sigma_zones Ignored; kept for a uniform signature.
+#' @param locale Optional override for the chart's stored locale.
+#' @param phase_dates Show where each phase ends in the legend, e.g.
+#'   "Phase 1 (until 2020-05-18)"? `NULL` (default) does so when the
+#'   index column is a `Date` or date-time; `TRUE` forces it for any
+#'   index (the last index value of each phase); `FALSE` turns it off.
+#'   The last phase ("Monitoring") never carries an end.
+#' @param legend_position `"top"` (default) puts the legend above the
+#'   panel, wrapping to several rows when there are many phases;
+#'   `"inside"` stacks it in a single column in the top-left corner of
+#'   the panel, on the panel colour, like the figures of Ferraz et al.
+#'   (2020).
+#' @param ... Unused.
+#'
+#' @return A `ggplot` object.
+#'
+#' @examples
+#' \donttest{
+#' pe <- subset(cvd_brazil, region == "PE" & date <= as.Date("2020-06-20"))
+#' fit <- shewhart_regression(pe, value = new_deaths, index = date,
+#'                            model = "log", limits_scale = "model",
+#'                            phase_rule = "we_seven_same")
+#' ggplot2::autoplot(fit, legend_position = "inside")
+#' ggplot2::autoplot(fit, phase_dates = FALSE, locale = "pt")
+#' }
+#'
 #' @exportS3Method ggplot2::autoplot shewhart_regression
 autoplot.shewhart_regression <- function(object, show_violations = TRUE,
                                          show_sigma_zones = FALSE,
-                                         locale = NULL, ...) {
+                                         locale = NULL,
+                                         phase_dates = NULL,
+                                         legend_position = c("top", "inside"),
+                                         ...) {
   locale <- locale %||% object$metadata$locale %||% "en"
+  legend_position <- rlang::arg_match(legend_position)
+  if (!is.null(phase_dates) &&
+      !(is.logical(phase_dates) && length(phase_dates) == 1L &&
+        !is.na(phase_dates))) {
+    cli::cli_abort(
+      "{.arg phase_dates} must be {.code NULL}, {.code TRUE} or {.code FALSE}."
+    )
+  }
   aug    <- object$augmented
   x_col  <- get_index_col(aug, chart = object)
 
   # Localised phase factor built from .phase_label ("Base", "Phase 1",
-  # ..., "Monitoring"), so the legend names phases the way the
-  # constructor does.
+  # ..., "Monitoring", with end dates for a date index), so the legend
+  # names phases the way the constructor does.
   ph_lvls   <- sort(unique(aug$.phase))
   ph_map    <- regression_phase_labels(
-    aug, locale, stored_locale = object$metadata$locale %||% locale
+    aug, locale, stored_locale = object$metadata$locale %||% locale,
+    index = x_col, dates = if (is.null(phase_dates)) NA else phase_dates
   )
   ph_labels <- unname(ph_map)
   aug$.phase_f <- factor(unname(ph_map[as.character(aug$.phase)]),
@@ -560,17 +611,34 @@ autoplot.shewhart_regression <- function(object, show_violations = TRUE,
                  locale)
   )
 
+  # Legend layout: rows of up to five short keys at the top (three
+  # when the labels carry dates), or a single column inside the panel.
+  key_aes <- list(linewidth = 0, size = 2.4, alpha = 1)
+  key_guide <- if (legend_position == "inside") {
+    ggplot2::guide_legend(ncol = 1L, override.aes = key_aes)
+  } else {
+    per_row <- if (max(nchar(ph_labels)) > 14L) 3L else 5L
+    ggplot2::guide_legend(nrow = legend_nrow(length(ph_labels), per_row),
+                          byrow = TRUE, override.aes = key_aes)
+  }
+  legend_theme <- if (legend_position == "inside") {
+    ggplot2::theme(
+      legend.position             = "inside",
+      legend.position.inside      = c(0.01, 0.99),
+      legend.justification.inside = c(0, 1),
+      legend.background = ggplot2::element_rect(fill = ink["bg_panel"],
+                                                colour = NA),
+      legend.margin     = ggplot2::margin(4, 6, 4, 6),
+      legend.key.height = ggplot2::unit(11, "pt")
+    )
+  }
+
   p +
     ggplot2::scale_colour_manual(
       name   = tr("legend_phases", locale),
       values = stats::setNames(pal, ph_labels)
     ) +
-    ggplot2::guides(
-      colour = ggplot2::guide_legend(
-        nrow = legend_nrow(length(ph_labels)), byrow = TRUE,
-        override.aes = list(linewidth = 0, size = 2.4, alpha = 1)
-      )
-    ) +
+    ggplot2::guides(colour = key_guide) +
     ggplot2::labs(
       title    = tr("title_regression", locale),
       subtitle = subtitle,
@@ -579,7 +647,8 @@ autoplot.shewhart_regression <- function(object, show_violations = TRUE,
     ) +
     shewhart_theme() +
     # Title above the keys, so wrapped rows start flush left (issue #1)
-    ggplot2::theme(legend.title.position = "top")
+    ggplot2::theme(legend.title.position = "top") +
+    legend_theme
 }
 
 #' Sequential phase palette
