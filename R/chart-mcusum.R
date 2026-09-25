@@ -5,7 +5,7 @@
 # zero when its Mahalanobis norm falls below a reference value k. The
 # Pignatiello & Runger (1990) variant exists too, but Crosier's
 # version is the one in the standard SPC textbooks (Montgomery 2019,
-# §11.3.3) and it is what `qcc::mcusum.qcc` implements.
+# Section 11.3.3) and it is what `qcc::mcusum.qcc` implements.
 #
 # Recursion:
 #
@@ -22,8 +22,14 @@
 # the chart should detect, expressed in sigma units. h is the
 # decision interval, calibrated for the desired in-control ARL.
 #
-# Default decision intervals follow Crosier (1988) Table 1, k = 0.5,
-# ARL_0 ~ 200, for p = 2..10. Outside that grid the user supplies h.
+# Default decision intervals give ARL_0 ~ 200 for k = 0.5 and
+# p = 2..10. Releases up to 1.3.0 extrapolated a table that was right
+# only for p = 2 (ARL_0 ~ 140 at p = 3, ~ 85 at p = 5); the current
+# values were re-derived by Monte Carlo in dev/calibrate-h-tables.R
+# (20,000 in-control paths per p, known parameters, bisection on h to
+# ARL_0 = 200, Monte Carlo s.e. ~ 1.3). p = 2 gives 5.48, within
+# simulation error of Crosier's (1988) 5.50, which is kept. Outside
+# that grid the user supplies h.
 #
 # References:
 #
@@ -56,8 +62,11 @@
 #' @param k Reference value, in sigma units. Default `0.5`, tuned
 #'   for shifts of `1 sigma`. Lower `k` makes the chart sensitive to
 #'   smaller shifts but increases false alarms.
-#' @param h Decision interval. If `NULL`, looked up in the Crosier
-#'   (1988) Table 1 for `k = 0.5`, `ARL_0 ~ 200`, `p = 2..10`.
+#' @param h Decision interval. If `NULL`, looked up in a table giving
+#'   `ARL_0 ~ 200` for `k = 0.5` and `p = 2..10` (simulated with known
+#'   in-control parameters; `p = 2` matches Crosier 1988). With
+#'   `target` and `cov` estimated from the same data the actual
+#'   in-control ARL differs; pass `h` explicitly for other designs.
 #' @param locale One of `"en"`, `"pt"`, `"es"`, `"fr"`.
 #' @param verbose Logical. Print progress messages?
 #'
@@ -232,22 +241,23 @@ shewhart_mcusum <- function(data, vars, index = NULL,
   )
 }
 
-# Internal: Crosier (1988) ARL_0 ~ 200 lookup, k = 0.5 --------------------
+# Internal: ARL_0 ~ 200 lookup, k = 0.5 -----------------------------------
 
 #' @keywords internal
 #' @noRd
 mcusum_h_lookup <- function(k, p) {
-  # Crosier (1988), Table 1: ARL_0 ~ 200 for k = 0.5
+  # ARL_0 ~ 200 for k = 0.5, by simulation (dev/calibrate-h-tables.R,
+  # 20,000 paths per p). p = 2 agrees with Crosier (1988): 5.50.
   if (!isTRUE(all.equal(k, 0.5))) return(NA_real_)
-  tbl <- c("2"  =  5.50,
-           "3"  =  6.40,
-           "4"  =  7.18,
-           "5"  =  7.85,
-           "6"  =  8.46,
-           "7"  =  9.01,
-           "8"  =  9.52,
-           "9"  = 10.00,
-           "10" = 10.43)
+  tbl <- c("2"  =  5.50,   # published value; simulation gives 5.48
+           "3"  =  6.90,
+           "4"  =  8.17,
+           "5"  =  9.40,
+           "6"  = 10.56,
+           "7"  = 11.66,
+           "8"  = 12.81,
+           "9"  = 13.85,
+           "10" = 14.92)
   pkey <- as.character(p)
   if (!pkey %in% names(tbl)) return(NA_real_)
   unname(tbl[pkey])

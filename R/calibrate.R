@@ -397,6 +397,9 @@ monitor_xbar_r <- function(data, chart) {
     .n    = sum(!is.na(.data[[v_n]])),
     .groups = "drop"
   )
+  # Keep subgroups in order of first appearance (time order), not in the
+  # sorted order of their labels (audit 2026-09-25, finding 9).
+  agg <- agg[order(match(agg[[g_n]], unique(data[[g_n]]))), , drop = FALSE]
 
   if (any(agg$.n != m$n)) {
     cli::cli_warn(c(
@@ -464,8 +467,15 @@ monitor_xbar_s <- function(data, chart) {
     .n    = sum(!is.na(.data[[v_n]])),
     .groups = "drop"
   )
+  # Keep subgroups in order of first appearance (time order), not in the
+  # sorted order of their labels (audit 2026-09-25, finding 9).
+  agg <- agg[order(match(agg[[g_n]], unique(data[[g_n]]))), , drop = FALSE]
 
-  if (any(agg$.n != m$n)) {
+  # With pooled_sd and unequal Phase I sizes, m$n is the *average* size
+  # and the limits are approximate by construction (Phase I already
+  # warned), so a mismatch against it is not informative.
+  n_varying <- m$n_varying %||% (m$n != round(m$n))
+  if (!isTRUE(n_varying) && any(agg$.n != m$n)) {
     cli::cli_warn(c(
       "Phase II subgroup sizes differ from Phase I ({.val {m$n}}).",
       "i" = "Limits assume size {.val {m$n}}."
@@ -602,7 +612,7 @@ monitor_ewma <- function(data, chart) {
   m   <- chart$metadata
   v_n <- m$value_name
   check_column(data, v_n, arg = "value")
-  v <- data[[v_n]]; check_numeric(v, arg = v_n)
+  v <- data[[v_n]]; check_numeric(v, arg = v_n, allow_na = FALSE)
 
   centre <- m$target
   sigma  <- chart$sigma_hat
@@ -619,14 +629,15 @@ monitor_ewma <- function(data, chart) {
     prev <- z[i]
   }
 
-  # Phase II uses steady-state (asymptotic) limits — the Phase I baseline
-  # has already absorbed the warm-up.
+  # Phase II uses steady-state (asymptotic) limits (the Phase I baseline
+  # has already absorbed the warm-up).
   ratio <- lambda / (2 - lambda)
   se    <- sigma * sqrt(ratio)
   upper <- centre + L * se
   lower <- centre - L * se
 
-  sigma_eq <- rep(se / L * 3, length(v))
+  # center + 3 * sigma_eq == upper, so rule 1 fires at the EWMA limit.
+  sigma_eq <- rep(L * se / 3, length(v))
   flags <- flag_rules(z, rep(centre, length(v)), sigma_eq, chart$rules)
 
   augmented <- tibble::tibble(
@@ -664,7 +675,7 @@ monitor_cusum <- function(data, chart) {
   m   <- chart$metadata
   v_n <- m$value_name
   check_column(data, v_n, arg = "value")
-  v <- data[[v_n]]; check_numeric(v, arg = v_n)
+  v <- data[[v_n]]; check_numeric(v, arg = v_n, allow_na = FALSE)
 
   centre <- m$target
   sigma  <- chart$sigma_hat
@@ -753,7 +764,9 @@ monitor_hotelling <- function(data, chart) {
     if (is.null(sub_col) || !sub_col %in% names(data)) {
       cli::cli_abort("Subgrouped Hotelling monitoring needs column {.field {sub_col}}.")
     }
-    groups <- split(seq_len(nrow(X)), data[[sub_col]])
+    # Subgroups in order of first appearance (time order).
+    sub_v  <- data[[sub_col]]
+    groups <- split(seq_len(nrow(X)), factor(sub_v, levels = unique(sub_v)))
     xbar_g <- do.call(rbind,
                       lapply(groups,
                              function(idx) colMeans(X[idx, , drop = FALSE])))
@@ -776,9 +789,10 @@ monitor_hotelling <- function(data, chart) {
     .flag_any    = flag
   )
   augmented[[m$index_name]] <- if (m$index_name %in% names(data)) {
+    # First index value of each subgroup; plain subsetting keeps the
+    # class (Date, POSIXct) that vapply() would drop.
     if (m$n == 1L) data[[m$index_name]] else
-      vapply(split(data[[m$index_name]], data[[m$subgroup]]),
-             function(z) z[1L], data[[m$index_name]][1L])
+      data[[m$index_name]][!duplicated(data[[m$subgroup]])]
   } else {
     seq_len(idx_count)
   }
@@ -821,29 +835,27 @@ monitor_mewma <- function(data, chart) {
   centred <- sweep(X, 2L, m$target, "-")
   n_new   <- nrow(X)
 
-  # Continue the recursion from the final Phase I value.
-  z0   <- if (chart$n > 0L) {
-    aug_p <- chart$augmented
-    # Reconstruct Z_n by re-running the recursion on the original data is
-    # overkill; instead carry the implicit Z = 0 reset and use the
-    # Phase II steady-state covariance, which is the recommended practice
-    # (Lowry et al. 1992 §4).
-    rep(0, m$p)
-  } else rep(0, m$p)
+  # Continue the recursion from the final Phase I (or previous Phase II)
+  # vector Z, as monitor_ewma() and monitor_cusum() do, so chained
+  # batches give the same statistic as one long batch. Objects built
+  # before 1.3.1 have no stored Z and restart from 0.
+  prev    <- m$last_Z %||% numeric(m$p)
+  t_start <- m$t_elapsed %||% 0L
 
   Z <- matrix(0, nrow = n_new, ncol = m$p)
-  prev <- z0
   for (i in seq_len(n_new)) {
     Z[i, ] <- m$lambda * centred[i, ] + (1 - m$lambda) * prev
     prev <- Z[i, ]
   }
 
-  ratio    <- m$lambda / (2 - m$lambda)
-  sigma_zi <- ratio * m$cov         # steady-state for Phase II
-  sigma_zi_inv <- solve(sigma_zi)
+  # Exact covariance of the continued recursion: step t_start + i of the
+  # time-varying form, or the steady-state form if the chart uses it.
+  ratio <- m$lambda / (2 - m$lambda)
   t2 <- numeric(n_new)
   for (i in seq_len(n_new)) {
-    t2[i] <- as.numeric(t(Z[i, ]) %*% sigma_zi_inv %*% Z[i, ])
+    fac <- if (isTRUE(m$steady_state)) ratio else
+      ratio * (1 - (1 - m$lambda)^(2 * (t_start + i)))
+    t2[i] <- as.numeric(t(Z[i, ]) %*% m$cov_inv %*% Z[i, ]) / fac
   }
 
   flag <- t2 > m$h
@@ -882,6 +894,10 @@ monitor_mewma <- function(data, chart) {
   out$violations <- violations
   out$phase      <- "phase_2"
   out$n          <- nrow(augmented)
+  if (n_new > 0L) {
+    out$metadata$last_Z    <- Z[n_new, ]
+    out$metadata$t_elapsed <- t_start + n_new
+  }
   out
 }
 
@@ -902,7 +918,7 @@ monitor_mcusum <- function(data, chart) {
 
   # Continue from the final Phase I S-vector so the recursion picks up
   # exactly where the calibration left off (this is the recommendation
-  # in Crosier 1988 §5 for prospective use).
+  # in Crosier 1988, Section 5 for prospective use).
   prev <- m$last_S %||% numeric(m$p)
   S    <- matrix(0, nrow = n_new, ncol = m$p)
   Y    <- numeric(n_new)
@@ -954,5 +970,7 @@ monitor_mcusum <- function(data, chart) {
   out$violations <- violations
   out$phase      <- "phase_2"
   out$n          <- nrow(augmented)
+  # Persist the accumulator so a later monitor() call continues from here.
+  if (n_new > 0L) out$metadata$last_S <- S[n_new, ]
   out
 }

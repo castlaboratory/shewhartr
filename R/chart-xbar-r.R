@@ -18,6 +18,8 @@
 #' @inheritParams shewhart_i_mr
 #' @param subgroup Tidy-eval column reference identifying the subgroup
 #'   (e.g. shift, batch, hour). All subgroups must have equal size.
+#'   Subgroups are plotted and tested in order of first appearance in
+#'   `data` (time order), not in sorted order of their labels.
 #'
 #' @return A [shewhart_chart] object of subclass `shewhart_xbar_r`.
 #'
@@ -69,6 +71,11 @@ shewhart_xbar_r <- function(data, value, subgroup,
                  min(.data$.value, na.rm = TRUE),
       .groups  = "drop"
     )
+
+  # Keep subgroups in order of first appearance (time order). group_by()
+  # sorts by label, which puts "S10" before "S2" and scrambles the runs
+  # rules and the x-axis (audit 2026-09-25, finding 9).
+  per <- per[order(match(per$.group, unique(d$.group))), , drop = FALSE]
 
   # Verify equal subgroup sizes --------------------------------------------
   n_unique <- unique(per$n)

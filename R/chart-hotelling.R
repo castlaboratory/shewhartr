@@ -78,7 +78,8 @@
 #' @param subgroup Optional tidy-eval column for rational subgrouping.
 #'   If supplied, all rows sharing a value of this column are treated
 #'   as a single subgroup. If `NULL` (default), every row is its own
-#'   observation (individual-observations chart).
+#'   observation (individual-observations chart). Subgroups are kept
+#'   in order of first appearance in `data` (time order).
 #' @param index Optional tidy-eval column for the x-axis. If
 #'   supplied, must vary across observations (or across subgroups, if
 #'   `subgroup` is supplied).
@@ -185,9 +186,10 @@ shewhart_hotelling <- function(data, vars, subgroup = NULL, index = NULL,
   if (has_subgroup) {
     res <- t2_subgrouped(X, sub_v, p, alpha, phase)
     idx <- if (!is_quo_null(idx_q)) {
-      # If idx supplied, take the first index per subgroup
-      vapply(split(data[[idx_name]], sub_v),
-             function(z) z[1L], data[[idx_name]][1L])
+      # If idx supplied, take the first index per subgroup (in order of
+      # first appearance, matching t2_subgrouped()). Plain subsetting
+      # keeps the class (Date, POSIXct) that vapply() would drop.
+      data[[idx_name]][!duplicated(sub_v)]
     } else {
       seq_len(res$m)
     }
@@ -314,7 +316,9 @@ t2_individual <- function(X, p, alpha, phase) {
 #' @keywords internal
 #' @noRd
 t2_subgrouped <- function(X, sub_v, p, alpha, phase) {
-  groups <- split(seq_len(nrow(X)), sub_v)
+  # Subgroups in order of first appearance (time order), not sorted by
+  # label: split() on a character vector would put "S10" before "S2".
+  groups <- split(seq_len(nrow(X)), factor(sub_v, levels = unique(sub_v)))
   ns     <- vapply(groups, length, integer(1L))
   if (length(unique(ns)) > 1L) {
     cli::cli_abort(c(

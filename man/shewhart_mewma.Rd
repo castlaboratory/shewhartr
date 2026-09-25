@@ -34,8 +34,8 @@ mean. Defaults to \code{colMeans(data[, vars])}.}
 \item{lambda}{Smoothing constant in \verb{(0, 1]}. Default \code{0.1}.}
 
 \item{h}{Decision interval (UCL on the \code{T^2} statistic). If
-\code{NULL}, looked up in the Prabhu & Runger (1997) table for
-\code{ARL_0 ~ 200}.}
+\code{NULL}, looked up in the \code{ARL_0 ~ 200} table matching
+\code{steady_state}.}
 
 \item{steady_state}{Logical. Use the steady-state covariance
 \code{(lambda / (2 - lambda)) * Sigma} everywhere instead of the
@@ -62,9 +62,16 @@ By default \code{target} (the in-control mean vector) and \code{cov} (the
 in-control covariance) are estimated from the data. For Phase II
 monitoring, supply both explicitly so the limits use the
 calibration values. The decision interval \code{h} is calibrated by
-lookup in the Prabhu & Runger (1997) table for \code{ARL_0 ~ 200}; if
-the \verb{(lambda, p)} combination is outside the tabulated range, the
-user must pass \code{h} explicitly.
+lookup in a table giving \code{ARL_0 ~ 200} (with known in-control
+parameters) for \code{lambda} in \verb{\{0.05, 0.10, 0.20, 0.40\}} and
+\verb{p = 2..6}. There is one table for each covariance mode and the
+lookup follows \code{steady_state}; the steady-state table reproduces
+Prabhu & Runger (1997). If the \verb{(lambda, p)} combination is outside
+the tabulated range, the user must pass \code{h} explicitly.
+
+In Phase II (\code{\link[=monitor]{monitor()}}), the recursion continues from the last
+Phase I vector \code{Z} (and from the previous batch when \code{monitor()} is
+chained), with the covariance of the continued recursion.
 }
 \examples{
 set.seed(1)
