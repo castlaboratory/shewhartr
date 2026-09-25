@@ -1,8 +1,11 @@
-# shewhartr 1.3.0 — first CRAN submission
+# shewhartr 1.4.0
+
+Update of the package on CRAN (1.3.0, published 2026-05-13, OK on all
+13 flavors at the time of this submission).
 
 ## Test environments
 
-* local: macOS 26.6, R 4.6.0
+* local: macOS 26.6 (Apple Silicon), R 4.6.0, `R CMD check --as-cran`
 * CI (GitHub Actions, R-CMD-check.yaml):
   - macOS-latest, R release
   - windows-latest, R release
@@ -14,39 +17,34 @@
 
 0 errors | 0 warnings | 1 note
 
-* This is a new submission. The package was previously distributed informally
-  under the name `Shewhart` (v0.1.x) for monitoring of COVID-19 in Recife.
-  The 1.x series is a comprehensive rewrite that broadens the scope to general
-  Statistical Process Control and renames the package to lowercase per modern
-  convention. Versions 1.0.0 to 1.2.0 were released on GitHub only; no prior
-  version exists on CRAN under either name.
+* The note is local only: "Skipping checking HTML validation: 'tidy'
+  doesn't look like recent enough HTML Tidy" and "package 'V8'
+  unavailable". Both tools are present on the CRAN check machines.
 
-## Note about URLs in README
+## What changed
 
-The README links to a forthcoming pkgdown documentation site at
-<https://castlaboratory.github.io/shewhartr/>. The site is built and deployed
-automatically by GitHub Actions on each push to `main`. At the time of
-submission these links may show as 404 in `R CMD check`; they resolve as soon
-as the gh-pages branch is published.
+This release follows an audit of the 1.3.0 code base. It fixes 34
+defects (all listed in NEWS.md with the finding number), the most
+user-visible being:
+
+* Phase II `monitor()` on a regression chart continued the model's
+  time index from 1 instead of from the end of the last phase.
+* `shewhart_capability()` on subgroup charts scaled sigma by sqrt(n)
+  and used subgroup means as raw data.
+* `autoplot()` failed on a monitored I-MR chart.
+* The MEWMA and MCUSUM decision-interval tables held ARL_0 ~ 200 only
+  for p = 2; they were re-derived by simulation for p >= 3.
+* The EWMA default `L` moved from 2.7 to 2.86 so that the documented
+  ARL_0 ~ 370 holds.
+
+New: `limits_scale = "model"` for the regression chart, dated phase
+labels, the `cvd_brazil` dataset, and two vignettes reproducing
+Ferraz et al. (2020). `lubridate` and `vdiffr` were dropped from
+Suggests (unused).
+
+Vignette build time is under 10 s each; the Monte Carlo tests that
+verify the decision-interval tables are wrapped in `skip_on_cran()`.
 
 ## Reverse dependencies
 
-This is a new package; no reverse dependencies exist.
-
-## Package philosophy
-
-The package complements `qcc` (classical, S3, no tidyverse) and `qicharts2`
-(healthcare-focused, fixed plots) with five differentiators:
-
-1. tidyverse-native API (data first, tidy-eval column references, `.by`)
-2. broom integration (`tidy()`, `glance()`, `augment()` for every chart)
-3. regression-based control charts as a first-class citizen
-4. embedded methodology: ARL by Monte Carlo, all 8 Nelson runs rules,
-   Box-Cox guidance, Tukey-style residual diagnostics
-5. explicit Phase I (`calibrate()`) / Phase II (`monitor()`) workflow,
-   following Woodall (2000)
-
-Multilingual plots (`locale = "en" | "pt" | "es" | "fr"`), exact Poisson /
-binomial quantile limits for c/u/p charts (`limits = "poisson"` /
-`"binomial"`), memory-based charts (EWMA, CUSUM) and multivariate charts
-(Hotelling T^2, MEWMA, MCUSUM) are also supported.
+There are no reverse dependencies on CRAN.

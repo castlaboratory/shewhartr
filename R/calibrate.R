@@ -973,7 +973,7 @@ monitor_mewma <- function(data, chart) {
   # Continue the recursion from the final Phase I (or previous Phase II)
   # vector Z, as monitor_ewma() and monitor_cusum() do, so chained
   # batches give the same statistic as one long batch. Objects built
-  # before 1.3.1 have no stored Z and restart from 0.
+  # before 1.4.0 have no stored Z and restart from 0.
   prev    <- m$last_Z %||% numeric(m$p)
   t_start <- m$t_elapsed %||% 0L
 
