@@ -115,6 +115,7 @@ Useful links:
 
 Authors:
 \itemize{
+  \item André Leite \email{leite@castlab.org}
   \item Hugo Vasconcelos \email{hugo.vasconcelos@ufpe.br}
   \item Raydonal Ospina \email{raydonal@castlab.org}
   \item Cristiano Ferraz \email{cferraz@castlab.org}

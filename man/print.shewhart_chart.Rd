@@ -17,8 +17,8 @@ Returns \code{x} invisibly (for chaining).
 \description{
 Concise summary including chart type, sample size, sigma estimate
 and any rule violations. For full per-row results, use
-\link[broom:reexports]{augment()}; for a tabular limit summary, use
-\link[broom:reexports]{tidy()}.
+\link[broom:augment]{augment()}; for a tabular limit summary, use
+\link[broom:tidy]{tidy()}.
 }
 \examples{
 set.seed(1)
