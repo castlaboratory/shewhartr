@@ -11,7 +11,7 @@ shewhart_regression(
   model = c("auto", "linear", "log", "loglog", "gompertz", "logistic"),
   formula = NULL,
   dummy = NULL,
-  start_base = 10L,
+  start_base = NULL,
   phase_changes = NULL,
   phase_rule = "nelson_2_nine_same",
   rules = c("nelson_1_beyond_3s", "nelson_2_nine_same"),
@@ -32,7 +32,12 @@ time, but can be any continuous variable).}
 \item{model}{Character. One of \code{"auto"} (Box-Cox guidance),
 \code{"linear"}, \code{"log"} (fits \code{log(y + 1) ~ N}), \code{"loglog"},
 \code{"gompertz"}, \code{"logistic"}. For full control, supply \code{formula}
-instead.}
+instead. With \code{"auto"}, each phase gets the Box-Cox profile
+maximiser \code{lambda} of \code{y + 1}, rounded to the nearest rung of the
+ladder that the menu offers: \code{lambda < 0.25} selects \code{"log"}, any
+larger value selects \code{"linear"} (a square-root lambda near 0.5 has
+no dedicated model and maps to \code{"linear"}; \code{"loglog"} is a stronger
+transform than log and is never chosen automatically).}
 
 \item{formula}{Optional one-sided or two-sided formula referencing
 columns in \code{data}. If provided, overrides \code{model}.}
@@ -42,17 +47,22 @@ covariate (a "dummy" in the original v0.1 nomenclature; can be
 any factor or numeric covariate the user wants to adjust for,
 such as day-of-week effects or treatment indicators).}
 
-\item{start_base}{Integer. Number of initial observations used to
-estimate the first phase. Defaults to 10.}
+\item{start_base}{Integer or \code{NULL}. Number of initial observations
+used to estimate the first (base) phase. With automatic phase
+detection, \code{NULL} (the default) means 10. When \code{phase_changes} is
+supplied, \code{NULL} means the base phase ends just before the first
+supplied change; an explicit \code{start_base} adds a cut at
+observation \code{start_base + 1} in addition to \code{phase_changes}.}
 
-\item{phase_changes}{Optional vector of index positions or values
-at which to force a phase change. If \code{NULL}, phase changes are
-detected automatically using the supplied \code{phase_rule}.}
+\item{phase_changes}{Optional vector of index values at which to
+force a phase change (the observation whose index equals the value
+starts the new phase). If \code{NULL}, phase changes are detected
+automatically using the supplied \code{phase_rule}.}
 
 \item{phase_rule}{Character. Runs rule used to detect new phases.
 See \code{\link[=shewhart_rules_available]{shewhart_rules_available()}}. Default Nelson 2 (9 points
-same side; ARL_0 ~ 256). For backward compatibility with v0.1.x,
-use \code{"we_seven_same"} (7 points; ARL_0 ~ 64).}
+same side; ARL_0 = 2^9 - 1 = 511). For backward compatibility with
+v0.1.x, use \code{"we_seven_same"} (7 points; ARL_0 = 2^7 - 1 = 127).}
 
 \item{rules}{Character vector of rules to flag on the final chart.}
 
@@ -70,7 +80,12 @@ is clipped at this value (commonly 0 for counts). Default \code{NA}
 \value{
 A \link{shewhart_chart} object of subclass \code{shewhart_regression}.
 The \code{fits} slot contains a list of fitted model objects (one per
-phase).
+phase; a phase with fewer than 3 observations reuses the previous
+phase's fit). The \code{metadata} slot additionally stores
+\code{phase_n_end} (the last within-phase position \code{.N} reached by each
+phase's fit) and \code{phase_sigma} (the residual sigma of each phase),
+which \code{\link[=monitor]{monitor()}} uses to extrapolate the last phase. The
+\code{sigma_hat} slot is the median of the per-phase sigmas.
 }
 \description{
 Fits a chosen model to the data (linear, log, log-log, Gompertz,

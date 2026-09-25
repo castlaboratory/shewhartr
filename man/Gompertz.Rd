@@ -24,15 +24,18 @@ A numeric vector the same length as \code{x}.
 Computes the value of the Gompertz curve parameterised in terms of
 starting value, asymptote, growth rate and lag:
 \deqn{G(x) = y_0 + (y_{\max} - y_0)\,
-  \exp\!\left[-\exp\!\left(\frac{k(\mathrm{lag} - x)}{y_{\max} - y_0}
+  \exp\!\left[-\exp\!\left(\frac{k\,e\,(\mathrm{lag} - x)}{y_{\max} - y_0}
   + 1\right)\right].}
 }
 \details{
 This parameterisation, often called the "Zwietering Gompertz" form
-after Zwietering et al. (1990), gives directly interpretable
+after Zwietering et al. (1990, eq. 3), gives directly interpretable
 parameters: \code{y0} is the lower asymptote, \code{ymax} the upper
-asymptote, \code{k} the maximum specific growth rate, and \code{lag} the lag
-time before exponential growth.
+asymptote, \code{k} the maximum growth rate (the slope of the curve at
+its inflection point), and \code{lag} the lag time (where the tangent
+at the inflection point crosses \code{y0}). The factor \eqn{e} is what
+makes \code{k} the maximum slope; versions of shewhartr up to 1.3.0
+omitted it, so their curves had maximum slope \eqn{k/e}.
 }
 \examples{
 x <- seq(0, 30, by = 0.5)

@@ -9,7 +9,29 @@
 # Phase detection: a new phase is introduced when a runs-rule fires.
 # The chart is then re-fit phase-by-phase. The default rule
 # ("nelson_2_nine_same") is more conservative than the legacy
-# 7-points-in-a-row ("we_seven_same") and gives ARL_0 ~= 256 versus 64.
+# 7-points-in-a-row ("we_seven_same") and gives ARL_0 ~= 511 versus 127.
+# Under H0 each point falls on either side of the centre with
+# probability 1/2, so the expected waiting time for a run of k points
+# on the same side is 2^k - 1 (Markov-chain result; confirmed by
+# `shewhart_arl()`): 2^9 - 1 = 511 and 2^7 - 1 = 127.
+#
+# Time axis: every model in the menu regresses on `.N`, the position
+# of the observation *within its phase* (1, 2, ..., n_phase), not on
+# the raw index (dev/ROADMAP.md: irregular grids must not break the
+# chart). Consequences that the code must honour:
+#   * a phase too short to fit (< 3 rows) inherits the previous
+#     phase's fit AND sigma, and extrapolates it by continuing `.N`
+#     from where the previous phase stopped;
+#   * `monitor()` continues `.N` from the last position of the last
+#     phase (`metadata$phase_n_end`) and uses that phase's sigma
+#     (`metadata$phase_sigma`), never restarting at `.N = 1`.
+#
+# `model = "auto"` maps the Box-Cox lambda of the phase to the
+# nearest rung of Tukey's ladder that the menu offers: lambda < 0.25
+# (rungs 0 and below) -> "log"; otherwise -> "linear". The square-root
+# rung (0.5) has no model in the menu and is mapped to "linear", the
+# nearest *weaker* transform; "loglog" is stronger than log and is
+# therefore never chosen automatically.
 #
 # Key references:
 #
@@ -43,22 +65,32 @@
 #' @param model Character. One of `"auto"` (Box-Cox guidance),
 #'   `"linear"`, `"log"` (fits `log(y + 1) ~ N`), `"loglog"`,
 #'   `"gompertz"`, `"logistic"`. For full control, supply `formula`
-#'   instead.
+#'   instead. With `"auto"`, each phase gets the Box-Cox profile
+#'   maximiser `lambda` of `y + 1`, rounded to the nearest rung of the
+#'   ladder that the menu offers: `lambda < 0.25` selects `"log"`, any
+#'   larger value selects `"linear"` (a square-root lambda near 0.5 has
+#'   no dedicated model and maps to `"linear"`; `"loglog"` is a stronger
+#'   transform than log and is never chosen automatically).
 #' @param formula Optional one-sided or two-sided formula referencing
 #'   columns in `data`. If provided, overrides `model`.
 #' @param dummy Optional tidy-eval column reference for an additive
 #'   covariate (a "dummy" in the original v0.1 nomenclature; can be
 #'   any factor or numeric covariate the user wants to adjust for,
 #'   such as day-of-week effects or treatment indicators).
-#' @param start_base Integer. Number of initial observations used to
-#'   estimate the first phase. Defaults to 10.
-#' @param phase_changes Optional vector of index positions or values
-#'   at which to force a phase change. If `NULL`, phase changes are
-#'   detected automatically using the supplied `phase_rule`.
+#' @param start_base Integer or `NULL`. Number of initial observations
+#'   used to estimate the first (base) phase. With automatic phase
+#'   detection, `NULL` (the default) means 10. When `phase_changes` is
+#'   supplied, `NULL` means the base phase ends just before the first
+#'   supplied change; an explicit `start_base` adds a cut at
+#'   observation `start_base + 1` in addition to `phase_changes`.
+#' @param phase_changes Optional vector of index values at which to
+#'   force a phase change (the observation whose index equals the value
+#'   starts the new phase). If `NULL`, phase changes are detected
+#'   automatically using the supplied `phase_rule`.
 #' @param phase_rule Character. Runs rule used to detect new phases.
 #'   See [shewhart_rules_available()]. Default Nelson 2 (9 points
-#'   same side; ARL_0 ~ 256). For backward compatibility with v0.1.x,
-#'   use `"we_seven_same"` (7 points; ARL_0 ~ 64).
+#'   same side; ARL_0 = 2^9 - 1 = 511). For backward compatibility with
+#'   v0.1.x, use `"we_seven_same"` (7 points; ARL_0 = 2^7 - 1 = 127).
 #' @param rules Character vector of rules to flag on the final chart.
 #' @param sigma_method One of `"mr"` (default), `"median_mr"`,
 #'   `"biweight"` (Tukey-style robust), or `"sd"`.
@@ -70,7 +102,12 @@
 #'
 #' @return A [shewhart_chart] object of subclass `shewhart_regression`.
 #'   The `fits` slot contains a list of fitted model objects (one per
-#'   phase).
+#'   phase; a phase with fewer than 3 observations reuses the previous
+#'   phase's fit). The `metadata` slot additionally stores
+#'   `phase_n_end` (the last within-phase position `.N` reached by each
+#'   phase's fit) and `phase_sigma` (the residual sigma of each phase),
+#'   which [monitor()] uses to extrapolate the last phase. The
+#'   `sigma_hat` slot is the median of the per-phase sigmas.
 #'
 #' @references
 #' Mandel, B. J. (1969). The Regression Control Chart. *Journal of
@@ -103,7 +140,7 @@ shewhart_regression <- function(data, value, index,
                                           "gompertz", "logistic"),
                                 formula       = NULL,
                                 dummy         = NULL,
-                                start_base    = 10L,
+                                start_base    = NULL,
                                 phase_changes = NULL,
                                 phase_rule    = "nelson_2_nine_same",
                                 rules         = c("nelson_1_beyond_3s",
@@ -119,7 +156,9 @@ shewhart_regression <- function(data, value, index,
   check_locale(locale)
   model <- rlang::arg_match(model)
   sigma_method <- rlang::arg_match(sigma_method)
-  start_base   <- check_scalar_int(start_base, min = 5L)
+  explicit_base <- !is.null(start_base)
+  start_base    <- if (explicit_base) check_scalar_int(start_base, min = 5L)
+                   else 10L
 
   v_q <- rlang::enquo(value); v_n <- rlang::as_name(v_q)
   i_q <- rlang::enquo(index); i_n <- rlang::as_name(i_q)
@@ -157,9 +196,14 @@ shewhart_regression <- function(data, value, index,
       verbose     = verbose
     )
   } else {
-    # Convert user-supplied phase_changes to integer positions
+    # Convert user-supplied phase_changes to integer positions. An
+    # explicit start_base is honoured as an extra cut; otherwise the
+    # base phase runs up to the first supplied change.
     idx_v <- dplyr::pull(data, !!i_q)
     phase_positions <- which(idx_v %in% phase_changes)
+    if (explicit_base) {
+      phase_positions <- sort(unique(c(start_base + 1L, phase_positions)))
+    }
   }
 
   success_step("{.val {length(phase_positions)}} phase change{?s} found.",
@@ -182,7 +226,9 @@ shewhart_regression <- function(data, value, index,
   )
 
   fits <- attr(augmented, "fits")
+  phase_info <- attr(augmented, "phase_info")
   attr(augmented, "fits") <- NULL
+  attr(augmented, "phase_info") <- NULL
 
   # Limits summary ---------------------------------------------------------
   lim_tbl <- augmented |>
@@ -211,7 +257,7 @@ shewhart_regression <- function(data, value, index,
     violations   = violations,
     fits         = fits,
     rules        = rules,
-    sigma_hat    = stats::median(augmented$.sigma, na.rm = TRUE),
+    sigma_hat    = stats::median(phase_info$sigma, na.rm = TRUE),
     sigma_method = sigma_method,
     phase        = "phase_1",
     call         = call,
@@ -222,7 +268,9 @@ shewhart_regression <- function(data, value, index,
       model      = model,
       formula    = formula,
       phase_rule = phase_rule,
-      locale     = locale
+      locale     = locale,
+      phase_n_end = phase_info$n_end,
+      phase_sigma = phase_info$sigma
     )
   )
 }
@@ -245,10 +293,7 @@ fit_one_phase <- function(d, value_q, index_q, dummy_q, model, formula) {
   # Build formula if not supplied -----------------------------------------
   if (is.null(formula)) {
     if (model == "auto") {
-      lambda <- shewhart_box_cox_lambda(d[[v_n]] + 1)
-      if (abs(lambda) < 0.1) model <- "log"
-      else if (abs(lambda - 0.5) < 0.1) model <- "loglog"
-      else model <- "linear"
+      model <- auto_model_from_lambda(shewhart_box_cox_lambda(d[[v_n]] + 1))
     }
     rhs <- if (has_dummy) paste0(".N + ", d_n) else ".N"
     lhs <- switch(model,
@@ -313,7 +358,30 @@ fit_one_phase <- function(d, value_q, index_q, dummy_q, model, formula) {
   }
 }
 
+#' Map a Box-Cox lambda to a model of the menu (model = "auto")
+#'
+#' Nearest rung of Tukey's ladder among those the menu offers. The
+#' lambda is rounded first because the profile grid
+#' `seq(-2, 2, by = 0.1)` carries floating-point noise (e.g. the grid
+#' point near -0.1 is not exactly -1/10), which made the old
+#' `abs(lambda) < 0.1` window asymmetric.
+#'
+#' @keywords internal
+#' @noRd
+auto_model_from_lambda <- function(lambda) {
+  lambda <- round(lambda, 6L)
+  if (!is.finite(lambda)) return("linear")
+  if (lambda < 0.25) "log" else "linear"
+}
+
 #' Compute fitted values on the original scale, given a model
+#'
+#' Gompertz / logistic fits model the cumulative series
+#' `cumsum(y) + 1` against `.N`; the fitted increment at `.N` is
+#' `C(.N) - C(.N - 1)`, with `C(0) = 1` (the offset: nothing
+#' accumulated yet). Evaluating `C(.N - 1)` explicitly keeps this
+#' correct for the first row of a phase and for Phase II rows whose
+#' `.N` continues past the calibration data.
 #'
 #' @keywords internal
 #' @noRd
@@ -326,8 +394,11 @@ predict_original <- function(fit, newdata, value_name) {
     loglog   = pmax(0, iloglog(pred)),
     gompertz = ,
     logistic = {
-      # nls fits cumulative; recover increments
-      c(pred[1], diff(pred))
+      prev_data    <- newdata
+      prev_data$.N <- newdata$.N - 1
+      prev         <- stats::predict(fit, newdata = prev_data)
+      prev[prev_data$.N <= 0] <- 1
+      as.vector(pred - prev)
     },
     pred
   )
@@ -430,19 +501,33 @@ build_phases <- function(data, value_q, index_q, dummy_q, model, formula,
   phase <- pmax(phase, 0L)
   d$.phase <- phase
 
-  fits <- vector("list", length = max(phase) + 1L)
-  out  <- vector("list", length = nrow(d))
+  n_phases <- max(phase) + 1L
+  fits  <- vector("list", length = n_phases)
+  n_end <- integer(n_phases)
+  sigma <- rep(NA_real_, n_phases)
+  out   <- vector("list", length = nrow(d))
 
   for (p in unique(phase)) {
     sub <- d[d$.phase == p, , drop = FALSE]
-    sub$.N <- seq_len(nrow(sub))
-    if (nrow(sub) < 3L) {
-      # Not enough data; reuse previous phase's fit
-      fit <- if (p > 0L) fits[[p]] else NULL
+    inherit <- nrow(sub) < 3L && p > 0L
+    if (inherit) {
+      # Not enough data: extrapolate the previous phase's fit (and use
+      # its sigma), continuing .N from where that phase stopped.
+      fit    <- fits[[p]]
+      offset <- n_end[p]
     } else {
-      fit <- fit_one_phase(sub, value_q, index_q, dummy_q, model, formula)
+      fit <- if (nrow(sub) < 3L) {
+        NULL
+      } else {
+        fit_one_phase(sub, value_q, index_q, dummy_q, model, formula)
+      }
+      offset <- 0L
     }
-    fits[[p + 1L]] <- fit
+    sub$.N <- offset + seq_len(nrow(sub))
+    # Single-bracket assignment: `fits[[i]] <- NULL` would delete the
+    # element and shift every later phase's index.
+    fits[p + 1L]  <- list(fit)
+    n_end[p + 1L] <- offset + nrow(sub)
 
     if (is.null(fit)) {
       sub$.fitted <- NA_real_
@@ -450,16 +535,21 @@ build_phases <- function(data, value_q, index_q, dummy_q, model, formula,
       sub$.fitted <- predict_original(fit, sub, v_n)
     }
 
-    # Sigma from residuals (on original scale, simple choice)
-    resid <- sub[[v_n]] - sub$.fitted
-    sigma_hat <- switch(
-      sigma_method,
-      mr        = mr_bar(resid) / 1.128,
-      median_mr = stats::median(moving_range(resid), na.rm = TRUE) / 0.954,
-      biweight  = unname(biweight(resid)["scale"]),
-      sd        = stats::sd(resid, na.rm = TRUE)
-    )
+    if (inherit) {
+      sigma_hat <- sigma[p]
+    } else {
+      # Sigma from residuals (on original scale, simple choice)
+      resid <- sub[[v_n]] - sub$.fitted
+      sigma_hat <- switch(
+        sigma_method,
+        mr        = mr_bar(resid) / 1.128,
+        median_mr = stats::median(moving_range(resid), na.rm = TRUE) / 0.954,
+        biweight  = unname(biweight(resid)["scale"]),
+        sd        = stats::sd(resid, na.rm = TRUE)
+      )
+    }
     if (!is.finite(sigma_hat) || sigma_hat <= 0) sigma_hat <- 1
+    sigma[p + 1L] <- sigma_hat
     sub$.center <- sub$.fitted
     sub$.sigma  <- sigma_hat
     sub$.upper  <- sub$.fitted + 3 * sigma_hat
@@ -472,14 +562,14 @@ build_phases <- function(data, value_q, index_q, dummy_q, model, formula,
   augmented <- dplyr::bind_rows(out)
   augmented$.value <- augmented[[v_n]]
 
-  # Phase labels (locale-aware)
-  augmented$.phase_label <- with(augmented,
-    ifelse(
-      .phase == 0L, tr("phase_base", locale),
-      ifelse(.phase == max(.phase), tr("phase_monitoring", locale),
-             vapply(.phase, function(p) tr("phase_n", locale, p),
-                    character(1L)))
-    )
+  # Phase labels (locale-aware). Explicit `augmented$` references
+  # rather than `with()` keep R CMD check free of global-variable NOTEs.
+  ph <- augmented$.phase
+  augmented$.phase_label <- ifelse(
+    ph == 0L, tr("phase_base", locale),
+    ifelse(ph == max(ph), tr("phase_monitoring", locale),
+           vapply(ph, function(p) tr("phase_n", locale, p),
+                  character(1L)))
   )
 
   # Apply rule flags -------------------------------------------------------
@@ -487,5 +577,6 @@ build_phases <- function(data, value_q, index_q, dummy_q, model, formula,
   augmented <- dplyr::bind_cols(augmented, flags)
 
   attr(augmented, "fits") <- fits
+  attr(augmented, "phase_info") <- list(n_end = n_end, sigma = sigma)
   augmented
 }
