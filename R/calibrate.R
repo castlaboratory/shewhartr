@@ -148,8 +148,9 @@ trim_units <- function(fit, work) {
     fit$augmented[[g]]
   } else {
     # Hotelling does not store the subgroup label: mirror the order in
-    # which t2_subgrouped() splits the data.
-    names(split(seq_len(nrow(work)), row_unit))
+    # which t2_subgrouped() splits the data (first appearance, not
+    # lexicographic; audit finding 9).
+    as.character(unique(row_unit))
   }
   list(labels = as.character(labels), row_unit = as.character(row_unit),
        subgrouped = TRUE)
