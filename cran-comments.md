@@ -1,8 +1,8 @@
-# shewhartr 1.0.0 — first CRAN submission
+# shewhartr 1.3.0 — first CRAN submission
 
 ## Test environments
 
-* local: macOS 14.x, R 4.5.2
+* local: macOS 26.6, R 4.6.0
 * CI (GitHub Actions, R-CMD-check.yaml):
   - macOS-latest, R release
   - windows-latest, R release
@@ -16,9 +16,10 @@
 
 * This is a new submission. The package was previously distributed informally
   under the name `Shewhart` (v0.1.x) for monitoring of COVID-19 in Recife.
-  v1.0.0 is a comprehensive rewrite that broadens the scope to general
+  The 1.x series is a comprehensive rewrite that broadens the scope to general
   Statistical Process Control and renames the package to lowercase per modern
-  convention. No prior version exists on CRAN under either name.
+  convention. Versions 1.0.0 to 1.2.0 were released on GitHub only; no prior
+  version exists on CRAN under either name.
 
 ## Note about URLs in README
 
@@ -45,5 +46,7 @@ The package complements `qcc` (classical, S3, no tidyverse) and `qicharts2`
 5. explicit Phase I (`calibrate()`) / Phase II (`monitor()`) workflow,
    following Woodall (2000)
 
-Multilingual plots (`locale = "en" | "pt" | "es" | "fr"`) and exact Poisson
-quantile limits for c/u charts (`limits = "poisson"`) are also supported.
+Multilingual plots (`locale = "en" | "pt" | "es" | "fr"`), exact Poisson /
+binomial quantile limits for c/u/p charts (`limits = "poisson"` /
+`"binomial"`), memory-based charts (EWMA, CUSUM) and multivariate charts
+(Hotelling T^2, MEWMA, MCUSUM) are also supported.

@@ -14,7 +14,9 @@
 \value{
 A one-row tibble with columns \code{type}, \code{n}, \code{phase},
 \code{sigma_hat}, \code{sigma_method}, \code{n_violations}, \code{n_rules},
-\code{pct_violations}.
+\code{pct_violations}. \code{n_violations} counts rule hits (one row per
+point and rule), while \code{pct_violations} is the share of points
+flagged by at least one rule, so it always lies in \verb{[0, 1]}.
 }
 \description{
 Returns a one-row tibble with overall chart-level diagnostics

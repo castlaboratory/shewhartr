@@ -16,6 +16,12 @@
 #     synchronised x-axis interaction.
 #   * For CUSUM the autoplot uses `geom_segment` for the bars; that
 #     translates fine to plotly without special handling.
+#   * `locale`, `show_violations` and `show_sigma_zones` are forwarded
+#     to `autoplot()`; everything else in `...` goes to `ggplotly()`.
+#   * ggplotly() does not carry over the ggplot legend's `nrow`, and
+#     its horizontal legend at y = 1.02 runs into the title once a
+#     regression chart has many phases (issue #1). For regression
+#     charts the legend is moved below the plotting area.
 
 #' Convert a Shewhart chart to an interactive plotly figure
 #'
@@ -34,6 +40,7 @@
 #' @param tooltip Character vector of aesthetics to display in the
 #'   hover tooltip, as accepted by [plotly::ggplotly()]. Defaults to
 #'   `c("x", "y")`.
+#' @inheritParams autoplot.shewhart_chart
 #' @param ... Additional arguments forwarded to [plotly::ggplotly()].
 #'
 #' @return A `plotly` object (S3 class `plotly` / `htmlwidget`) ready
@@ -63,14 +70,20 @@ as_plotly.default <- function(x, ...) {
 
 #' @rdname as_plotly
 #' @export
-as_plotly.shewhart_chart <- function(x, tooltip = c("x", "y"), ...) {
+as_plotly.shewhart_chart <- function(x, tooltip = c("x", "y"),
+                                     show_violations  = TRUE,
+                                     show_sigma_zones = FALSE,
+                                     locale = NULL, ...) {
   if (!requireNamespace("plotly", quietly = TRUE)) {
     cli::cli_abort(c(
       "Install {.pkg plotly} to use {.fn as_plotly}.",
       "i" = "{.code install.packages(\"plotly\")}"
     ))
   }
-  obj <- ggplot2::autoplot(x)
+  obj <- ggplot2::autoplot(x,
+                           show_violations  = show_violations,
+                           show_sigma_zones = show_sigma_zones,
+                           locale           = locale)
 
   if (inherits(obj, "shewhart_plot_pair")) {
     p1 <- plotly::ggplotly(obj$top,    tooltip = tooltip, ...)
@@ -79,6 +92,14 @@ as_plotly.shewhart_chart <- function(x, tooltip = c("x", "y"), ...) {
                     titleX = TRUE, titleY = TRUE,
                     margin = 0.06)
   } else {
-    plotly::ggplotly(obj, tooltip = tooltip, ...)
+    out <- plotly::ggplotly(obj, tooltip = tooltip, ...)
+    if (identical(x$type, "regression")) {
+      out <- plotly::layout(
+        out,
+        legend = list(orientation = "h", x = 0, xanchor = "left",
+                      y = -0.15, yanchor = "top")
+      )
+    }
+    out
   }
 }

@@ -179,7 +179,10 @@ shewhart_xbar_s <- function(data, value, subgroup,
       n          = n,
       n_varying  = length(unique(per$n)) > 1L,
       locale     = locale,
-      constants  = cons
+      constants  = cons,
+      # individual measurements, kept for shewhart_capability()
+      values     = d$.value[!is.na(d$.value)],
+      value_groups = d$.group[!is.na(d$.value)]
     )
   )
 }

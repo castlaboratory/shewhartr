@@ -229,13 +229,24 @@ monitor_i_mr <- function(data, chart) {
   flags <- flag_rules(v, rep(centre, length(v)), rep(sigma, length(v)),
                       chart$rules)
 
+  # Moving ranges continue across the Phase I / Phase II boundary: the
+  # first new MR is seeded with the last value the chart has seen, and
+  # the MR-chart limits are the stored ones (never re-estimated).
+  prev_v <- utils::tail(chart$augmented$.value, 1L)
+  if (length(prev_v) == 0L) prev_v <- NA_real_
+  mr <- abs(diff(c(prev_v, v)))
+
   augmented <- tibble::tibble(
     .obs       = seq_along(v),
     .value     = v,
     .center    = centre,
     .sigma     = sigma,
     .upper     = upper,
-    .lower     = lower
+    .lower     = lower,
+    .mr        = mr,
+    .mr_center = chart$augmented$.mr_center[1L],
+    .mr_upper  = chart$augmented$.mr_upper[1L],
+    .mr_lower  = chart$augmented$.mr_lower[1L]
   )
   if (!is.null(m$index_name) && m$index_name %in% names(data)) {
     augmented[[m$index_name]] <- data[[m$index_name]]
@@ -259,6 +270,9 @@ monitor_p <- function(data, chart) {
   m <- chart$metadata
   defects_v <- data[[m$defects_name]]; check_count(defects_v, arg = m$defects_name)
   n_v       <- data[[m$n_name]];        check_count(n_v, arg = m$n_name)
+  if (any(n_v <= 0, na.rm = TRUE)) {
+    cli::cli_abort("{.arg n} must be strictly positive in every row.")
+  }
   if (any(defects_v > n_v)) {
     cli::cli_abort("{.arg defects} cannot exceed {.arg n}.")
   }
@@ -266,10 +280,24 @@ monitor_p <- function(data, chart) {
   p_i  <- defects_v / n_v
   p_bar <- m$p_bar
   sigma_i <- sqrt(p_bar * (1 - p_bar) / n_v)
-  upper   <- pmin(1, p_bar + 3 * sigma_i)
-  lower   <- pmax(0, p_bar - 3 * sigma_i)
+  exact   <- identical(chart$sigma_method, "binomial")
+  if (exact) {
+    # Keep the exact method chosen in Phase I (same n -> same limits)
+    upper <- stats::qbinom(0.99865, size = n_v, prob = p_bar) / n_v
+    lower <- stats::qbinom(0.00135, size = n_v, prob = p_bar) / n_v
+  } else {
+    upper <- pmin(1, p_bar + 3 * sigma_i)
+    lower <- pmax(0, p_bar - 3 * sigma_i)
+  }
 
   flags <- flag_rules(p_i, rep(p_bar, length(p_i)), sigma_i, chart$rules)
+  violations <- shewhart_runs(p_i, rules = chart$rules,
+                              center = p_bar, sigma = sigma_i)
+  if (exact) {
+    ex <- apply_exact_limits_rule1(flags, violations, p_i, lower, upper,
+                                   chart$rules)
+    flags <- ex$flags; violations <- ex$violations
+  }
 
   augmented <- tibble::tibble(
     .obs    = seq_along(p_i),
@@ -285,9 +313,6 @@ monitor_p <- function(data, chart) {
     augmented[[m$index_name]] <- data[[m$index_name]]
   }
   augmented <- dplyr::bind_cols(augmented, flags)
-
-  violations <- shewhart_runs(p_i, rules = chart$rules,
-                              center = p_bar, sigma = sigma_i)
 
   out <- chart
   out$augmented  <- augmented
@@ -312,6 +337,13 @@ monitor_c <- function(data, chart) {
                       rep(c_bar, length(defects_v)),
                       rep(sigma, length(defects_v)),
                       chart$rules)
+  violations <- shewhart_runs(defects_v, rules = chart$rules,
+                              center = c_bar, sigma = sigma)
+  if (identical(chart$sigma_method, "poisson")) {
+    ex <- apply_exact_limits_rule1(flags, violations, defects_v,
+                                   lower, upper, chart$rules)
+    flags <- ex$flags; violations <- ex$violations
+  }
 
   augmented <- tibble::tibble(
     .obs    = seq_along(defects_v),
@@ -325,9 +357,6 @@ monitor_c <- function(data, chart) {
     augmented[[m$index_name]] <- data[[m$index_name]]
   }
   augmented <- dplyr::bind_cols(augmented, flags)
-
-  violations <- shewhart_runs(defects_v, rules = chart$rules,
-                              center = c_bar, sigma = sigma)
 
   out <- chart
   out$augmented  <- augmented
@@ -394,10 +423,24 @@ monitor_u <- function(data, chart) {
   u_i     <- defects_v / exposure_v
   u_bar   <- m$u_bar
   sigma_i <- sqrt(u_bar / exposure_v)
-  upper   <- u_bar + 3 * sigma_i
-  lower   <- pmax(0, u_bar - 3 * sigma_i)
+  exact   <- identical(chart$sigma_method, "poisson")
+  if (exact) {
+    # Keep the exact method chosen in Phase I
+    upper <- stats::qpois(0.99865, lambda = u_bar * exposure_v) / exposure_v
+    lower <- stats::qpois(0.00135, lambda = u_bar * exposure_v) / exposure_v
+  } else {
+    upper <- u_bar + 3 * sigma_i
+    lower <- pmax(0, u_bar - 3 * sigma_i)
+  }
 
   flags <- flag_rules(u_i, rep(u_bar, length(u_i)), sigma_i, chart$rules)
+  violations <- shewhart_runs(u_i, rules = chart$rules,
+                              center = u_bar, sigma = sigma_i)
+  if (exact) {
+    ex <- apply_exact_limits_rule1(flags, violations, u_i, lower, upper,
+                                   chart$rules)
+    flags <- ex$flags; violations <- ex$violations
+  }
 
   augmented <- tibble::tibble(
     .obs      = seq_along(u_i),
@@ -413,9 +456,6 @@ monitor_u <- function(data, chart) {
     augmented[[m$index_name]] <- data[[m$index_name]]
   }
   augmented <- dplyr::bind_cols(augmented, flags)
-
-  violations <- shewhart_runs(u_i, rules = chart$rules,
-                              center = u_bar, sigma = sigma_i)
 
   out <- chart
   out$augmented  <- augmented
@@ -490,6 +530,9 @@ monitor_xbar_r <- function(data, chart) {
   out <- chart
   out$augmented  <- augmented
   out$violations <- violations
+  ok <- !is.na(v)
+  out$metadata$values       <- v[ok]
+  out$metadata$value_groups <- data[[g_n]][ok]
   out$phase      <- "phase_2"
   out$n          <- nrow(augmented)
   out
@@ -564,6 +607,9 @@ monitor_xbar_s <- function(data, chart) {
   out <- chart
   out$augmented  <- augmented
   out$violations <- violations
+  ok <- !is.na(v)
+  out$metadata$values       <- v[ok]
+  out$metadata$value_groups <- data[[g_n]][ok]
   out$phase      <- "phase_2"
   out$n          <- nrow(augmented)
   out

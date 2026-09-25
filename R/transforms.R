@@ -102,6 +102,12 @@ box_cox <- function(x, lambda) {
 #' @inheritParams box_cox
 #'
 #' @return A numeric vector on the original scale.
+#'
+#' @examples
+#' y <- box_cox(1:10, lambda = 0.5)
+#' inv_box_cox(y, lambda = 0.5)          # recovers 1:10
+#' inv_box_cox(log(1:10), lambda = 0)    # lambda = 0 is exp()
+#'
 #' @export
 inv_box_cox <- function(x, lambda) {
   check_numeric(x)

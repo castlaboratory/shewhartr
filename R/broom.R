@@ -16,6 +16,11 @@
 #' @param ... Currently unused.
 #'
 #' @return A tibble with at least columns `chart`, `line`, `value`.
+#'   For regression charts, whose limits follow a fitted curve, the
+#'   tibble is in long format with one row per phase, endpoint and
+#'   line: columns `chart` (`"regression"`), `.phase`, `endpoint`
+#'   (`"first"` / `"last"` observation of the phase), `line` (`"CL"`,
+#'   `"UCL"`, `"LCL"`) and `value`.
 #'
 #' @examples
 #' fit <- shewhart_i_mr(data.frame(y = rnorm(50)), value = y)
@@ -24,7 +29,37 @@
 #' @exportS3Method broom::tidy shewhart_chart
 tidy.shewhart_chart <- function(x, ...) {
   assert_chart(x)
-  x$limits
+  lim <- x$limits
+  if (identical(x$type, "regression") &&
+      !all(c("chart", "line", "value") %in% names(lim))) {
+    lim <- tidy_regression_limits(lim)
+  }
+  lim
+}
+
+#' Reshape the wide per-phase regression limits to chart/line/value
+#'
+#' @keywords internal
+#' @noRd
+tidy_regression_limits <- function(lim) {
+  spec <- tibble::tibble(
+    col      = c("cl_first", "ucl_first", "lcl_first",
+                 "cl_last",  "ucl_last",  "lcl_last"),
+    endpoint = rep(c("first", "last"), each = 3L),
+    line     = rep(c("CL", "UCL", "LCL"), times = 2L)
+  )
+  spec <- spec[spec$col %in% names(lim), , drop = FALSE]
+  rows <- lapply(seq_len(nrow(lim)), function(i) {
+    tibble::tibble(
+      chart    = "regression",
+      .phase   = lim$.phase[i],
+      endpoint = spec$endpoint,
+      line     = spec$line,
+      value    = vapply(spec$col, function(cl) as.numeric(lim[[cl]][i]),
+                        numeric(1L), USE.NAMES = FALSE)
+    )
+  })
+  dplyr::bind_rows(rows)
 }
 
 #' Glance at a Shewhart chart's overall diagnostics
@@ -37,7 +72,9 @@ tidy.shewhart_chart <- function(x, ...) {
 #'
 #' @return A one-row tibble with columns `type`, `n`, `phase`,
 #'   `sigma_hat`, `sigma_method`, `n_violations`, `n_rules`,
-#'   `pct_violations`.
+#'   `pct_violations`. `n_violations` counts rule hits (one row per
+#'   point and rule), while `pct_violations` is the share of points
+#'   flagged by at least one rule, so it always lies in `[0, 1]`.
 #'
 #' @examples
 #' fit <- shewhart_i_mr(data.frame(y = rnorm(50)), value = y)
@@ -54,8 +91,22 @@ glance.shewhart_chart <- function(x, ...) {
     sigma_method   = x$sigma_method,
     n_violations   = nrow(x$violations),
     n_rules        = length(x$rules),
-    pct_violations = if (x$n > 0L) nrow(x$violations) / x$n else NA_real_
+    pct_violations = glance_pct_violations(x)
   )
+}
+
+#' Share of points flagged by at least one rule
+#'
+#' @keywords internal
+#' @noRd
+glance_pct_violations <- function(x) {
+  if (x$n <= 0L) return(NA_real_)
+  flag <- x$augmented[[".flag_any"]]
+  if (is.null(flag)) {
+    # Fallback for objects without a .flag_any column: distinct positions
+    return(length(unique(x$violations$position)) / x$n)
+  }
+  mean(flag, na.rm = TRUE)
 }
 
 #' Augment new data with control-chart annotations

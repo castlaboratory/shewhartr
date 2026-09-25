@@ -90,8 +90,8 @@ returns a fresh chart object whose `phase` slot is `"phase_2"`.
 
 You can plot the monitored series exactly the same way:
 
-```{r, eval = FALSE}
-autoplot(alarms)
+```{r, fig.height = 6}
+ggplot2::autoplot(alarms)
 ```
 
 ## Why the trim step matters

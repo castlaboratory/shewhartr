@@ -39,11 +39,22 @@ Computes the four classical capability indices for a Shewhart chart
 or a raw vector. Optionally returns bootstrap confidence intervals.
 }
 \details{
-For a \code{shewhart_chart} of type \code{i_mr}, \code{xbar_r}, or \code{xbar_s}, the
-within-subgroup sigma stored on the chart object is used for
-Cp/Cpk; the overall standard deviation of the raw data is used for
-Pp/Ppk. For a numeric vector \code{data}, a single sigma is used for
-both pairs (so Cp = Pp and Cpk = Ppk).
+For a \code{shewhart_chart} of type \code{i_mr}, \code{ewma}, \code{cusum}, \code{xbar_r}
+or \code{xbar_s}, the within sigma stored on the chart object
+(\code{sigma_hat}, already expressed per individual measurement) is used
+for Cp/Cpk; the overall standard deviation of the individual
+measurements is used for Pp/Ppk. For subgroup charts the individual
+measurements are the ones the chart was built from (not the subgroup
+means). For a numeric vector \code{data}, a single sigma is used for both
+pairs (so Cp = Pp and Cpk = Ppk). Other chart types (attribute,
+regression, multivariate) are not supported; pass the measurements
+as a numeric vector instead.
+
+Bootstrap intervals re-estimate sigma within in every replicate
+with the same estimator as the chart: whole subgroups are resampled
+for Xbar-R / Xbar-S charts, and consecutive pairs of observations
+(so that each replicate keeps its moving ranges) for individual
+charts.
 
 Capability indices are only meaningful when the process is in
 statistical control (Phase I). The function emits a warning if the

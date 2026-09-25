@@ -49,7 +49,7 @@ bc
 The optimal lambda is near zero (log transformation), and the 95% CI
 should cover zero. Let's plot the profile:
 
-```{r, eval = FALSE}
+```{r}
 autoplot(bc)
 ```
 

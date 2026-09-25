@@ -51,7 +51,7 @@ $\bar p \pm 3\sqrt{\bar p (1 - \bar p)/n_i}$. This is fine when
 $n_i \bar p \gtrsim 5$ and $n_i (1-\bar p) \gtrsim 5$. For small
 $n$ or extreme $\bar p$, switch to exact binomial limits:
 
-```{r, eval = FALSE}
+```{r}
 shewhart_p(claims_p, defects = defects, n = n, index = day,
            limits = "binomial")
 ```

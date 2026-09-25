@@ -29,7 +29,7 @@ to surface the assumptions, not to print them.
 
 ## What the panels show
 
-```{r, eval = FALSE}
+```{r}
 fit <- shewhart_i_mr(bottle_fill, value = ml, index = observation)
 shewhart_diagnostics(fit)
 ```
@@ -57,7 +57,7 @@ If the histogram or Q-Q reveals strong skew, the chart's nominal
 limits won't give the advertised coverage. The classical fix is a
 Box-Cox transformation:
 
-```{r, eval = FALSE}
+```{r}
 bc <- shewhart_box_cox(bottle_fill, value = ml)
 print(bc)
 ggplot2::autoplot(bc)

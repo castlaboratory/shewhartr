@@ -135,6 +135,44 @@ violation_layers <- function(data, y_col = ".value",
   )
 }
 
+#' Legend labels for the phases of a regression chart
+#'
+#' Uses the `.phase_label` column computed by the constructor ("Base",
+#' "Phase 1", ..., "Monitoring") when the plot is drawn in the chart's
+#' own locale; otherwise rebuilds the same labels in the requested
+#' locale. Returns a named character vector (names = phase ids, as
+#' character) of unique labels, ordered by phase.
+#'
+#' @keywords internal
+#' @noRd
+regression_phase_labels <- function(aug, locale, stored_locale = locale) {
+  ph_lvls <- sort(unique(aug$.phase))
+  if (".phase_label" %in% names(aug) && identical(locale, stored_locale)) {
+    lbl <- as.character(aug$.phase_label[match(ph_lvls, aug$.phase)])
+  } else {
+    max_ph <- max(ph_lvls)
+    lbl <- vapply(ph_lvls, function(p) {
+      if (p == 0L) tr("phase_base", locale)
+      else if (p == max_ph) tr("phase_monitoring", locale)
+      else tr("phase_n", locale, as.integer(p))
+    }, character(1L))
+  }
+  lbl[is.na(lbl)] <- shewhart_phase_label(ph_lvls[is.na(lbl)], locale)
+  lbl <- make.unique(lbl, sep = " ")
+  stats::setNames(lbl, as.character(ph_lvls))
+}
+
+#' Legend layout for a legend with `n` keys
+#'
+#' Up to five keys fit on one row at the top of a 7-inch plot; beyond
+#' that, wrap to rows of five (issue #1).
+#'
+#' @keywords internal
+#' @noRd
+legend_nrow <- function(n) {
+  if (n <= 5L) 1L else as.integer(ceiling(n / 5))
+}
+
 #' @keywords internal
 #' @noRd
 shewhart_phase_label <- function(phase, locale = "en") {
@@ -306,7 +344,8 @@ autoplot.shewhart_u <- function(object, show_violations = TRUE,
 plot_two_panel <- function(object, title_key, top_key, bottom_key,
                            bottom_value_col, bottom_center_col,
                            bottom_upper_col, bottom_lower_col,
-                           locale, show_violations, ...) {
+                           locale, show_violations,
+                           show_sigma_zones = FALSE, ...) {
 
   aug    <- object$augmented
   x_col  <- get_index_col(aug, chart = object)
@@ -314,9 +353,23 @@ plot_two_panel <- function(object, title_key, top_key, bottom_key,
   ink    <- shewhart_palette("neutral")
 
   panel <- function(y_col, centre_col, upper_col, lower_col,
-                    title = NULL, ylab) {
+                    title = NULL, ylab, zones = FALSE) {
     g <- ggplot2::ggplot(aug, ggplot2::aes(x = .data[[x_col]],
-                                           y = .data[[y_col]])) +
+                                           y = .data[[y_col]]))
+    if (zones) {
+      # 1- and 2-sigma zones of the top (location) panel, drawn first so
+      # data and limits sit on top. Same styling as single-panel charts.
+      g <- g +
+        ggplot2::geom_ribbon(
+          ggplot2::aes(ymin = .data$.center - .data$.sigma,
+                       ymax = .data$.center + .data$.sigma),
+          fill = signal["in_control"], alpha = 0.06, colour = NA) +
+        ggplot2::geom_ribbon(
+          ggplot2::aes(ymin = .data$.center - 2 * .data$.sigma,
+                       ymax = .data$.center + 2 * .data$.sigma),
+          fill = signal["in_control"], alpha = 0.04, colour = NA)
+    }
+    g <- g +
       ggplot2::geom_line(colour = ink["text_low"],
                          linewidth = 0.25, alpha = 0.45) +
       ggplot2::geom_point(colour = signal["in_control"],
@@ -338,7 +391,8 @@ plot_two_panel <- function(object, title_key, top_key, bottom_key,
 
   p1 <- panel(".value", ".center", ".upper", ".lower",
               title = tr(title_key, locale),
-              ylab  = tr(top_key, locale))
+              ylab  = tr(top_key, locale),
+              zones = isTRUE(show_sigma_zones) && ".sigma" %in% names(aug))
 
   if (show_violations && ".flag_any" %in% names(aug)) {
     viol <- dplyr::filter(aug, .data$.flag_any)
@@ -370,6 +424,7 @@ autoplot.shewhart_i_mr <- function(object, show_violations = TRUE,
     bottom_lower_col  = ".mr_lower",
     locale            = locale,
     show_violations   = show_violations,
+    show_sigma_zones  = show_sigma_zones,
     ...
   )
 }
@@ -390,6 +445,7 @@ autoplot.shewhart_xbar_r <- function(object, show_violations = TRUE,
     bottom_lower_col  = ".r_lower",
     locale            = locale,
     show_violations   = show_violations,
+    show_sigma_zones  = show_sigma_zones,
     ...
   )
 }
@@ -410,6 +466,7 @@ autoplot.shewhart_xbar_s <- function(object, show_violations = TRUE,
     bottom_lower_col  = ".s_lower",
     locale            = locale,
     show_violations   = show_violations,
+    show_sigma_zones  = show_sigma_zones,
     ...
   )
 }
@@ -424,10 +481,15 @@ autoplot.shewhart_regression <- function(object, show_violations = TRUE,
   aug    <- object$augmented
   x_col  <- get_index_col(aug, chart = object)
 
-  # Build localised phase factor: "Phase 0", "Phase 1", "Fase 0", etc.
+  # Localised phase factor built from .phase_label ("Base", "Phase 1",
+  # ..., "Monitoring"), so the legend names phases the way the
+  # constructor does.
   ph_lvls   <- sort(unique(aug$.phase))
-  ph_labels <- shewhart_phase_label(ph_lvls, locale)
-  aug$.phase_f <- factor(shewhart_phase_label(aug$.phase, locale),
+  ph_map    <- regression_phase_labels(
+    aug, locale, stored_locale = object$metadata$locale %||% locale
+  )
+  ph_labels <- unname(ph_map)
+  aug$.phase_f <- factor(unname(ph_map[as.character(aug$.phase)]),
                          levels = ph_labels)
   pal <- shewhart_phase_palette(length(ph_lvls))
   signal <- shewhart_palette("signal")
@@ -489,12 +551,13 @@ autoplot.shewhart_regression <- function(object, show_violations = TRUE,
   } else NA_character_
   n_phases <- length(object$fits)
   n_viol   <- nrow(object$violations)
-  subtitle <- sprintf(
-    "%s model, rule(s): %s \u2014 %d phase%s, %d violation%s",
+  subtitle <- tr(
+    "subtitle_regression", locale,
     object$metadata$model %||% "linear",
-    rule_lbl %||% "(none)",
-    n_phases, if (n_phases == 1L) "" else "s",
-    n_viol,   if (n_viol   == 1L) "" else "s"
+    if (is.na(rule_lbl)) tr("rules_none", locale) else rule_lbl,
+    n_phases, tr(if (n_phases == 1L) "word_phase" else "word_phases", locale),
+    n_viol,   tr(if (n_viol   == 1L) "word_violation" else "word_violations",
+                 locale)
   )
 
   p +
@@ -504,7 +567,7 @@ autoplot.shewhart_regression <- function(object, show_violations = TRUE,
     ) +
     ggplot2::guides(
       colour = ggplot2::guide_legend(
-        nrow = 1, byrow = TRUE,
+        nrow = legend_nrow(length(ph_labels)), byrow = TRUE,
         override.aes = list(linewidth = 0, size = 2.4, alpha = 1)
       )
     ) +
@@ -514,7 +577,9 @@ autoplot.shewhart_regression <- function(object, show_violations = TRUE,
       x        = tr("label_index", locale),
       y        = tr("label_value", locale)
     ) +
-    shewhart_theme()
+    shewhart_theme() +
+    # Title above the keys, so wrapped rows start flush left (issue #1)
+    ggplot2::theme(legend.title.position = "top")
 }
 
 #' Sequential phase palette
@@ -589,9 +654,11 @@ autoplot.shewhart_cusum <- function(object, show_violations = TRUE,
 
   # CUSUM is plotted with C+ as positive bars and C- as negative,
   # so a single panel makes the symmetric decision interval visible.
+  lbl_pos <- tr("cusum_positive", locale)
+  lbl_neg <- tr("cusum_negative", locale)
   long <- tibble::tibble(
     !!x_col      := rep(aug[[x_col]], 2L),
-    cusum_kind    = rep(c("Positive", "Negative"), each = nrow(aug)),
+    cusum_kind    = rep(c(lbl_pos, lbl_neg), each = nrow(aug)),
     cusum_value   = c(aug$.cusum_pos, -aug$.cusum_neg),
     flag          = c(aug$.cusum_pos > decision,
                       aug$.cusum_neg > decision)
@@ -619,8 +686,10 @@ autoplot.shewhart_cusum <- function(object, show_violations = TRUE,
                         linetype = "dashed", linewidth = 0.4, alpha = 0.7) +
     ggplot2::scale_colour_manual(
       name   = NULL,
-      values = c(Positive = unname(signal["in_control"]),
-                 Negative = unname(fam["memory_based"])))
+      values = stats::setNames(
+        c(unname(signal["in_control"]), unname(fam["memory_based"])),
+        c(lbl_pos, lbl_neg)
+      ))
 
   if (show_violations && any(long$flag)) {
     p <- p + violation_layers(long[long$flag, , drop = FALSE],

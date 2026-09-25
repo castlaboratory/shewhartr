@@ -56,7 +56,7 @@ fit <- shewhart_i_mr(bottle_fill, value = ml, index = observation)
 broom::glance(fit)
 ```
 
-```{r, eval = FALSE}
+```{r, fig.height = 6}
 autoplot(fit)
 ```
 
@@ -134,7 +134,7 @@ broom::glance(fit_xbs)
 
 For variable subgroup sizes:
 
-```{r, eval = FALSE}
+```{r}
 fit_xbs_pooled <- shewhart_xbar_s(df, value = weight, subgroup = subgroup,
                                   sigma_method = "pooled_sd")
 ```
