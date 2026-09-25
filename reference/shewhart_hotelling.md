@@ -39,7 +39,8 @@ shewhart_hotelling(
   Optional tidy-eval column for rational subgrouping. If supplied, all
   rows sharing a value of this column are treated as a single subgroup.
   If `NULL` (default), every row is its own observation
-  (individual-observations chart).
+  (individual-observations chart). Subgroups are kept in order of first
+  appearance in `data` (time order).
 
 - index:
 

@@ -54,7 +54,7 @@ shewhart_mewma(
 - h:
 
   Decision interval (UCL on the `T^2` statistic). If `NULL`, looked up
-  in the Prabhu & Runger (1997) table for `ARL_0 ~ 200`.
+  in the `ARL_0 ~ 200` table matching `steady_state`.
 
 - steady_state:
 
@@ -83,10 +83,20 @@ object of subclass `shewhart_mewma`. The augmented tibble has columns
 By default `target` (the in-control mean vector) and `cov` (the
 in-control covariance) are estimated from the data. For Phase II
 monitoring, supply both explicitly so the limits use the calibration
-values. The decision interval `h` is calibrated by lookup in the Prabhu
-& Runger (1997) table for `ARL_0 ~ 200`; if the `(lambda, p)`
+values. The decision interval `h` is calibrated by lookup in a table
+giving `ARL_0 ~ 200` (with known in-control parameters) for `lambda` in
+`{0.05, 0.10, 0.20, 0.40}` and `p = 2..6`. There is one table for each
+covariance mode and the lookup follows `steady_state`; the steady-state
+table reproduces Prabhu & Runger (1997). If the `(lambda, p)`
 combination is outside the tabulated range, the user must pass `h`
 explicitly.
+
+In Phase II
+([`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md)),
+the recursion continues from the last Phase I vector `Z` (and from the
+previous batch when
+[`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md)
+is chained), with the covariance of the continued recursion.
 
 ## References
 
@@ -124,7 +134,7 @@ print(fit)
 #> # A tibble: 1 × 3
 #>   chart line  value
 #>   <chr> <chr> <dbl>
-#> 1 MEWMA UCL    8.64
+#> 1 MEWMA UCL    8.76
 #> ── Rule violations ──
 #> 
 #> ✔ No violations across 1 rule: "mewma_h".

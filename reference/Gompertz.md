@@ -2,8 +2,9 @@
 
 Computes the value of the Gompertz curve parameterised in terms of
 starting value, asymptote, growth rate and lag: \$\$G(x) = y_0 +
-(y\_{\max} - y_0)\\ \exp\\\left\[-\exp\\\left(\frac{k(\mathrm{lag} -
-x)}{y\_{\max} - y_0} + 1\right)\right\].\$\$
+(y\_{\max} - y_0)\\
+\exp\\\left\[-\exp\\\left(\frac{k\\e\\(\mathrm{lag} - x)}{y\_{\max} -
+y_0} + 1\right)\right\].\$\$
 
 ## Usage
 
@@ -40,9 +41,13 @@ A numeric vector the same length as `x`.
 ## Details
 
 This parameterisation, often called the "Zwietering Gompertz" form after
-Zwietering et al. (1990), gives directly interpretable parameters: `y0`
-is the lower asymptote, `ymax` the upper asymptote, `k` the maximum
-specific growth rate, and `lag` the lag time before exponential growth.
+Zwietering et al. (1990, eq. 3), gives directly interpretable
+parameters: `y0` is the lower asymptote, `ymax` the upper asymptote, `k`
+the maximum growth rate (the slope of the curve at its inflection
+point), and `lag` the lag time (where the tangent at the inflection
+point crosses `y0`). The factor \\e\\ is what makes `k` the maximum
+slope; versions of shewhartr up to 1.3.0 omitted it, so their curves had
+maximum slope \\k/e\\.
 
 ## References
 

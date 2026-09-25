@@ -24,7 +24,11 @@ tidy(x, ...)
 
 ## Value
 
-A tibble with at least columns `chart`, `line`, `value`.
+A tibble with at least columns `chart`, `line`, `value`. For regression
+charts, whose limits follow a fitted curve, the tibble is in long format
+with one row per phase, endpoint and line: columns `chart`
+(`"regression"`), `.phase`, `endpoint` (`"first"` / `"last"` observation
+of the phase), `line` (`"CL"`, `"UCL"`, `"LCL"`) and `value`.
 
 ## Examples
 

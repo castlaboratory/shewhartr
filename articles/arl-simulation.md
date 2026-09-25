@@ -120,10 +120,13 @@ arl_we
 arl_n2
 ```
 
-The WE rule’s ARL_0 is around 64 (a false phase change every 64
-in-control samples on average); Nelson 2’s is around 256 (one every ~256
-samples). For most monitoring contexts that is a meaningful difference.
-The WE rule is easier to teach, but the false-alarm cost is high.
+The WE rule’s ARL_0 is $`2^7 - 1 = 127`$ (a false phase change every 127
+in-control samples on average); Nelson 2’s is $`2^9 - 1 = 511`$ (one
+every ~511 samples). Both follow from the waiting time for a run of
+$`k`$ same-side points when each side has probability 1/2, $`2^k - 1`$,
+and the simulated values above agree with them. For most monitoring
+contexts that is a meaningful difference. The WE rule is easier to
+teach, but the false-alarm cost is high.
 
 [`shewhart_regression()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_regression.md)
 accepts either via the `phase_rule` argument:

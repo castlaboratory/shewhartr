@@ -15,7 +15,7 @@ shewhart_ewma(
   target = NULL,
   sigma = NULL,
   lambda = 0.2,
-  L = 2.7,
+  L = 2.86,
   steady_state = FALSE,
   rules = "nelson_1_beyond_3s",
   locale = getOption("shewhart.locale", "en"),
@@ -53,7 +53,7 @@ shewhart_ewma(
 - L:
 
   Numeric. Width of the limits in standard errors of the EWMA. Default
-  `2.7`, which combined with `lambda = 0.2` yields `ARL_0 ~ 370` (Lucas
+  `2.86`, which combined with `lambda = 0.2` yields `ARL_0 ~ 370` (Lucas
   & Saccucci 1990).
 
 - steady_state:
@@ -63,10 +63,14 @@ shewhart_ewma(
 
 - rules:
 
-  Character vector of runs rules to flag. Defaults to Nelson 1 only —
-  the EWMA's own limits already encode most of the diagnostic power and
-  the higher-order Nelson rules are not designed for autocorrelated
-  statistics.
+  Character vector of runs rules to flag. Defaults to Nelson 1 only,
+  which fires exactly when `.ewma` crosses `.upper`/`.lower`. The rules
+  are evaluated on the EWMA series with a sigma-equivalent of
+  `L * se / 3`, so the zones used by rules 5-8 are thirds of the
+  distance from the centre to the EWMA limit (they equal 1 and 2
+  standard errors only when `L = 3`). The higher-order Nelson rules are
+  not designed for autocorrelated statistics and their false-alarm rates
+  on the EWMA are not calibrated.
 
 - locale:
 
@@ -90,12 +94,14 @@ z_i, plotted on the chart), and the usual `.center`, `.upper`, `.lower`,
 By default, sigma is estimated from the moving range of `value` (Wheeler
 1992 convention, `MR_bar / 1.128`); the centre is the mean of `value`.
 Either can be overridden via `target` and `sigma` for Phase II
-monitoring against pre-calibrated values.
+monitoring against pre-calibrated values. Missing values in `value` are
+an error, since a single `NA` would propagate through the recursion and
+silently disable every later alarm.
 
-Limits are time-varying by default — they widen out from `target` as the
-EWMA "warms up" — converging to the asymptotic limits as
-`i -> infinity`. Set `steady_state = TRUE` to use the asymptotic limits
-everywhere (commonly chosen when calibrating from a long baseline).
+Limits are time-varying by default: they widen out from `target` as the
+EWMA "warms up", converging to the asymptotic limits as `i -> infinity`.
+Set `steady_state = TRUE` to use the asymptotic limits everywhere
+(commonly chosen when calibrating from a long baseline).
 
 ## References
 
@@ -135,7 +141,7 @@ print(fit)
 #>   <chr> <chr>          <dbl>
 #> 1 EWMA  CL             101. 
 #> 2 EWMA  UCL_asymptotic 102. 
-#> 3 EWMA  LCL_asymptotic  99.0
+#> 3 EWMA  LCL_asymptotic  98.9
 #> ── Rule violations ──
 #> 
 #> ✔ No violations across 1 rule: "nelson_1_beyond_3s".

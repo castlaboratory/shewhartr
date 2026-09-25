@@ -143,6 +143,8 @@ Useful links:
 
 Authors:
 
+- André Leite <leite@castlab.org>
+
 - Hugo Vasconcelos <hugo.vasconcelos@ufpe.br>
 
 - Raydonal Ospina <raydonal@castlab.org>

@@ -26,6 +26,9 @@ glance(x, ...)
 
 A one-row tibble with columns `type`, `n`, `phase`, `sigma_hat`,
 `sigma_method`, `n_violations`, `n_rules`, `pct_violations`.
+`n_violations` counts rule hits (one row per point and rule), while
+`pct_violations` is the share of points flagged by at least one rule, so
+it always lies in `[0, 1]`.
 
 ## Examples
 

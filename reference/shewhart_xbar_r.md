@@ -30,7 +30,9 @@ shewhart_xbar_r(
 - subgroup:
 
   Tidy-eval column reference identifying the subgroup (e.g. shift,
-  batch, hour). All subgroups must have equal size.
+  batch, hour). All subgroups must have equal size. Subgroups are
+  plotted and tested in order of first appearance in `data` (time
+  order), not in sorted order of their labels.
 
 - rules:
 

@@ -50,6 +50,8 @@ should cover zero. Let’s plot the profile:
 autoplot(bc)
 ```
 
+![](box-cox_files/figure-html/unnamed-chunk-3-1.png)
+
 If the CI for $`\lambda`$ contains 1, no transformation is needed (the
 data are approximately normal as is). If it contains 0, take logs. If it
 contains 0.5, take square roots — and so on.
@@ -60,14 +62,18 @@ The `"auto"` model in
 [`shewhart_regression()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_regression.md)
 calls
 [`shewhart_box_cox()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_box_cox.md)
-internally on the response (with a +1 shift to keep zeros valid) and
-selects among `linear`, `log`, `loglog` according to the value of
-$`\hat \lambda`$:
+internally on the response (with a +1 shift to keep zeros valid), phase
+by phase, and rounds $`\hat \lambda`$ to the nearest rung of the ladder
+that the model menu offers:
 
-- $`|\hat \lambda - 1| \le 0.1`$ → `linear`
-- $`|\hat \lambda - 0| \le 0.1`$ → `log`
-- $`|\hat \lambda - 0.5| \le 0.1`$ → `loglog`
-- otherwise default to `linear` with a warning
+- $`\hat \lambda < 0.25`$ (rungs 0 and below) → `log`
+- $`\hat \lambda \ge 0.25`$ → `linear`
+
+The square-root rung ($`\lambda = 0.5`$) has no dedicated model, so it
+maps to `linear`, the nearest *weaker* transform. `loglog` is a
+*stronger* transform than `log` and is never chosen automatically;
+request it explicitly with `model = "loglog"` when the diagnostics call
+for it.
 
 This is a guidance step, not a guarantee. Always inspect the residual
 diagnostics afterwards via

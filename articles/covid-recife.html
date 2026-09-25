@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
 <script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_3-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_3-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/JetBrains_Mono-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -136,7 +136,7 @@ predictor).</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 8</span></span></span>
 <span><span class="co">#&gt;   type      n phase   sigma_hat sigma_method n_violations n_rules pct_violations</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> i_mr    279 phase_1      5.17 mr                    139       2          0.498</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> i_mr    279 phase_1      5.17 mr                    139       2          0.448</span></span></code></pre></div>
 <p>The chart fires repeatedly along the entire ascending limb of the
 first wave — every “violation” is the chart noticing that today is worse
 than yesterday, which is true and is also exactly what we already knew.
@@ -153,13 +153,14 @@ stationarity, not violations of the underlying public health story.</p>
 <span>  index      <span class="op">=</span> <span class="va">.t</span>,</span>
 <span>  model      <span class="op">=</span> <span class="st">"loglog"</span>,</span>
 <span>  phase_rule <span class="op">=</span> <span class="st">"we_seven_same"</span>,   <span class="co"># legacy WE rule used in the original analysis</span></span>
-<span>  rules      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nelson_1_beyond_3s"</span>, <span class="st">"we_seven_same"</span><span class="op">)</span></span>
+<span>  rules      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nelson_1_beyond_3s"</span>, <span class="st">"we_seven_same"</span><span class="op">)</span>,</span>
+<span>  lower_bound <span class="op">=</span> <span class="fl">0</span>                 <span class="co"># death counts cannot go negative</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu">broom</span><span class="fu">::</span><span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 8</span></span></span>
 <span><span class="co">#&gt;   type        n phase sigma_hat sigma_method n_violations n_rules pct_violations</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> regres…   279 phas…      3.47 mr                     10       2         0.035<span style="text-decoration: underline;">8</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> regres…   279 phas…      4.37 mr                     10       2         0.035<span style="text-decoration: underline;">8</span></span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">fits</span><span class="op">)</span>        <span class="co"># number of phases</span></span>
 <span><span class="co">#&gt; [1] 9</span></span></code></pre></div>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
@@ -191,9 +192,20 @@ choose:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/shewhart_box_cox.html">shewhart_box_cox</a></span><span class="op">(</span><span class="va">cvd_recife</span><span class="op">$</span><span class="va">new_deaths</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="va">lambda_hat</span></span>
 <span><span class="co">#&gt; [1] 0</span></span></code></pre></div>
-<p>If the maximiser is near 0, take logs. If it is near 0.5, the log-log
-scale is a reasonable approximation. For values between 0 and 1, a
-Box-Cox transformation in that range is the most defensible choice.</p>
+<p>Read the maximiser as a rung on Tukey’s ladder of powers: near 1, no
+transformation (<code>model = "linear"</code>); near 0.5, square roots;
+near 0, logs (<code>model = "log"</code>); below 0, something
+<em>stronger</em> than logs. The log-log scale belongs to that last
+group: it compresses more than a single log, so it is the defensible
+choice only when
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>λ</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat\lambda</annotation></semantics></math>
+sits at or below 0 and the <code>log</code> fit still leaves the
+residual spread growing with the level. A maximiser near 0.5 calls for a
+<em>weaker</em> transform than log, never for log-log. The
+<code>model = "auto"</code> setting applies this reading per phase,
+choosing between <code>log</code>
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>&lt;</mo><mn>0.25</mn></mrow><annotation encoding="application/x-tex">\hat\lambda &lt; 0.25</annotation></semantics></math>)
+and <code>linear</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="methodological-caveats">Methodological caveats<a class="anchor" aria-label="anchor" href="#methodological-caveats"></a>
@@ -240,17 +252,18 @@ cleaner default rule (Nelson 2 — 9 points).</p>
 </h2>
 <ul>
 <li>Perla, R. J., Provost, S. M., Parry, G. J., Little, K., &amp;
-Provost, L. (2020). Understanding variation in reported COVID-19 deaths
-with a novel Shewhart chart application. <em>International Journal for
-Quality in Health Care</em>, 32(S1), 49-55. — the methodological
-blueprint for the regression chart with phase detection used in this
-case study.</li>
-<li>Ferraz, C., Petenate, A. J., Wanderley, A. L., Ospina, R., Torres,
-J., &amp; Moreira, A. P. (2020). COVID-19: Monitoramento por gráficos de
-Shewhart. <em>Revista Brasileira de Estatística</em>. — the Brazilian
-adaptation, the source of the <code>cvd_recife</code> dataset and of the
-legacy 7-points-in-a-row rule (<code>we_seven_same</code>) used
-above.</li>
+Provost, L. P. (2020). Understanding variation in reported covid-19
+deaths with a novel Shewhart chart application. <em>International
+Journal for Quality in Health Care</em>, 32(10), 685-688. <a href="doi:10.1093/intqhc/mzaa069" class="uri">doi:10.1093/intqhc/mzaa069</a>. — the methodological
+blueprint (a hybrid C/I chart in phases) for the regression chart with
+phase detection used in this case study.</li>
+<li>Ferraz, C., Petenate, A. J., Leite Wanderley, A., Ospina, R.,
+Torres, J. E. M., &amp; Peruzzi Moreira, A. (2020). Gráficos de Shewhart
+para monitoramento de COVID-19 na cidade de Recife. In <em>Anais do LII
+Simpósio Brasileiro de Pesquisa Operacional</em> (SBPO 2020), João
+Pessoa-PB. — the Brazilian adaptation, the source of the
+<code>cvd_recife</code> analysis and of the legacy 7-points-in-a-row
+rule (<code>we_seven_same</code>) used above.</li>
 <li>Cori, A., Ferguson, N. M., Fraser, C., &amp; Cauchemez, S. (2013). A
 New Framework and Software to Estimate Time-Varying Reproduction Numbers
 During Epidemics. <em>American Journal of Epidemiology</em>, 178(9),
@@ -275,7 +288,7 @@ Quality Technology</em>, 1(1), 1-9.</li>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

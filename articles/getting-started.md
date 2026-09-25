@@ -57,7 +57,13 @@ the MR chart) and lists any rule violations. To see the chart:
 ``` r
 
 autoplot(fit_imr)
+#> Warning: Removed 1 row containing missing values or values outside the scale range
+#> (`geom_line()`).
+#> Warning: Removed 1 row containing missing values or values outside the scale range
+#> (`geom_point()`).
 ```
+
+![](getting-started_files/figure-html/unnamed-chunk-3-1.png)
 
 ### 2. An Xbar-R chart on a subgrouped process
 

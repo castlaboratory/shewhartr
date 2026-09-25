@@ -122,8 +122,10 @@ You can plot the monitored series exactly the same way:
 
 ``` r
 
-autoplot(alarms)
+ggplot2::autoplot(alarms)
 ```
+
+![](phase1-phase2_files/figure-html/unnamed-chunk-6-1.png)
 
 ## Why the trim step matters
 

@@ -77,7 +77,9 @@ both non-negative), `.upper` (the decision interval `h * sigma`), and
 By default, sigma is estimated from the moving range of `value`
 (`MR_bar / 1.128`); the target is the mean of `value`. Either can be
 overridden via `target` and `sigma` for Phase II monitoring against
-pre-calibrated values.
+pre-calibrated values. Missing values in `value` are an error, since a
+single `NA` would propagate through the accumulators and silently
+disable every later alarm.
 
 ## References
 

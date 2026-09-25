@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
 <script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_3-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_3-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/JetBrains_Mono-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -129,6 +129,7 @@ twice the log-likelihood drop.</p>
 should cover zero. Let’s plot the profile:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">bc</span><span class="op">)</span></span></code></pre></div>
+<p><img src="box-cox_files/figure-html/unnamed-chunk-3-1.png" class="r-plt" alt="" width="672"></p>
 <p>If the CI for
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>λ</mi><annotation encoding="application/x-tex">\lambda</annotation></semantics></math>
 contains 1, no transformation is needed (the data are approximately
@@ -141,24 +142,26 @@ square roots — and so on.</p>
 </h2>
 <p>The <code>"auto"</code> model in <code><a href="../reference/shewhart_regression.html">shewhart_regression()</a></code>
 calls <code><a href="../reference/shewhart_box_cox.html">shewhart_box_cox()</a></code> internally on the response (with a
-+1 shift to keep zeros valid) and selects among <code>linear</code>,
-<code>log</code>, <code>loglog</code> according to the value of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>λ</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat \lambda</annotation></semantics></math>:</p>
++1 shift to keep zeros valid), phase by phase, and rounds
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>λ</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat \lambda</annotation></semantics></math>
+to the nearest rung of the ladder that the model menu offers:</p>
 <ul>
 <li>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">|</mo><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>−</mo><mn>1</mn><mo stretchy="false" form="prefix">|</mo><mo>≤</mo><mn>0.1</mn></mrow><annotation encoding="application/x-tex">|\hat \lambda - 1| \le 0.1</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>&lt;</mo><mn>0.25</mn></mrow><annotation encoding="application/x-tex">\hat \lambda &lt; 0.25</annotation></semantics></math>
+(rungs 0 and below) → <code>log</code>
+</li>
+<li>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>≥</mo><mn>0.25</mn></mrow><annotation encoding="application/x-tex">\hat \lambda \ge 0.25</annotation></semantics></math>
 → <code>linear</code>
 </li>
-<li>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">|</mo><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>−</mo><mn>0</mn><mo stretchy="false" form="prefix">|</mo><mo>≤</mo><mn>0.1</mn></mrow><annotation encoding="application/x-tex">|\hat \lambda - 0| \le 0.1</annotation></semantics></math>
-→ <code>log</code>
-</li>
-<li>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">|</mo><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>−</mo><mn>0.5</mn><mo stretchy="false" form="prefix">|</mo><mo>≤</mo><mn>0.1</mn></mrow><annotation encoding="application/x-tex">|\hat \lambda - 0.5| \le 0.1</annotation></semantics></math>
-→ <code>loglog</code>
-</li>
-<li>otherwise default to <code>linear</code> with a warning</li>
 </ul>
+<p>The square-root rung
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>λ</mi><mo>=</mo><mn>0.5</mn></mrow><annotation encoding="application/x-tex">\lambda = 0.5</annotation></semantics></math>)
+has no dedicated model, so it maps to <code>linear</code>, the nearest
+<em>weaker</em> transform. <code>loglog</code> is a <em>stronger</em>
+transform than <code>log</code> and is never chosen automatically;
+request it explicitly with <code>model = "loglog"</code> when the
+diagnostics call for it.</p>
 <p>This is a guidance step, not a guarantee. Always inspect the residual
 diagnostics afterwards via <code><a href="../reference/shewhart_diagnostics.html">shewhart_diagnostics()</a></code>.</p>
 </div>
@@ -203,7 +206,7 @@ Regression</em>. Oxford.</li>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

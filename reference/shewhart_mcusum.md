@@ -54,8 +54,11 @@ shewhart_mcusum(
 
 - h:
 
-  Decision interval. If `NULL`, looked up in the Crosier (1988) Table 1
-  for `k = 0.5`, `ARL_0 ~ 200`, `p = 2..10`.
+  Decision interval. If `NULL`, looked up in a table giving
+  `ARL_0 ~ 200` for `k = 0.5` and `p = 2..10` (simulated with known
+  in-control parameters; `p = 2` matches Crosier 1988). With `target`
+  and `cov` estimated from the same data the actual in-control ARL
+  differs; pass `h` explicitly for other designs.
 
 - locale:
 

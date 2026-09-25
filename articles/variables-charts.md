@@ -49,7 +49,13 @@ broom::glance(fit)
 ``` r
 
 autoplot(fit)
+#> Warning: Removed 1 row containing missing values or values outside the scale range
+#> (`geom_line()`).
+#> Warning: Removed 1 row containing missing values or values outside the scale range
+#> (`geom_point()`).
 ```
+
+![](variables-charts_files/figure-html/unnamed-chunk-3-1.png)
 
 ### Robust alternatives
 

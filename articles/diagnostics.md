@@ -23,7 +23,13 @@ print them.
 
 fit <- shewhart_i_mr(bottle_fill, value = ml, index = observation)
 shewhart_diagnostics(fit)
+#> Warning: Removed 1 row containing missing values or values outside the scale range
+#> (`geom_line()`).
+#> Warning: Removed 1 row containing missing values or values outside the scale range
+#> (`geom_point()`).
 ```
+
+![](diagnostics_files/figure-html/unnamed-chunk-2-1.png)
 
 | Panel                | Reads as                                     |
 |----------------------|----------------------------------------------|
@@ -52,8 +58,15 @@ transformation:
 
 bc <- shewhart_box_cox(bottle_fill, value = ml)
 print(bc)
+#> 
+#> ── Box-Cox profile likelihood ──────────────────────────────────────────────────
+#> • n = 100
+#> • lambda_hat = 2
+#> • 95% CI: [-2, 2]
 ggplot2::autoplot(bc)
 ```
+
+![](diagnostics_files/figure-html/unnamed-chunk-3-1.png)
 
 The maximum-likelihood lambda and its 95% CI are returned. If 1 falls
 inside the CI, no transformation is needed; if 0 does, take logs;

@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
 <script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_3-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_3-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/JetBrains_Mono-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -131,7 +131,7 @@ to small shifts.</p>
 <span><span class="co">#&gt;   chart alarm</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> I-MR     10</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> EWMA     <span style="color: #BB0000;">NA</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> EWMA     15</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> CUSUM    15</span></span></code></pre></div>
 <p>For a 0.5-sigma shift, the I-MR chart often fails to signal at all
 within 80 observations, while the EWMA and CUSUM typically catch it
@@ -145,12 +145,14 @@ within a few points of the change.</p>
 <p>With <code>lambda</code> close to 1 the chart behaves like a Shewhart
 I chart (little memory). With <code>lambda</code> close to 0 it averages
 over a long history (heavy memory, slow but very sensitive). The
-classical default <code>lambda = 0.2</code>, <code>L = 2.7</code> gives
+classical default <code>lambda = 0.2</code>, <code>L = 2.86</code> gives
 <code>ARL_0 ≈ 370</code> and is well matched to detecting shifts of 0.5
-to 1 sigma (Lucas &amp; Saccucci 1990).</p>
+to 1 sigma (Lucas &amp; Saccucci 1990). (Releases up to 1.3.0 used
+<code>L = 2.7</code>, which with <code>lambda = 0.2</code> gives only
+<code>ARL_0 ≈ 240</code>.)</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/shewhart_ewma.html">shewhart_ewma</a></span><span class="op">(</span><span class="va">df</span>, value <span class="op">=</span> <span class="va">y</span>, index <span class="op">=</span> <span class="va">t</span>,</span>
-<span>                     lambda <span class="op">=</span> <span class="fl">0.2</span>, L <span class="op">=</span> <span class="fl">2.7</span><span class="op">)</span></span>
+<span>                     lambda <span class="op">=</span> <span class="fl">0.2</span>, L <span class="op">=</span> <span class="fl">2.86</span><span class="op">)</span></span>
 <span><span class="va">fit</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Shewhart chart </span><span style="color: #00BB00; font-weight: bold;">ewma</span> <span style="color: #00BBBB;">─────────────────────────────────────────────────────────</span></span></span>
@@ -164,11 +166,12 @@ to 1 sigma (Lucas &amp; Saccucci 1990).</p>
 <span><span class="co">#&gt;   chart line            value</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> EWMA  CL              0.165</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> EWMA  UCL_asymptotic  1.08 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> EWMA  LCL_asymptotic -<span style="color: #BB0000;">0.748</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> EWMA  UCL_asymptotic  1.13 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> EWMA  LCL_asymptotic -<span style="color: #BB0000;">0.802</span></span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Rule violations</span> ──</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> No violations across <span style="color: #0000BB;">1</span> rule: <span style="color: #0000BB;">"nelson_1_beyond_3s"</span>.</span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> <span style="color: #0000BB;">1</span> violation across <span style="color: #0000BB;">1</span> rule.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">nelson_1_beyond_3s</span>: <span style="color: #0000BB;">1</span> hit.</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
 <p><img src="memory-based-charts_files/figure-html/unnamed-chunk-3-1.png" class="r-plt" alt="" width="672"></p>
 <p>The control limits in an EWMA chart are <strong>time-varying</strong>
@@ -178,6 +181,16 @@ is the correct probability-symmetric calibration; setting
 <code>steady_state = TRUE</code> flattens them out at the asymptotic
 value (a common simplification once you have a long enough
 baseline).</p>
+<p>Nelson rule 1 fires exactly when the EWMA crosses these limits. If
+you switch on other runs rules through <code>rules =</code>, note that
+their zones are drawn at one and two thirds of the distance from the
+centre to the EWMA limit (they match 1 and 2 standard errors of
+<code>z_i</code> only when <code>L = 3</code>), and that those rules
+were designed for independent points, not for the autocorrelated EWMA;
+their false-alarm rate is not calibrated. Missing values are rejected by
+both <code><a href="../reference/shewhart_ewma.html">shewhart_ewma()</a></code> and <code><a href="../reference/shewhart_cusum.html">shewhart_cusum()</a></code>,
+because a single <code>NA</code> would propagate through the recursion
+and switch every later alarm off.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/shewhart_ewma.html">shewhart_ewma</a></span><span class="op">(</span><span class="va">df</span>, value <span class="op">=</span> <span class="va">y</span>, index <span class="op">=</span> <span class="va">t</span>, steady_state <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
@@ -185,7 +198,9 @@ baseline).</p>
 <div class="section level3">
 <h3 id="choosing-lambda">Choosing <code>lambda</code><a class="anchor" aria-label="anchor" href="#choosing-lambda"></a>
 </h3>
-<p>A practical guide (Montgomery 2019, Table 9.10):</p>
+<p>A practical guide (Lucas &amp; Saccucci 1990; the <code>L</code>
+values were checked by simulation with 20,000 in-control paths and
+steady-state limits):</p>
 <table class="table">
 <thead><tr class="header">
 <th>Target shift size</th>
@@ -216,11 +231,14 @@ baseline).</p>
 <tr class="even">
 <td>1.00 σ</td>
 <td>0.40</td>
-<td>3.00</td>
+<td>2.96</td>
 <td>~370</td>
 </tr>
 </tbody>
 </table>
+<p>With the default time-varying limits the in-control ARL is a little
+lower (about 340 for <code>lambda = 0.05</code>, 360 to 370 for the
+other rows), because the narrow early limits add some false alarms.</p>
 <p>Choose the <em>smallest</em> shift you care about, then use the
 matching row. You can validate the actual ARL with
 [<code><a href="../reference/shewhart_arl.html">shewhart_arl()</a></code>] from the arl-simulation vignette.</p>
@@ -324,7 +342,7 @@ calibrates on a 60-point in-control baseline and then monitors a fresh
 <span></span>
 <span><span class="fu"><a href="../reference/shewhart_ewma.html">shewhart_ewma</a></span><span class="op">(</span><span class="va">new_data</span>, value <span class="op">=</span> <span class="va">y</span>, index <span class="op">=</span> <span class="va">t</span>,</span>
 <span>              target <span class="op">=</span> <span class="va">mu_hat</span>, sigma <span class="op">=</span> <span class="va">sd_hat</span>,</span>
-<span>              lambda <span class="op">=</span> <span class="fl">0.2</span>, L <span class="op">=</span> <span class="fl">2.7</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>              lambda <span class="op">=</span> <span class="fl">0.2</span>, L <span class="op">=</span> <span class="fl">2.86</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="memory-based-charts_files/figure-html/unnamed-chunk-6-1.png" class="r-plt" alt="" width="672"></p>
 <p>A <code><a href="../reference/calibrate.html">calibrate()</a></code> / <code><a href="../reference/monitor.html">monitor()</a></code> integration for
@@ -419,7 +437,7 @@ Control</em> (8th ed.). Wiley. Chapter 9.</li>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

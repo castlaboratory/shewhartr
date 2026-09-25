@@ -54,7 +54,7 @@ broom::glance(fit_imr)
 #> # A tibble: 1 × 8
 #>   type      n phase   sigma_hat sigma_method n_violations n_rules pct_violations
 #>   <chr> <int> <chr>       <dbl> <chr>               <int>   <int>          <dbl>
-#> 1 i_mr    279 phase_1      5.17 mr                    139       2          0.498
+#> 1 i_mr    279 phase_1      5.17 mr                    139       2          0.448
 ```
 
 The chart fires repeatedly along the entire ascending limb of the first
@@ -73,13 +73,14 @@ fit <- shewhart_regression(
   index      = .t,
   model      = "loglog",
   phase_rule = "we_seven_same",   # legacy WE rule used in the original analysis
-  rules      = c("nelson_1_beyond_3s", "we_seven_same")
+  rules      = c("nelson_1_beyond_3s", "we_seven_same"),
+  lower_bound = 0                 # death counts cannot go negative
 )
 broom::glance(fit)
 #> # A tibble: 1 × 8
 #>   type        n phase sigma_hat sigma_method n_violations n_rules pct_violations
 #>   <chr>   <int> <chr>     <dbl> <chr>               <int>   <int>          <dbl>
-#> 1 regres…   279 phas…      3.47 mr                     10       2         0.0358
+#> 1 regres…   279 phas…      4.37 mr                     10       2         0.0358
 length(fit$fits)        # number of phases
 #> [1] 9
 ```
@@ -118,9 +119,16 @@ shewhart_box_cox(cvd_recife$new_deaths + 1)$lambda_hat
 #> [1] 0
 ```
 
-If the maximiser is near 0, take logs. If it is near 0.5, the log-log
-scale is a reasonable approximation. For values between 0 and 1, a
-Box-Cox transformation in that range is the most defensible choice.
+Read the maximiser as a rung on Tukey’s ladder of powers: near 1, no
+transformation (`model = "linear"`); near 0.5, square roots; near 0,
+logs (`model = "log"`); below 0, something *stronger* than logs. The
+log-log scale belongs to that last group: it compresses more than a
+single log, so it is the defensible choice only when $`\hat\lambda`$
+sits at or below 0 and the `log` fit still leaves the residual spread
+growing with the level. A maximiser near 0.5 calls for a *weaker*
+transform than log, never for log-log. The `model = "auto"` setting
+applies this reading per phase, choosing between `log`
+($`\hat\lambda < 0.25`$) and `linear`.
 
 ## Methodological caveats
 
@@ -158,16 +166,20 @@ chart families and the cleaner default rule (Nelson 2 — 9 points).
 
 ## References
 
-- Perla, R. J., Provost, S. M., Parry, G. J., Little, K., & Provost, L.
-  (2020). Understanding variation in reported COVID-19 deaths with a
-  novel Shewhart chart application. *International Journal for Quality
-  in Health Care*, 32(S1), 49-55. — the methodological blueprint for the
-  regression chart with phase detection used in this case study.
-- Ferraz, C., Petenate, A. J., Wanderley, A. L., Ospina, R., Torres, J.,
-  & Moreira, A. P. (2020). COVID-19: Monitoramento por gráficos de
-  Shewhart. *Revista Brasileira de Estatística*. — the Brazilian
-  adaptation, the source of the `cvd_recife` dataset and of the legacy
-  7-points-in-a-row rule (`we_seven_same`) used above.
+- Perla, R. J., Provost, S. M., Parry, G. J., Little, K., &
+  Provost, L. P. (2020). Understanding variation in reported covid-19
+  deaths with a novel Shewhart chart application. *International Journal
+  for Quality in Health Care*, 32(10), 685-688.
+  <doi:10.1093/intqhc/mzaa069>. — the methodological blueprint (a hybrid
+  C/I chart in phases) for the regression chart with phase detection
+  used in this case study.
+- Ferraz, C., Petenate, A. J., Leite Wanderley, A., Ospina, R.,
+  Torres, J. E. M., & Peruzzi Moreira, A. (2020). Gráficos de Shewhart
+  para monitoramento de COVID-19 na cidade de Recife. In *Anais do LII
+  Simpósio Brasileiro de Pesquisa Operacional* (SBPO 2020), João
+  Pessoa-PB. — the Brazilian adaptation, the source of the `cvd_recife`
+  analysis and of the legacy 7-points-in-a-row rule (`we_seven_same`)
+  used above.
 - Cori, A., Ferguson, N. M., Fraser, C., & Cauchemez, S. (2013). A New
   Framework and Software to Estimate Time-Varying Reproduction Numbers
   During Epidemics. *American Journal of Epidemiology*, 178(9),

@@ -40,7 +40,7 @@ broom::glance(fit)
 #> # A tibble: 1 × 8
 #>   type        n phase sigma_hat sigma_method n_violations n_rules pct_violations
 #>   <chr>   <int> <chr>     <dbl> <chr>               <int>   <int>          <dbl>
-#> 1 regres…   200 phas…     0.366 mr                     11       2          0.055
+#> 1 regres…   200 phas…     0.366 mr                     11       2           0.05
 ```
 
 ``` r
@@ -98,7 +98,7 @@ broom::glance(fit)
 #> # A tibble: 1 × 8
 #>   type        n phase sigma_hat sigma_method n_violations n_rules pct_violations
 #>   <chr>   <int> <chr>     <dbl> <chr>               <int>   <int>          <dbl>
-#> 1 regres…   120 phas…     0.481 mr                      7       2         0.0583
+#> 1 regres…   120 phas…     0.453 mr                      7       2         0.0583
 length(fit$fits)    # number of phases detected
 #> [1] 7
 ```
@@ -118,10 +118,10 @@ length(fit_legacy$fits)
 ```
 
 The trade-off is straightforward. With Nelson 2 (9 same side), the
-in-control ARL is about 256 — false phase changes are rare. With the WE
-7-same rule, ARL_0 is about 64 — phase changes are detected faster but
-at a higher false-alarm cost. See the `arl-simulation` vignette for a
-quantitative comparison.
+in-control ARL is $`2^9 - 1 = 511`$ — false phase changes are rare. With
+the WE 7-same rule, ARL_0 is $`2^7 - 1 = 127`$ — phase changes are
+detected faster but at a higher false-alarm cost. See the
+`arl-simulation` vignette for a quantitative comparison.
 
 ``` r
 
@@ -200,13 +200,15 @@ head(fit_recife$violations, 8)
 | `"loglog"`    | $`\log(\log(y/\alpha + 1) + 1) = \beta_0 + \beta_1 N`$ |
 | `"gompertz"`  | Gompertz cumulative growth (via `nls`)                 |
 | `"logistic"`  | Logistic cumulative growth (via `nls`)                 |
-| `"auto"`      | Box-Cox guidance to choose between linear/log/log-log  |
+| `"auto"`      | Box-Cox guidance to choose between linear and log      |
 
 The `"auto"` setting calls
 [`shewhart_box_cox()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_box_cox.md)
-internally and selects based on the maximum-likelihood lambda. It is a
-good first try when you don’t have strong prior knowledge of the
-functional form.
+internally and selects based on the maximum-likelihood lambda: `log`
+when $`\hat\lambda < 0.25`$, `linear` otherwise (a square-root lambda
+near 0.5 maps to `linear`; `loglog` is stronger than `log` and is never
+chosen automatically). It is a good first try when you don’t have strong
+prior knowledge of the functional form.
 
 For full control, supply your own formula:
 
@@ -233,7 +235,7 @@ broom::glance(fit_gomp)
 #> # A tibble: 1 × 8
 #>   type        n phase sigma_hat sigma_method n_violations n_rules pct_violations
 #>   <chr>   <int> <chr>     <dbl> <chr>               <int>   <int>          <dbl>
-#> 1 regres…    80 phas…     0.160 mr                      8       2            0.1
+#> 1 regres…    80 phas…    0.0802 mr                      2       2          0.025
 ```
 
 ``` r
@@ -267,17 +269,20 @@ colouring each phase distinctly.
 
 - Mandel, B. J. (1969). The Regression Control Chart. *Journal of
   Quality Technology*, 1(1), 1-9.
-- Perla, R. J., Provost, S. M., Parry, G. J., Little, K., & Provost, L.
-  (2020). Understanding variation in reported COVID-19 deaths with a
-  novel Shewhart chart application. *International Journal for Quality
-  in Health Care*, 32(S1), 49-55. — the three-phase hybrid C/I chart
-  that motivated the multi-phase regression-chart design used by
+- Perla, R. J., Provost, S. M., Parry, G. J., Little, K., &
+  Provost, L. P. (2020). Understanding variation in reported covid-19
+  deaths with a novel Shewhart chart application. *International Journal
+  for Quality in Health Care*, 32(10), 685-688.
+  <doi:10.1093/intqhc/mzaa069>. — the three-phase hybrid C/I chart that
+  motivated the multi-phase regression-chart design used by
   [`shewhart_regression()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_regression.md).
-- Ferraz, C., Petenate, A. J., Wanderley, A. L., Ospina, R., Torres, J.,
-  & Moreira, A. P. (2020). COVID-19: Monitoramento por gráficos de
-  Shewhart. *Revista Brasileira de Estatística*. — the Brazilian
-  adaptation; source of the legacy `we_seven_same` phase rule and the
-  original analysis settings reused in the Recife example above.
+- Ferraz, C., Petenate, A. J., Leite Wanderley, A., Ospina, R.,
+  Torres, J. E. M., & Peruzzi Moreira, A. (2020). Gráficos de Shewhart
+  para monitoramento de COVID-19 na cidade de Recife. In *Anais do LII
+  Simpósio Brasileiro de Pesquisa Operacional* (SBPO 2020), João
+  Pessoa-PB. — the Brazilian adaptation; source of the legacy
+  `we_seven_same` phase rule and the original analysis settings reused
+  in the Recife example above.
 - Hawkins, D. M. (1991). Multivariate Quality Control Based on
   Regression-Adjusted Variables. *Technometrics*, 33(1), 61-75.
 - Wheeler, D. J., & Chambers, D. S. (1992). *Understanding Statistical

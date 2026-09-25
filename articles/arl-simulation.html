@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
 <script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_3-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_3-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/JetBrains_Mono-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -202,10 +202,18 @@ The trade-off:</p>
 <span><span class="va">arl_n2</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/shewhart_arl.html">shewhart_arl</a></span><span class="op">(</span><span class="fl">0</span>, <span class="st">"nelson_2_nine_same"</span>,  n_sim <span class="op">=</span> <span class="fl">5000</span>, max_run <span class="op">=</span> <span class="fl">2000</span><span class="op">)</span></span>
 <span><span class="va">arl_we</span></span>
 <span><span class="va">arl_n2</span></span></code></pre></div>
-<p>The WE rule’s ARL_0 is around 64 (a false phase change every 64
-in-control samples on average); Nelson 2’s is around 256 (one every ~256
-samples). For most monitoring contexts that is a meaningful difference.
-The WE rule is easier to teach, but the false-alarm cost is high.</p>
+<p>The WE rule’s ARL_0 is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mn>2</mn><mn>7</mn></msup><mo>−</mo><mn>1</mn><mo>=</mo><mn>127</mn></mrow><annotation encoding="application/x-tex">2^7 - 1 = 127</annotation></semantics></math>
+(a false phase change every 127 in-control samples on average); Nelson
+2’s is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mn>2</mn><mn>9</mn></msup><mo>−</mo><mn>1</mn><mo>=</mo><mn>511</mn></mrow><annotation encoding="application/x-tex">2^9 - 1 = 511</annotation></semantics></math>
+(one every ~511 samples). Both follow from the waiting time for a run of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
+same-side points when each side has probability 1/2,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mn>2</mn><mi>k</mi></msup><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">2^k - 1</annotation></semantics></math>,
+and the simulated values above agree with them. For most monitoring
+contexts that is a meaningful difference. The WE rule is easier to
+teach, but the false-alarm cost is high.</p>
 <p><code><a href="../reference/shewhart_regression.html">shewhart_regression()</a></code> accepts either via the
 <code>phase_rule</code> argument:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
@@ -251,7 +259,7 @@ Moving Average Control Schemes: Properties and Enhancements.
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

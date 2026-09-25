@@ -47,7 +47,7 @@ tibble::tibble(
 #>   chart alarm
 #>   <chr> <int>
 #> 1 I-MR     10
-#> 2 EWMA     NA
+#> 2 EWMA     15
 #> 3 CUSUM    15
 ```
 
@@ -65,13 +65,15 @@ z_i = \lambda x_i + (1 - \lambda) z_{i-1}, \qquad z_0 = \mu.
 With `lambda` close to 1 the chart behaves like a Shewhart I chart
 (little memory). With `lambda` close to 0 it averages over a long
 history (heavy memory, slow but very sensitive). The classical default
-`lambda = 0.2`, `L = 2.7` gives `ARL_0 ≈ 370` and is well matched to
-detecting shifts of 0.5 to 1 sigma (Lucas & Saccucci 1990).
+`lambda = 0.2`, `L = 2.86` gives `ARL_0 ≈ 370` and is well matched to
+detecting shifts of 0.5 to 1 sigma (Lucas & Saccucci 1990). (Releases up
+to 1.3.0 used `L = 2.7`, which with `lambda = 0.2` gives only
+`ARL_0 ≈ 240`.)
 
 ``` r
 
 fit <- shewhart_ewma(df, value = y, index = t,
-                     lambda = 0.2, L = 2.7)
+                     lambda = 0.2, L = 2.86)
 fit
 #> 
 #> ── Shewhart chart ewma ─────────────────────────────────────────────────────────
@@ -85,11 +87,12 @@ fit
 #>   chart line            value
 #>   <chr> <chr>           <dbl>
 #> 1 EWMA  CL              0.165
-#> 2 EWMA  UCL_asymptotic  1.08 
-#> 3 EWMA  LCL_asymptotic -0.748
+#> 2 EWMA  UCL_asymptotic  1.13 
+#> 3 EWMA  LCL_asymptotic -0.802
 #> ── Rule violations ──
 #> 
-#> ✔ No violations across 1 rule: "nelson_1_beyond_3s".
+#> ! 1 violation across 1 rule.
+#> nelson_1_beyond_3s: 1 hit.
 autoplot(fit)
 ```
 
@@ -102,6 +105,19 @@ correct probability-symmetric calibration; setting `steady_state = TRUE`
 flattens them out at the asymptotic value (a common simplification once
 you have a long enough baseline).
 
+Nelson rule 1 fires exactly when the EWMA crosses these limits. If you
+switch on other runs rules through `rules =`, note that their zones are
+drawn at one and two thirds of the distance from the centre to the EWMA
+limit (they match 1 and 2 standard errors of `z_i` only when `L = 3`),
+and that those rules were designed for independent points, not for the
+autocorrelated EWMA; their false-alarm rate is not calibrated. Missing
+values are rejected by both
+[`shewhart_ewma()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_ewma.md)
+and
+[`shewhart_cusum()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_cusum.md),
+because a single `NA` would propagate through the recursion and switch
+every later alarm off.
+
 ``` r
 
 shewhart_ewma(df, value = y, index = t, steady_state = TRUE) |>
@@ -112,14 +128,19 @@ shewhart_ewma(df, value = y, index = t, steady_state = TRUE) |>
 
 ### Choosing `lambda`
 
-A practical guide (Montgomery 2019, Table 9.10):
+A practical guide (Lucas & Saccucci 1990; the `L` values were checked by
+simulation with 20,000 in-control paths and steady-state limits):
 
 | Target shift size | Reasonable `lambda` | `L`  | ARL_0 |
 |-------------------|---------------------|------|-------|
 | 0.25 σ            | 0.05                | 2.49 | ~370  |
 | 0.50 σ            | 0.10                | 2.70 | ~370  |
 | 0.75 σ            | 0.20                | 2.86 | ~370  |
-| 1.00 σ            | 0.40                | 3.00 | ~370  |
+| 1.00 σ            | 0.40                | 2.96 | ~370  |
+
+With the default time-varying limits the in-control ARL is a little
+lower (about 340 for `lambda = 0.05`, 360 to 370 for the other rows),
+because the narrow early limits add some false alarms.
 
 Choose the *smallest* shift you care about, then use the matching row.
 You can validate the actual ARL with
@@ -212,7 +233,7 @@ new_data <- tibble::tibble(
 
 shewhart_ewma(new_data, value = y, index = t,
               target = mu_hat, sigma = sd_hat,
-              lambda = 0.2, L = 2.7) |>
+              lambda = 0.2, L = 2.86) |>
   autoplot()
 ```
 

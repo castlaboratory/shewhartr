@@ -1,6 +1,211 @@
 # Changelog
 
-## shewhartr 1.3.0 (development version)
+## shewhartr 1.3.1 (development version)
+
+### Bug fixes (audit of 2026-09-25)
+
+- [`shewhart_capability()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_capability.md)
+  on Xbar-R / Xbar-S charts no longer multiplies the chart’s sigma by
+  `sqrt(n)` (it is already the per-individual sigma), and computes the
+  mean and Pp/Ppk from the individual measurements instead of the
+  subgroup means. Cp was depressed by `sqrt(n)` and Pp could be `Inf`.
+  Subgroup charts now carry their individual measurements in
+  `metadata$values`
+  ([\#2](https://github.com/castlaboratory/shewhartr/issues/2)).
+- [`shewhart_capability()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_capability.md)
+  bootstrap intervals re-estimate sigma within in every replicate with
+  the chart’s own estimator (whole subgroups resampled for Xbar charts,
+  consecutive pairs for individual charts). The Cp/Cpk interval used to
+  be an interval for Pp/Ppk. Capability now errors for chart types where
+  it is undefined (attribute, regression, multivariate)
+  ([\#24](https://github.com/castlaboratory/shewhartr/issues/24)).
+- [`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md)
+  on an I-MR chart now returns the moving-range columns (`.mr`, seeded
+  with the last Phase I value, and the stored MR limits), so
+  [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+  and
+  [`as_plotly()`](https://castlaboratory.github.io/shewhartr/reference/as_plotly.md)
+  work on Phase II I-MR charts
+  ([\#3](https://github.com/castlaboratory/shewhartr/issues/3)).
+- p / c / u charts with exact limits (`limits = "binomial"` /
+  `"poisson"`) flag Nelson 1 against the plotted exact limits, not
+  against 3 sigma;
+  [`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md)
+  keeps the exact method instead of falling back to 3-sigma limits
+  ([\#10](https://github.com/castlaboratory/shewhartr/issues/10)).
+- Regression chart legend wraps to rows of five keys when there are more
+  than five phases, with the title above the keys, so it no longer runs
+  off a 7-inch device;
+  [`as_plotly()`](https://castlaboratory.github.io/shewhartr/reference/as_plotly.md)
+  places the regression legend below the plot
+  ([\#12](https://github.com/castlaboratory/shewhartr/issues/12), GitHub
+  issue [\#1](https://github.com/castlaboratory/shewhartr/issues/1)).
+- Nelson rules 3, 4, 7 and 8 no longer abort on missing values: a window
+  containing an `NA` does not fire
+  ([\#14](https://github.com/castlaboratory/shewhartr/issues/14)).
+- `glance()$pct_violations` is now the share of points flagged by at
+  least one rule (`mean(.flag_any)`) and can no longer exceed 1
+  ([\#17](https://github.com/castlaboratory/shewhartr/issues/17)).
+- `tidy()` on a regression chart follows the documented `chart` / `line`
+  / `value` schema (long format, with `.phase` and `endpoint` columns)
+  ([\#18](https://github.com/castlaboratory/shewhartr/issues/18)).
+- [`as_plotly()`](https://castlaboratory.github.io/shewhartr/reference/as_plotly.md)
+  forwards `locale`, `show_violations` and `show_sigma_zones` to
+  [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+  ([\#19](https://github.com/castlaboratory/shewhartr/issues/19)).
+- `show_sigma_zones = TRUE` now draws the 1- and 2-sigma zones on the
+  top panel of I-MR, Xbar-R and Xbar-S plots
+  ([\#20](https://github.com/castlaboratory/shewhartr/issues/20)).
+- Nelson rules 5 and 6 fire at the point that completes the pattern
+  (which must itself be beyond the zone): the same pair is no longer
+  flagged twice, and patterns starting at positions 1-2 are caught
+  ([\#30](https://github.com/castlaboratory/shewhartr/issues/30)).
+- [`shewhart_p()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_p.md)
+  and
+  [`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md)
+  reject subgroups with `n = 0` instead of silently producing `NaN`
+  proportions
+  ([\#32](https://github.com/castlaboratory/shewhartr/issues/32)).
+- The regression legend uses the phase labels the constructor computes
+  (“Base”, “Phase 1”, …, “Monitoring”); the regression subtitle and the
+  CUSUM “Positive” / “Negative” legend are translated through the locale
+  table ([\#36](https://github.com/castlaboratory/shewhartr/issues/36)).
+
+### Release hygiene
+
+- `lubridate` and `vdiffr` removed from `Suggests` (unused).
+- [`inv_box_cox()`](https://castlaboratory.github.io/shewhartr/reference/inv_box_cox.md)
+  gains an example; `cran-comments.md` describes the 1.3.0 submission.
+- Plot chunks re-enabled in the `phase1-phase2`, `getting-started`,
+  `variables-charts`, `attributes-charts`, `diagnostics` and `box-cox`
+  vignettes
+  ([\#37](https://github.com/castlaboratory/shewhartr/issues/37)).
+
+### Bug fixes: regression chart and `calibrate()` (audit 2026-09-25)
+
+- [`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md)
+  on a regression chart no longer restarts the within-phase position
+  `.N` at 1: Phase II continues from the last position of the last Phase
+  I phase, so an in-control continuation is predicted on the
+  extrapolated trend instead of the start of the phase (audit
+  [\#1](https://github.com/castlaboratory/shewhartr/issues/1)). The
+  last-phase `.N` is stored in `metadata$phase_n_end`.
+- [`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md)
+  on a regression chart now uses the residual sigma of the last phase
+  (the phase whose fit it extrapolates), stored in
+  `metadata$phase_sigma`, instead of the median sigma across phases
+  (audit [\#11](https://github.com/castlaboratory/shewhartr/issues/11)).
+  `sigma_hat` of the Phase II object is that sigma.
+- A phase with fewer than 3 observations now extrapolates the previous
+  phase’s fit (continuing `.N`) and inherits its sigma, instead of
+  restarting the previous curve at `.N = 1` with a sigma estimated from
+  1-2 residuals. A `NULL` fit no longer deletes its slot in `$fits`,
+  which shifted every later phase (audit
+  [\#34](https://github.com/castlaboratory/shewhartr/issues/34)).
+- `calibrate(trim_outliers = TRUE)` now trims a running copy of the
+  data, so violation positions of a trimmed fit are mapped to the rows
+  that fit was built on. Previously an observation dropped in one
+  iteration could come back in the next and the loop oscillated until
+  `max_trim_iter`. Subgrouped charts (Xbar-R, Xbar-S, subgrouped
+  Hotelling) drop whole subgroups instead of individual rows, which used
+  to abort with “unequal sizes” (audit
+  [\#4](https://github.com/castlaboratory/shewhartr/issues/4)).
+- `shewhart_regression(start_base = )` is no longer ignored when
+  `phase_changes` is supplied. `start_base` now defaults to `NULL`: 10
+  with automatic detection; with `phase_changes`, the base phase ends at
+  the first supplied change unless `start_base` is given explicitly, in
+  which case it adds a cut (audit
+  [\#21](https://github.com/castlaboratory/shewhartr/issues/21)).
+- `model = "auto"` no longer maps a square-root Box-Cox lambda (~0.5) to
+  `"loglog"`, a transform *stronger* than log. Lambda is rounded to the
+  nearest rung the menu offers: `< 0.25` gives `"log"`, anything else
+  `"linear"`. Rounding also removes the floating-point asymmetry that
+  treated lambda = -0.1 and 0.1 differently. The `covid-recife` and
+  `box-cox` vignettes are corrected accordingly (audit
+  [\#22](https://github.com/castlaboratory/shewhartr/issues/22)).
+- Gompertz / logistic regression charts: the first fitted increment of
+  each phase no longer carries the `+1` offset of the cumulative fit
+  (`cumsum(y) + 1`); increments are `C(.N) - C(.N - 1)` with `C(0) = 1`
+  (audit [\#35](https://github.com/castlaboratory/shewhartr/issues/35)).
+- [`Gompertz()`](https://castlaboratory.github.io/shewhartr/reference/Gompertz.md)
+  now includes the factor `e` of the Zwietering et al.
+  1990. parameterisation, so `k` is the maximum slope and `lag` the
+        tangent intercept, as documented. Previous curves had maximum
+        slope `k / e` (audit
+        [\#26](https://github.com/castlaboratory/shewhartr/issues/26)).
+- Documented in-control ARL of the phase rules corrected from 64 / 256
+  to 127 / 511 (`2^k - 1` for a run of `k` same-side points) in
+  [`?shewhart_regression`](https://castlaboratory.github.io/shewhartr/reference/shewhart_regression.md)
+  and the `regression-charts` and `arl-simulation` vignettes (audit
+  [\#27](https://github.com/castlaboratory/shewhartr/issues/27)).
+- `covid-recife` vignette: death-count limits are now clipped with
+  `lower_bound = 0`, and the Perla et al. (2020) and Ferraz et al.
+  2020. citations now match the published papers (audit
+        [\#25](https://github.com/castlaboratory/shewhartr/issues/25)).
+- Removed the R CMD check NOTE “no visible binding for global variable
+  ‘.phase’” (audit
+  [\#31](https://github.com/castlaboratory/shewhartr/issues/31)).
+
+### Bug fixes: memory-based and multivariate charts (audit 2026-09-25)
+
+- [`shewhart_mcusum()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_mcusum.md):
+  the default decision intervals (k = 0.5) held `ARL_0 ~ 200` only for p
+  = 2; with the old table ARL_0 was ~140 at p = 3 and ~85 at p = 5. The
+  table for p = 2..10 was re-derived by Monte Carlo
+  (`dev/calibrate-h-tables.R`, 20,000 paths per cell); p = 2 reproduces
+  Crosier’s 5.50 (5.48). Default `h` is larger for every p \> 2 (finding
+  5).
+- [`shewhart_mewma()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_mewma.md):
+  the default `h` table was wrong for p \>= 3 (ARL_0 ~136 at lambda =
+  0.1, p = 4) and was a steady-state table used with the time-varying
+  default. There are now two simulated tables, one per covariance mode,
+  and the lookup follows `steady_state` (finding 6).
+- [`shewhart_ewma()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_ewma.md):
+  default `L` is now `2.86`, which with `lambda = 0.2` gives
+  `ARL_0 ~ 370` as documented; the old `L = 2.7` gave ~240 (finding 7).
+- [`shewhart_ewma()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_ewma.md)
+  /
+  [`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md):
+  runs-rule flags now fire exactly at the plotted limits for any `L`
+  (the sigma-equivalent was inverted, placing the alarm at `9 se / L`).
+  Zones for rules 5-8 are thirds of the limit width; this is documented
+  (finding 8).
+- [`shewhart_xbar_r()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_xbar_r.md),
+  [`shewhart_xbar_s()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_xbar_s.md),
+  subgrouped
+  [`shewhart_hotelling()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_hotelling.md)
+  and their
+  [`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md)
+  counterparts keep subgroups in order of first appearance instead of
+  sorting labels (`S1, S10, S11, S2, ...`), which scrambled runs rules
+  and the x axis (finding 9).
+- [`shewhart_ewma()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_ewma.md),
+  [`shewhart_cusum()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_cusum.md)
+  and their
+  [`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md)
+  methods now reject missing values; a single `NA` used to switch off
+  every later alarm silently (finding 13).
+- [`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md)
+  on an MCUSUM chart stores the final `S` vector, so chained Phase II
+  batches continue the accumulator (finding 15).
+- [`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md)
+  on an MEWMA chart continues `Z` from the last Phase I (or previous
+  Phase II) value with the matching covariance, instead of restarting at
+  0 (finding 16).
+- Subgrouped
+  [`shewhart_hotelling()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_hotelling.md)
+  and its
+  [`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md)
+  keep a `Date` (or other classed) index instead of turning it numeric
+  (finding 29).
+- [`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md)
+  on an Xbar-S chart fitted with `sigma_method = "pooled_sd"` and
+  unequal subgroup sizes no longer warns on every call that sizes differ
+  from the (average) Phase I size (finding 33).
+
+## shewhartr 1.3.0
+
+CRAN release: 2026-05-13
 
 ### New chart family
 

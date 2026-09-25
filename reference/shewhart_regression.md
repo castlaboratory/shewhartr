@@ -16,7 +16,7 @@ shewhart_regression(
   model = c("auto", "linear", "log", "loglog", "gompertz", "logistic"),
   formula = NULL,
   dummy = NULL,
-  start_base = 10L,
+  start_base = NULL,
   phase_changes = NULL,
   phase_rule = "nelson_2_nine_same",
   rules = c("nelson_1_beyond_3s", "nelson_2_nine_same"),
@@ -46,7 +46,13 @@ shewhart_regression(
 
   Character. One of `"auto"` (Box-Cox guidance), `"linear"`, `"log"`
   (fits `log(y + 1) ~ N`), `"loglog"`, `"gompertz"`, `"logistic"`. For
-  full control, supply `formula` instead.
+  full control, supply `formula` instead. With `"auto"`, each phase gets
+  the Box-Cox profile maximiser `lambda` of `y + 1`, rounded to the
+  nearest rung of the ladder that the menu offers: `lambda < 0.25`
+  selects `"log"`, any larger value selects `"linear"` (a square-root
+  lambda near 0.5 has no dedicated model and maps to `"linear"`;
+  `"loglog"` is a stronger transform than log and is never chosen
+  automatically).
 
 - formula:
 
@@ -62,22 +68,27 @@ shewhart_regression(
 
 - start_base:
 
-  Integer. Number of initial observations used to estimate the first
-  phase. Defaults to 10.
+  Integer or `NULL`. Number of initial observations used to estimate the
+  first (base) phase. With automatic phase detection, `NULL` (the
+  default) means 10. When `phase_changes` is supplied, `NULL` means the
+  base phase ends just before the first supplied change; an explicit
+  `start_base` adds a cut at observation `start_base + 1` in addition to
+  `phase_changes`.
 
 - phase_changes:
 
-  Optional vector of index positions or values at which to force a phase
-  change. If `NULL`, phase changes are detected automatically using the
-  supplied `phase_rule`.
+  Optional vector of index values at which to force a phase change (the
+  observation whose index equals the value starts the new phase). If
+  `NULL`, phase changes are detected automatically using the supplied
+  `phase_rule`.
 
 - phase_rule:
 
   Character. Runs rule used to detect new phases. See
   [`shewhart_rules_available()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_rules_available.md).
-  Default Nelson 2 (9 points same side; ARL_0 ~ 256). For backward
-  compatibility with v0.1.x, use `"we_seven_same"` (7 points; ARL_0 ~
-  64).
+  Default Nelson 2 (9 points same side; ARL_0 = 2^9 - 1 = 511). For
+  backward compatibility with v0.1.x, use `"we_seven_same"` (7 points;
+  ARL_0 = 2^7 - 1 = 127).
 
 - rules:
 
@@ -106,7 +117,14 @@ shewhart_regression(
 A
 [shewhart_chart](https://castlaboratory.github.io/shewhartr/reference/is_shewhart_chart.md)
 object of subclass `shewhart_regression`. The `fits` slot contains a
-list of fitted model objects (one per phase).
+list of fitted model objects (one per phase; a phase with fewer than 3
+observations reuses the previous phase's fit). The `metadata` slot
+additionally stores `phase_n_end` (the last within-phase position `.N`
+reached by each phase's fit) and `phase_sigma` (the residual sigma of
+each phase), which
+[`monitor()`](https://castlaboratory.github.io/shewhartr/reference/monitor.md)
+uses to extrapolate the last phase. The `sigma_hat` slot is the median
+of the per-phase sigmas.
 
 ## Details
 
@@ -144,7 +162,7 @@ print(fit)
 #> ── Shewhart chart regression-based ─────────────────────────────────────────────
 #> • Observations / subgroups: 60
 #> • Phase: "phase_1"
-#> • Sigma estimate ("mr"): 0.4273
+#> • Sigma estimate ("mr"): 0.4435
 #> 
 #> ── Control limits ──
 #> 

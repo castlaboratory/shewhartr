@@ -2,9 +2,9 @@
 
 Concise summary including chart type, sample size, sigma estimate and
 any rule violations. For full per-row results, use
-[augment()](https://broom.tidymodels.org/reference/reexports.html); for
-a tabular limit summary, use
-[tidy()](https://broom.tidymodels.org/reference/reexports.html).
+[augment()](https://generics.r-lib.org/reference/augment.html); for a
+tabular limit summary, use
+[tidy()](https://generics.r-lib.org/reference/tidy.html).
 
 ## Usage
 

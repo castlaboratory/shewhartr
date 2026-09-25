@@ -66,6 +66,23 @@ $`n`$ or extreme $`\bar p`$, switch to exact binomial limits:
 
 shewhart_p(claims_p, defects = defects, n = n, index = day,
            limits = "binomial")
+#> 
+#> ── Shewhart chart p (proportion of nonconforming) ──────────────────────────────
+#> • Observations / subgroups: 30
+#> • Phase: "phase_1"
+#> • Sigma estimate ("binomial"): NA
+#> 
+#> 
+#> ── Control limits ──
+#> # A tibble: 3 × 4
+#>   chart line    value note           
+#>   <chr> <chr>   <dbl> <chr>          
+#> 1 p     CL     0.0601 ""             
+#> 2 p     UCL   NA      "varies with n"
+#> 3 p     LCL   NA      "varies with n"
+#> ── Rule violations ──
+#> 
+#> ✔ No violations across 1 rule: "nelson_1_beyond_3s".
 ```
 
 ## c chart and Poisson honesty
