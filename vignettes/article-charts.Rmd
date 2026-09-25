@@ -461,7 +461,7 @@ whether they departed from what was expected on 4 July.
 | Naive chart (SBPO Fig. 2) | Avg 584.23, UCL 932.78, LCL 235.67 | 585.41, 936.18, 234.64 on 17 March to 4 July |
 | Brazil phases (SBPO Fig. 3) | base + six phases, the first one empty | base + five phases; our "Fase k" is the article's "Fase k+1" |
 | Recife phases (SBPO Fig. 4) | as in the legend | identical, via `phase_changes` |
-| Final segment | "Monitoramento", projection of the last phase | a refitted "Monitorando" in `autoplot()`; the projection via `calibrate()` + `monitor()` (section 7) |
+| Final segment | "Monitoramento", projection of the last phase | the same word, but it labels a *refitted* last phase in `autoplot()`; the projection via `calibrate()` + `monitor()` (section 7) |
 | SRAG notifications (SBPO Fig. 5) | expert-chosen phases | not reproduced: the SRAG series of Recife is not shipped with the package |
 | RBE Fig. 6 (Brazil to 20 June) | Phase 1 from 4 May, five phases | not reproduced; `phase_rule` gives the dates in section 4 |
 | Figures 1 (SBPO) and 1-5 (RBE) | didactic figures and descriptive series | not reproduced |

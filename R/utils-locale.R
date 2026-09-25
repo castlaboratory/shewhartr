@@ -117,7 +117,7 @@
     label_cl              = "LC",
     label_target          = "Alvo",
     phase_base            = "Base",
-    phase_monitoring      = "Monitorando",
+    phase_monitoring      = "Monitoramento",
     phase_n               = "Fase %d",
     phase_until           = "%s (at\u00e9 %s)",
     # regression subtitle / CUSUM legend

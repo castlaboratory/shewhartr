@@ -191,7 +191,7 @@ test_that(".phase_label carries end dates for a Date index", {
                                 phase_changes = as.Date("2020-04-06"),
                                 locale = "pt")
   expect_equal(unique(fit_pt$augmented$.phase_label),
-               c("Base (at\u00e9 2020-04-05)", "Monitorando"))
+               c("Base (at\u00e9 2020-04-05)", "Monitoramento"))
   expect_equal(tr("phase_until", "es", "Fase 1", "x"), "Fase 1 (hasta x)")
   expect_equal(tr("phase_until", "fr", "Phase 1", "x"),
                "Phase 1 (jusqu'au x)")
