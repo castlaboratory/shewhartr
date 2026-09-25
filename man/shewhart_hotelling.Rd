@@ -26,7 +26,8 @@ columns.}
 \item{subgroup}{Optional tidy-eval column for rational subgrouping.
 If supplied, all rows sharing a value of this column are treated
 as a single subgroup. If \code{NULL} (default), every row is its own
-observation (individual-observations chart).}
+observation (individual-observations chart). Subgroups are kept
+in order of first appearance in \code{data} (time order).}
 
 \item{index}{Optional tidy-eval column for the x-axis. If
 supplied, must vary across observations (or across subgroups, if

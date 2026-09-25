@@ -196,3 +196,38 @@ test_that("monitor() on a growth-curve chart differences C(.N) - C(.N - 1) (audi
   C   <- function(n) as.vector(stats::predict(fit, newdata = data.frame(.N = n)))
   expect_equal(mon$augmented$.fitted, C(41:43) - C(40:42))
 })
+
+test_that("Xbar-R / Xbar-S keep subgroups in time order (audit finding 9)", {
+  set.seed(31)
+  labs <- paste0("S", 1:12)
+  df <- data.frame(g = rep(labs, each = 5), y = stats::rnorm(60, 10, 1))
+  df$y[df$g == "S2"] <- df$y[df$g == "S2"] + 3
+
+  for (ch in c("xbar_r", "xbar_s")) {
+    fit <- calibrate(df, value = y, subgroup = g, chart = ch)
+    expect_equal(as.character(fit$augmented$g), labs)
+    expect_equal(which.max(fit$augmented$.xbar), 2L)
+    mon <- monitor(df, fit)
+    expect_equal(as.character(mon$augmented$g), labs)
+    expect_equal(which.max(mon$augmented$.xbar), 2L)
+  }
+})
+
+test_that("monitor_xbar_s(pooled_sd) does not warn about the average size (audit finding 33)", {
+  set.seed(32)
+  sizes <- rep(c(4L, 5L), 10)                 # average 4.5
+  df <- data.frame(g = rep(seq_along(sizes), sizes),
+                   y = stats::rnorm(sum(sizes)))
+  cal <- suppressWarnings(
+    shewhart_xbar_s(df, value = y, subgroup = g, sigma_method = "pooled_sd")
+  )
+  expect_true(cal$metadata$n_varying)
+  expect_no_warning(monitor(df, cal))
+
+  # Equal Phase I sizes still warn on a genuine Phase II size change.
+  df_eq  <- data.frame(g = rep(1:20, each = 5), y = stats::rnorm(100))
+  cal_eq <- shewhart_xbar_s(df_eq, value = y, subgroup = g,
+                            sigma_method = "pooled_sd")
+  new    <- data.frame(g = rep(1:5, each = 3), y = stats::rnorm(15))
+  expect_warning(monitor(new, cal_eq), "differ")
+})

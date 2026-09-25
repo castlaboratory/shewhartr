@@ -11,7 +11,7 @@ shewhart_ewma(
   target = NULL,
   sigma = NULL,
   lambda = 0.2,
-  L = 2.7,
+  L = 2.86,
   steady_state = FALSE,
   rules = "nelson_1_beyond_3s",
   locale = getOption("shewhart.locale", "en"),
@@ -35,16 +35,20 @@ shewhart_ewma(
 shifts.}
 
 \item{L}{Numeric. Width of the limits in standard errors of the
-EWMA. Default \code{2.7}, which combined with \code{lambda = 0.2} yields
+EWMA. Default \code{2.86}, which combined with \code{lambda = 0.2} yields
 \code{ARL_0 ~ 370} (Lucas & Saccucci 1990).}
 
 \item{steady_state}{Logical. Use asymptotic (constant) limits
 instead of time-varying ones?}
 
 \item{rules}{Character vector of runs rules to flag. Defaults to
-Nelson 1 only — the EWMA's own limits already encode most of the
-diagnostic power and the higher-order Nelson rules are not
-designed for autocorrelated statistics.}
+Nelson 1 only, which fires exactly when \code{.ewma} crosses
+\code{.upper}/\code{.lower}. The rules are evaluated on the EWMA series with
+a sigma-equivalent of \code{L * se / 3}, so the zones used by rules 5-8
+are thirds of the distance from the centre to the EWMA limit (they
+equal 1 and 2 standard errors only when \code{L = 3}). The higher-order
+Nelson rules are not designed for autocorrelated statistics and
+their false-alarm rates on the EWMA are not calibrated.}
 
 \item{locale}{One of \code{"en"}, \code{"pt"}, \code{"es"}, \code{"fr"}.}
 
@@ -66,10 +70,12 @@ a longer reaction time to large shifts.
 By default, sigma is estimated from the moving range of \code{value}
 (Wheeler 1992 convention, \code{MR_bar / 1.128}); the centre is the mean
 of \code{value}. Either can be overridden via \code{target} and \code{sigma} for
-Phase II monitoring against pre-calibrated values.
+Phase II monitoring against pre-calibrated values. Missing values in
+\code{value} are an error, since a single \code{NA} would propagate through
+the recursion and silently disable every later alarm.
 
-Limits are time-varying by default — they widen out from \code{target}
-as the EWMA "warms up" — converging to the asymptotic limits as
+Limits are time-varying by default: they widen out from \code{target}
+as the EWMA "warms up", converging to the asymptotic limits as
 \code{i -> infinity}. Set \code{steady_state = TRUE} to use the asymptotic
 limits everywhere (commonly chosen when calibrating from a long
 baseline).

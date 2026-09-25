@@ -20,7 +20,9 @@ shewhart_xbar_s(
 \item{value}{Tidy-eval column reference for the measurement.}
 
 \item{subgroup}{Tidy-eval column reference identifying the subgroup
-(e.g. shift, batch, hour). All subgroups must have equal size.}
+(e.g. shift, batch, hour). All subgroups must have equal size.
+Subgroups are plotted and tested in order of first appearance in
+\code{data} (time order), not in sorted order of their labels.}
 
 \item{sigma_method}{One of \code{"sbar"} (default; classical S-bar /
 c4(n)) or \code{"pooled_sd"} (pooled within-subgroup SD; preferred

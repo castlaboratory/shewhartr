@@ -21,10 +21,24 @@
 # Steady-state limits (i -> infinity):
 #   UCL = mu + L * sigma * sqrt(lambda / (2 - lambda))
 #
-# Defaults (lambda = 0.2, L = 2.7) give ARL_0 ~ 370 and good sensitivity
-# to shifts of 0.5 to 1 sigma. For larger shifts, raise lambda; for
+# Defaults (lambda = 0.2, L = 2.86) give ARL_0 ~ 370 (Lucas & Saccucci
+# 1990, Table 3; the 1.3.0 default L = 2.7 gave ARL_0 ~ 240) and good
+# sensitivity to shifts of 0.5 to 1 sigma. For larger shifts, raise lambda; for
 # smaller shifts, lower it. See the table on Montgomery (2019) p. 421
 # for ARL profiles.
+#
+# Runs rules on the EWMA. `flag_rules()` expresses every Nelson rule in
+# units of a "sigma" around the centre and fires rule 1 at 3 of those
+# units. To make rule 1 fire exactly at the plotted limit centre +/- L*se
+# the rules receive sigma_eq = L * se / 3. The zones used by rules 5-8
+# (1 and 2 "sigma") are therefore one third and two thirds of the
+# distance from the centre to the EWMA limit, not 1 and 2 standard
+# errors of z_i; with L = 3 the two coincide. Rules other than rule 1
+# are not calibrated for the autocorrelated EWMA statistic and are off
+# by default.
+#
+# Missing values are rejected: the recursion cannot skip an NA (every
+# later z_i would become NA and the chart would go silent).
 #
 # References:
 #
@@ -47,10 +61,12 @@
 #' By default, sigma is estimated from the moving range of `value`
 #' (Wheeler 1992 convention, `MR_bar / 1.128`); the centre is the mean
 #' of `value`. Either can be overridden via `target` and `sigma` for
-#' Phase II monitoring against pre-calibrated values.
+#' Phase II monitoring against pre-calibrated values. Missing values in
+#' `value` are an error, since a single `NA` would propagate through
+#' the recursion and silently disable every later alarm.
 #'
-#' Limits are time-varying by default — they widen out from `target`
-#' as the EWMA "warms up" — converging to the asymptotic limits as
+#' Limits are time-varying by default: they widen out from `target`
+#' as the EWMA "warms up", converging to the asymptotic limits as
 #' `i -> infinity`. Set `steady_state = TRUE` to use the asymptotic
 #' limits everywhere (commonly chosen when calibrating from a long
 #' baseline).
@@ -65,14 +81,18 @@
 #'   `0.2`. Smaller lambda = more memory, more sensitive to small
 #'   shifts.
 #' @param L Numeric. Width of the limits in standard errors of the
-#'   EWMA. Default `2.7`, which combined with `lambda = 0.2` yields
+#'   EWMA. Default `2.86`, which combined with `lambda = 0.2` yields
 #'   `ARL_0 ~ 370` (Lucas & Saccucci 1990).
 #' @param steady_state Logical. Use asymptotic (constant) limits
 #'   instead of time-varying ones?
 #' @param rules Character vector of runs rules to flag. Defaults to
-#'   Nelson 1 only — the EWMA's own limits already encode most of the
-#'   diagnostic power and the higher-order Nelson rules are not
-#'   designed for autocorrelated statistics.
+#'   Nelson 1 only, which fires exactly when `.ewma` crosses
+#'   `.upper`/`.lower`. The rules are evaluated on the EWMA series with
+#'   a sigma-equivalent of `L * se / 3`, so the zones used by rules 5-8
+#'   are thirds of the distance from the centre to the EWMA limit (they
+#'   equal 1 and 2 standard errors only when `L = 3`). The higher-order
+#'   Nelson rules are not designed for autocorrelated statistics and
+#'   their false-alarm rates on the EWMA are not calibrated.
 #' @param locale One of `"en"`, `"pt"`, `"es"`, `"fr"`.
 #' @param verbose Logical. Print progress messages?
 #'
@@ -109,7 +129,7 @@
 #' @export
 shewhart_ewma <- function(data, value, index = NULL,
                           target = NULL, sigma = NULL,
-                          lambda = 0.2, L = 2.7,
+                          lambda = 0.2, L = 2.86,
                           steady_state = FALSE,
                           rules = "nelson_1_beyond_3s",
                           locale = getOption("shewhart.locale", "en"),
@@ -131,7 +151,7 @@ shewhart_ewma <- function(data, value, index = NULL,
   value_name <- rlang::as_name(value_q)
   check_column(data, value_name, arg = "value")
   v <- dplyr::pull(data, !!value_q)
-  check_numeric(v, arg = "value")
+  check_numeric(v, arg = "value", allow_na = FALSE)
 
   if (is_quo_null(index_q)) {
     idx <- seq_along(v)
@@ -187,9 +207,9 @@ shewhart_ewma <- function(data, value, index = NULL,
 
   # Flags ------------------------------------------------------------------
   # Pass z (not v) and the time-varying sigma-equivalent so rule_n1 fires
-  # at the correct boundary. Higher Nelson rules are evaluated against
-  # the EWMA series too.
-  sigma_eq <- se / L * 3   # vector such that center + 3*sigma_eq == upper
+  # at the plotted limit. Higher Nelson rules are evaluated against the
+  # EWMA series too, with zones at thirds of the limit width (see header).
+  sigma_eq <- L * se / 3   # vector such that center + 3*sigma_eq == upper
   flags <- flag_rules(z, rep(centre, length(v)), sigma_eq, rules)
 
   augmented <- tibble::tibble(

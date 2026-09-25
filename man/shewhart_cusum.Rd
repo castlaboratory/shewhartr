@@ -55,7 +55,9 @@ decision interval \code{h * sigma}.
 By default, sigma is estimated from the moving range of \code{value}
 (\code{MR_bar / 1.128}); the target is the mean of \code{value}. Either can
 be overridden via \code{target} and \code{sigma} for Phase II monitoring
-against pre-calibrated values.
+against pre-calibrated values. Missing values in \code{value} are an
+error, since a single \code{NA} would propagate through the accumulators
+and silently disable every later alarm.
 }
 \examples{
 set.seed(1)

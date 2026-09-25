@@ -67,6 +67,11 @@ shewhart_xbar_s <- function(data, value, subgroup,
       .groups = "drop"
     )
 
+  # Keep subgroups in order of first appearance (time order). group_by()
+  # sorts by label, which puts "S10" before "S2" and scrambles the runs
+  # rules and the x-axis (audit 2026-09-25, finding 9).
+  per <- per[order(match(per$.group, unique(d$.group))), , drop = FALSE]
+
   if (any(per$n < 2L)) {
     cli::cli_abort("All subgroups must have at least 2 observations for an S chart.")
   }
@@ -172,6 +177,7 @@ shewhart_xbar_s <- function(data, value, subgroup,
       value_name = value_name,
       group_name = group_name,
       n          = n,
+      n_varying  = length(unique(per$n)) > 1L,
       locale     = locale,
       constants  = cons
     )

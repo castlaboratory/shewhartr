@@ -34,8 +34,11 @@ mean. Defaults to \code{colMeans(data[, vars])}.}
 for shifts of \verb{1 sigma}. Lower \code{k} makes the chart sensitive to
 smaller shifts but increases false alarms.}
 
-\item{h}{Decision interval. If \code{NULL}, looked up in the Crosier
-(1988) Table 1 for \code{k = 0.5}, \code{ARL_0 ~ 200}, \verb{p = 2..10}.}
+\item{h}{Decision interval. If \code{NULL}, looked up in a table giving
+\code{ARL_0 ~ 200} for \code{k = 0.5} and \verb{p = 2..10} (simulated with known
+in-control parameters; \code{p = 2} matches Crosier 1988). With
+\code{target} and \code{cov} estimated from the same data the actual
+in-control ARL differs; pass \code{h} explicitly for other designs.}
 
 \item{locale}{One of \code{"en"}, \code{"pt"}, \code{"es"}, \code{"fr"}.}
 

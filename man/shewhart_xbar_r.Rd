@@ -19,7 +19,9 @@ shewhart_xbar_r(
 \item{value}{Tidy-eval column reference for the measurement.}
 
 \item{subgroup}{Tidy-eval column reference identifying the subgroup
-(e.g. shift, batch, hour). All subgroups must have equal size.}
+(e.g. shift, batch, hour). All subgroups must have equal size.
+Subgroups are plotted and tested in order of first appearance in
+\code{data} (time order), not in sorted order of their labels.}
 
 \item{rules}{Character vector of rule keys to apply. See
 \code{\link[=shewhart_rules_available]{shewhart_rules_available()}}. Default applies Nelson 1 and 2.}

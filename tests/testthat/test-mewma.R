@@ -58,7 +58,9 @@ test_that("steady_state = TRUE produces a constant T2 covariance", {
 })
 
 test_that("MEWMA UCL lookup returns NA outside the table", {
-  expect_equal(shewhartr:::mewma_h_lookup(0.10, 2L), 8.64)
+  expect_equal(shewhartr:::mewma_h_lookup(0.10, 2L, TRUE), 8.65)   # P&R 8.64
+  expect_equal(shewhartr:::mewma_h_lookup(0.10, 4L, TRUE), 12.73)  # P&R 12.73
+  expect_equal(shewhartr:::mewma_h_lookup(0.10, 2L), 8.76)
   expect_true(is.na(shewhartr:::mewma_h_lookup(0.30, 2L)))
   expect_true(is.na(shewhartr:::mewma_h_lookup(0.10, 8L)))
 })
@@ -88,4 +90,65 @@ test_that("MEWMA Phase II monitoring inherits limits", {
   expect_s3_class(mon, c("shewhart_mewma", "shewhart_chart"))
   expect_equal(mon$phase, "phase_2")
   expect_equal(mon$augmented$.upper[1], cal$metadata$h)
+})
+
+test_that("MEWMA default h gives ARL_0 ~ 200 for p >= 3 (audit finding 6)", {
+  testthat::skip_on_cran()
+  # Vectorised in-control simulation with the tabulated h, for both
+  # covariance modes; by affine invariance Sigma = I is enough. The
+  # 1.3.0 table gave ARL_0 ~ 136 at lambda = 0.1, p = 4 (time-varying).
+  sim_arl <- function(p, lambda, h, steady_state,
+                      n = 3000L, max_run = 5000L) {
+    ratio <- lambda / (2 - lambda)
+    Z <- matrix(0, n, p); rl <- rep(NA_integer_, n)
+    for (t in seq_len(max_run)) {
+      Z <- lambda * matrix(stats::rnorm(n * p), n, p) + (1 - lambda) * Z
+      v <- if (steady_state) ratio else ratio * (1 - (1 - lambda)^(2 * t))
+      hit <- is.na(rl) & rowSums(Z^2) / v > h
+      rl[hit] <- t
+      if (!anyNA(rl)) break
+    }
+    rl[is.na(rl)] <- max_run
+    mean(rl)
+  }
+  set.seed(20260925)
+  cells <- list(list(p = 4L, lambda = 0.10, ss = FALSE),
+                list(p = 6L, lambda = 0.20, ss = TRUE))
+  for (cl in cells) {
+    h   <- shewhartr:::mewma_h_lookup(cl$lambda, cl$p, cl$ss)
+    arl <- sim_arl(cl$p, cl$lambda, h, cl$ss)
+    expect_gt(arl, 200 * 0.85)
+    expect_lt(arl, 200 * 1.15)
+  }
+})
+
+test_that("MEWMA picks the h table matching steady_state (audit finding 6)", {
+  set.seed(8)
+  X  <- matrix(stats::rnorm(90), 30, 3)
+  df <- data.frame(a = X[, 1], b = X[, 2], c = X[, 3])
+  tv <- shewhart_mewma(df, vars = c(a, b, c), target = c(0, 0, 0),
+                       cov = diag(3), lambda = 0.1)
+  ss <- shewhart_mewma(df, vars = c(a, b, c), target = c(0, 0, 0),
+                       cov = diag(3), lambda = 0.1, steady_state = TRUE)
+  expect_equal(tv$metadata$h, shewhartr:::mewma_h_lookup(0.1, 3L, FALSE))
+  expect_equal(ss$metadata$h, shewhartr:::mewma_h_lookup(0.1, 3L, TRUE))
+})
+
+test_that("MEWMA Phase II continues Z from Phase I (audit finding 16)", {
+  set.seed(12)
+  Sigma <- matrix(c(1, 0.5, 0.5, 1), 2, 2)
+  all_x <- as.data.frame(MASS::mvrnorm(70, c(0, 0), Sigma))
+  names(all_x) <- c("a", "b")
+  all_x$a[41:70] <- all_x$a[41:70] + 0.8
+  # One long Phase I chart is the reference for the continued recursion.
+  ref <- shewhart_mewma(all_x, vars = c(a, b), target = c(0, 0),
+                        cov = Sigma, lambda = 0.1)
+  cal <- calibrate(all_x[1:40, ], vars = c(a, b), chart = "mewma",
+                   target = c(0, 0), cov = Sigma, lambda = 0.1)
+  mon <- monitor(all_x[41:70, ], cal)
+  expect_equal(mon$augmented$.t2, ref$augmented$.t2[41:70])
+  # ... and chained batches match one batch.
+  m1 <- monitor(all_x[41:50, ], cal)
+  m2 <- monitor(all_x[51:70, ], m1)
+  expect_equal(m2$augmented$.t2, ref$augmented$.t2[51:70])
 })

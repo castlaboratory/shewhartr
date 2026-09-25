@@ -14,13 +14,16 @@
 # Signal:  C+_i  > h * sigma   (upward shift)
 #       OR C-_i  > h * sigma   (downward shift)
 #
-# `k` is the reference value (in units of sigma) — typically half the
+# `k` is the reference value (in units of sigma), typically half the
 # minimum shift size you care about detecting; conventional default
 # is k = 0.5 (target sensitivity to 1-sigma shifts). `h` is the
 # decision interval (in units of sigma); h = 4 gives ARL_0 ~ 168 and
 # h = 5 gives ARL_0 ~ 465 for k = 0.5 (Hawkins & Olwell 1998, Table 3.1).
 #
-# CUSUM does not use Nelson runs rules — the cumulative statistic
+# Missing values are rejected: max(0, NA) propagates NA through both
+# accumulators and would silently disable every later alarm.
+#
+# CUSUM does not use Nelson runs rules: the cumulative statistic
 # already encodes them implicitly. The only "rule" is the decision
 # interval, captured in the `.flag_signal` column.
 #
@@ -44,7 +47,9 @@
 #' By default, sigma is estimated from the moving range of `value`
 #' (`MR_bar / 1.128`); the target is the mean of `value`. Either can
 #' be overridden via `target` and `sigma` for Phase II monitoring
-#' against pre-calibrated values.
+#' against pre-calibrated values. Missing values in `value` are an
+#' error, since a single `NA` would propagate through the accumulators
+#' and silently disable every later alarm.
 #'
 #' @param data A data frame.
 #' @param value Tidy-eval column reference for the measurement.
@@ -108,7 +113,7 @@ shewhart_cusum <- function(data, value, index = NULL,
   value_name <- rlang::as_name(value_q)
   check_column(data, value_name, arg = "value")
   v <- dplyr::pull(data, !!value_q)
-  check_numeric(v, arg = "value")
+  check_numeric(v, arg = "value", allow_na = FALSE)
 
   if (is_quo_null(index_q)) {
     idx <- seq_along(v)

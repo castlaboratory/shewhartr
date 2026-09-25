@@ -49,3 +49,12 @@ test_that("CUSUM violations table has one row per signalling observation", {
   expect_equal(nrow(fit$violations), sum(fit$augmented$.flag_signal))
   expect_true(all(fit$violations$rule == "cusum_decision"))
 })
+
+test_that("CUSUM rejects missing values (audit finding 13)", {
+  set.seed(1)
+  df <- data.frame(t = 1:30, y = c(rnorm(10), NA, rnorm(19)))
+  expect_error(shewhart_cusum(df, value = y, index = t), "missing")
+  base <- data.frame(y = rnorm(30))
+  cal  <- calibrate(base, value = y, chart = "cusum")
+  expect_error(monitor(data.frame(y = c(1, NA, 2, 3, 4)), cal), "missing")
+})

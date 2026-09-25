@@ -53,6 +53,46 @@
 * Removed the R CMD check NOTE "no visible binding for global
   variable '.phase'" (audit #31).
 
+## Bug fixes: memory-based and multivariate charts (audit 2026-09-25)
+
+* `shewhart_mcusum()`: the default decision intervals (k = 0.5) held
+  `ARL_0 ~ 200` only for p = 2; with the old table ARL_0 was ~140 at
+  p = 3 and ~85 at p = 5. The table for p = 2..10 was re-derived by
+  Monte Carlo (`dev/calibrate-h-tables.R`, 20,000 paths per cell);
+  p = 2 reproduces Crosier's 5.50 (5.48). Default `h` is larger for
+  every p > 2 (finding 5).
+* `shewhart_mewma()`: the default `h` table was wrong for p >= 3
+  (ARL_0 ~136 at lambda = 0.1, p = 4) and was a steady-state table
+  used with the time-varying default. There are now two simulated
+  tables, one per covariance mode, and the lookup follows
+  `steady_state` (finding 6).
+* `shewhart_ewma()`: default `L` is now `2.86`, which with
+  `lambda = 0.2` gives `ARL_0 ~ 370` as documented; the old `L = 2.7`
+  gave ~240 (finding 7).
+* `shewhart_ewma()` / `monitor()`: runs-rule flags now fire exactly at
+  the plotted limits for any `L` (the sigma-equivalent was inverted,
+  placing the alarm at `9 se / L`). Zones for rules 5-8 are thirds of
+  the limit width; this is documented (finding 8).
+* `shewhart_xbar_r()`, `shewhart_xbar_s()`, subgrouped
+  `shewhart_hotelling()` and their `monitor()` counterparts keep
+  subgroups in order of first appearance instead of sorting labels
+  (`S1, S10, S11, S2, ...`), which scrambled runs rules and the x
+  axis (finding 9).
+* `shewhart_ewma()`, `shewhart_cusum()` and their `monitor()` methods
+  now reject missing values; a single `NA` used to switch off every
+  later alarm silently (finding 13).
+* `monitor()` on an MCUSUM chart stores the final `S` vector, so
+  chained Phase II batches continue the accumulator (finding 15).
+* `monitor()` on an MEWMA chart continues `Z` from the last Phase I
+  (or previous Phase II) value with the matching covariance, instead
+  of restarting at 0 (finding 16).
+* Subgrouped `shewhart_hotelling()` and its `monitor()` keep a `Date`
+  (or other classed) index instead of turning it numeric (finding 29).
+* `monitor()` on an Xbar-S chart fitted with
+  `sigma_method = "pooled_sd"` and unequal subgroup sizes no longer
+  warns on every call that sizes differ from the (average) Phase I
+  size (finding 33).
+
 ## New chart family
 
 The multivariate side of the package now has the natural pair of

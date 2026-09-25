@@ -122,3 +122,33 @@ test_that("Per-variable contributions sum to a meaningful share of T²", {
     expect_true(all(sums > 0))
   }
 })
+
+test_that("subgrouped Hotelling keeps time order of subgroups (audit finding 9)", {
+  set.seed(21)
+  labs <- paste0("S", 1:12)
+  df <- data.frame(g = rep(labs, each = 4),
+                   day = rep(as.Date("2026-01-01") + 0:11, each = 4),
+                   x1 = stats::rnorm(48), x2 = stats::rnorm(48))
+  df$x1[df$g == "S2"] <- df$x1[df$g == "S2"] + 4
+  fit <- shewhart_hotelling(df, vars = c(x1, x2), subgroup = g, index = day)
+  # S2 is the 2nd subgroup in time; sorting by label would put it 5th.
+  expect_equal(unname(which.max(fit$augmented$.t2)), 2L)
+  expect_equal(fit$augmented$day, as.Date("2026-01-01") + 0:11)
+
+  mon <- monitor(df, calibrate(df, vars = c(x1, x2), subgroup = g,
+                               index = day, chart = "hotelling"))
+  expect_equal(unname(which.max(mon$augmented$.t2)), 2L)
+})
+
+test_that("subgrouped Hotelling keeps a Date index as Date (audit finding 29)", {
+  set.seed(22)
+  df <- data.frame(g = rep(1:10, each = 3),
+                   day = rep(as.Date("2026-03-01") + 0:9, each = 3),
+                   x1 = stats::rnorm(30), x2 = stats::rnorm(30))
+  fit <- shewhart_hotelling(df, vars = c(x1, x2), subgroup = g, index = day)
+  expect_s3_class(fit$augmented$day, "Date")
+  mon <- monitor(df, calibrate(df, vars = c(x1, x2), subgroup = g,
+                               index = day, chart = "hotelling"))
+  expect_s3_class(mon$augmented$day, "Date")
+  expect_equal(mon$augmented$day, as.Date("2026-03-01") + 0:9)
+})

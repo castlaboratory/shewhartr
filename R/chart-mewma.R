@@ -24,10 +24,26 @@
 # The chart signals when T2_i exceeds the decision interval h, which
 # is calibrated for the desired in-control ARL.
 #
-# Default decision intervals follow the Markov-chain values tabulated
-# in Prabhu & Runger (1997, JQT 29:8-15) for ARL_0 ~ 200, p in 2..6
-# and lambda in {0.05, 0.10, 0.20, 0.40}. For (lambda, p) outside the
-# table, the user must supply `h` explicitly.
+# Default decision intervals give ARL_0 ~ 200 for p in 2..6 and
+# lambda in {0.05, 0.10, 0.20, 0.40}. There is one table per covariance
+# mode, and the lookup follows `steady_state`:
+#
+#   * steady_state = TRUE  -> the steady-state design of Lowry et al.
+#     (1992) and Prabhu & Runger (1997, JQT 29:8-15). Our values agree
+#     with the published ones (lambda = 0.1: p = 2 gives 8.65 vs 8.64;
+#     p = 4 gives 12.73, as in Prabhu & Runger).
+#   * steady_state = FALSE (the default) -> time-varying covariance.
+#     The early statistic is scaled by its exact (smaller) variance, so
+#     h is somewhat larger (lambda = 0.1, p = 4: 12.93).
+#
+# Releases up to 1.3.0 shipped a single table that was right only for
+# p = 2 (ARL_0 ~ 136 at lambda = 0.1, p = 4) and applied it to the
+# time-varying default. Both tables were re-derived by Monte Carlo in
+# dev/calibrate-h-tables.R: 20,000 in-control paths per cell, known
+# in-control parameters, bisection on h to ARL_0 = 200 (Monte Carlo
+# s.e. ~ 1.4). With target and cov estimated from the same data the
+# actual in-control ARL differs. For (lambda, p) outside the tables
+# the user must supply `h` explicitly.
 #
 # References:
 #
@@ -53,9 +69,16 @@
 #' in-control covariance) are estimated from the data. For Phase II
 #' monitoring, supply both explicitly so the limits use the
 #' calibration values. The decision interval `h` is calibrated by
-#' lookup in the Prabhu & Runger (1997) table for `ARL_0 ~ 200`; if
-#' the `(lambda, p)` combination is outside the tabulated range, the
-#' user must pass `h` explicitly.
+#' lookup in a table giving `ARL_0 ~ 200` (with known in-control
+#' parameters) for `lambda` in `{0.05, 0.10, 0.20, 0.40}` and
+#' `p = 2..6`. There is one table for each covariance mode and the
+#' lookup follows `steady_state`; the steady-state table reproduces
+#' Prabhu & Runger (1997). If the `(lambda, p)` combination is outside
+#' the tabulated range, the user must pass `h` explicitly.
+#'
+#' In Phase II ([monitor()]), the recursion continues from the last
+#' Phase I vector `Z` (and from the previous batch when `monitor()` is
+#' chained), with the covariance of the continued recursion.
 #'
 #' @param data A data frame.
 #' @param vars Tidy-select expression for the columns to monitor
@@ -67,8 +90,8 @@
 #'   `cov(data[, vars])`.
 #' @param lambda Smoothing constant in `(0, 1]`. Default `0.1`.
 #' @param h Decision interval (UCL on the `T^2` statistic). If
-#'   `NULL`, looked up in the Prabhu & Runger (1997) table for
-#'   `ARL_0 ~ 200`.
+#'   `NULL`, looked up in the `ARL_0 ~ 200` table matching
+#'   `steady_state`.
 #' @param steady_state Logical. Use the steady-state covariance
 #'   `(lambda / (2 - lambda)) * Sigma` everywhere instead of the
 #'   time-varying form? Default `FALSE`.
@@ -164,9 +187,9 @@ shewhart_mewma <- function(data, vars, index = NULL,
     cli::cli_abort("{.arg cov} is singular and cannot be inverted.")
   }
 
-  # Decision interval (Prabhu & Runger 1997)
+  # Decision interval: ARL_0 ~ 200 table for the covariance mode in use
   if (is.null(h)) {
-    h <- mewma_h_lookup(lambda, p)
+    h <- mewma_h_lookup(lambda, p, steady_state)
     if (is.na(h)) {
       cli::cli_abort(c(
         "No tabulated decision interval for {.arg lambda} = {.val {lambda}}, p = {.val {p}}.",
@@ -252,23 +275,36 @@ shewhart_mewma <- function(data, vars, index = NULL,
       cov          = cov,
       cov_inv      = cov_inv,
       steady_state = steady_state,
+      last_Z       = Z[m, ],
+      t_elapsed    = m,
       locale       = locale
     )
   )
 }
 
-# Internal: Prabhu & Runger (1997) ARL_0 ~ 200 table ----------------------
+# Internal: ARL_0 ~ 200 tables ---------------------------------------------
 
 #' @keywords internal
 #' @noRd
-mewma_h_lookup <- function(lambda, p) {
-  # Prabhu & Runger (1997), Table 3, ARL_0 ~ 200, p = 2..6
-  tbl <- list(
-    "0.05" = c("2" = 7.35,  "3" = 9.16,  "4" = 10.59, "5" = 11.84, "6" = 12.94),
-    "0.10" = c("2" = 8.64,  "3" = 10.45, "4" = 11.95, "5" = 13.26, "6" = 14.42),
-    "0.20" = c("2" = 9.65,  "3" = 11.46, "4" = 12.97, "5" = 14.30, "6" = 15.50),
-    "0.40" = c("2" = 10.20, "3" = 12.01, "4" = 13.52, "5" = 14.85, "6" = 16.06)
-  )
+mewma_h_lookup <- function(lambda, p, steady_state = FALSE) {
+  # ARL_0 ~ 200 by simulation (dev/calibrate-h-tables.R, 20,000 paths
+  # per cell), p = 2..6. The steady-state table reproduces Prabhu &
+  # Runger (1997); the time-varying one matches the package default.
+  tbl <- if (isTRUE(steady_state)) {
+    list(
+      "0.05" = c("2" = 7.37,  "3" = 9.37,  "4" = 11.21, "5" = 12.93, "6" = 14.56),
+      "0.10" = c("2" = 8.65,  "3" = 10.76, "4" = 12.73, "5" = 14.49, "6" = 16.28),
+      "0.20" = c("2" = 9.64,  "3" = 11.83, "4" = 13.89, "5" = 15.76, "6" = 17.50),
+      "0.40" = c("2" = 10.32, "3" = 12.55, "4" = 14.59, "5" = 16.44, "6" = 18.24)
+    )
+  } else {
+    list(
+      "0.05" = c("2" = 7.67,  "3" = 9.81,  "4" = 11.64, "5" = 13.39, "6" = 15.09),
+      "0.10" = c("2" = 8.76,  "3" = 10.95, "4" = 12.93, "5" = 14.74, "6" = 16.47),
+      "0.20" = c("2" = 9.72,  "3" = 11.94, "4" = 13.98, "5" = 15.82, "6" = 17.60),
+      "0.40" = c("2" = 10.32, "3" = 12.58, "4" = 14.61, "5" = 16.47, "6" = 18.29)
+    )
+  }
   lkey <- sprintf("%.2f", lambda)
   if (!lkey %in% names(tbl)) return(NA_real_)
   pkey <- as.character(p)

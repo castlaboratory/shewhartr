@@ -49,7 +49,7 @@ test_that("MCUSUM detects a sustained vector shift", {
 
 test_that("MCUSUM h-lookup returns NA outside the table", {
   expect_equal(shewhartr:::mcusum_h_lookup(0.5, 2L), 5.50)
-  expect_equal(shewhartr:::mcusum_h_lookup(0.5, 10L), 10.43)
+  expect_equal(shewhartr:::mcusum_h_lookup(0.5, 10L), 14.92)
   expect_true(is.na(shewhartr:::mcusum_h_lookup(0.25, 2L)))
   expect_true(is.na(shewhartr:::mcusum_h_lookup(0.5, 11L)))
 })
@@ -93,4 +93,46 @@ test_that("MCUSUM Phase II continues from the calibration's last_S", {
   names(new_bad) <- c("a", "b")
   mon_bad <- monitor(new_bad, cal)
   expect_gt(sum(mon_bad$augmented$.flag_signal), 0)
+})
+
+test_that("MCUSUM default h gives ARL_0 ~ 200 for p > 2 (audit finding 5)", {
+  testthat::skip_on_cran()
+  # Vectorised in-control simulation of the Crosier recursion with the
+  # tabulated h; by affine invariance Sigma = I is enough. The 1.3.0
+  # table gave ARL_0 ~ 140 (p = 3) and ~ 85 (p = 5).
+  sim_arl <- function(p, h, k = 0.5, n = 3000L, max_run = 5000L) {
+    S <- matrix(0, n, p); rl <- rep(NA_integer_, n)
+    for (t in seq_len(max_run)) {
+      V <- S + matrix(stats::rnorm(n * p), n, p)
+      C <- sqrt(rowSums(V^2))
+      S <- V * ifelse(C <= k, 0, 1 - k / C)
+      hit <- is.na(rl) & sqrt(rowSums(S^2)) > h
+      rl[hit] <- t
+      if (!anyNA(rl)) break
+    }
+    rl[is.na(rl)] <- max_run
+    mean(rl)
+  }
+  set.seed(20260925)
+  for (p in c(3L, 5L)) {
+    arl <- sim_arl(p, shewhartr:::mcusum_h_lookup(0.5, p))
+    expect_gt(arl, 200 * 0.85)
+    expect_lt(arl, 200 * 1.15)
+  }
+})
+
+test_that("chained MCUSUM monitor() calls continue the accumulator (audit finding 15)", {
+  set.seed(11)
+  Sigma <- matrix(c(1, 0.4, 0.4, 1), 2, 2)
+  base  <- as.data.frame(MASS::mvrnorm(50, c(0, 0), Sigma))
+  names(base) <- c("a", "b")
+  cal <- calibrate(base, vars = c(a, b), chart = "mcusum",
+                   target = c(0, 0), cov = Sigma)
+  new <- as.data.frame(MASS::mvrnorm(30, c(0.5, 0.5), Sigma))
+  names(new) <- c("a", "b")
+  whole   <- monitor(new, cal)
+  first   <- monitor(new[1:12, ], cal)
+  second  <- monitor(new[13:30, ], first)
+  expect_equal(second$augmented$.y, whole$augmented$.y[13:30])
+  expect_equal(second$metadata$last_S, whole$metadata$last_S)
 })
