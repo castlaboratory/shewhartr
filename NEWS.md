@@ -41,6 +41,23 @@
   raw values are kept, including one PE correction of -37 deaths on
   2020-09-03.
 
+## New vignettes (closes #2, #3)
+
+* `vignette("article-charts")`: reproduces the charts of Ferraz et al.
+  (2020, SBPO and Revista Brasileira de Estatistica) -- the unadapted
+  individuals chart, Brazil and Recife with the articles' phases
+  (legend identical to the figures) and with automatic detection,
+  Pernambuco and Sao Paulo, and the "Monitoramento" segment as a
+  `calibrate()` + `monitor()` projection -- with a table of what
+  differs from the originals (closes #2).
+* `vignette("prospective-replay")`: replays the articles' "simulation"
+  of prospective monitoring day by day with `calibrate()` /
+  `monitor()` (frozen limits and daily refits), compares the phase
+  dates with the articles' and with `phase_rule`, and adds a Monte
+  Carlo study of the strategy on Poisson counts with known change
+  points: spurious phases, detection delays, and the in-control ARL
+  of the seven- and nine-point rules against 2^k - 1 (closes #3).
+
 ## Bug fixes (audit of 2026-09-25)
 
 * `shewhart_capability()` on Xbar-R / Xbar-S charts no longer multiplies

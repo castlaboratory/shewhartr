@@ -173,6 +173,8 @@ articles:
     navbar: ~
     contents:
       - covid-recife
+      - article-charts
+      - prospective-replay
 
 home:
   links:
