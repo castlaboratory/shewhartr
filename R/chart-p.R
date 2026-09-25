@@ -62,6 +62,12 @@ shewhart_p <- function(data, defects, n, index = NULL,
 
   defects_v <- dplyr::pull(data, !!d_q); check_count(defects_v, arg = "defects")
   n_v       <- dplyr::pull(data, !!n_q); check_count(n_v, arg = "n")
+  if (any(n_v <= 0, na.rm = TRUE)) {
+    cli::cli_abort(c(
+      "{.arg n} must be strictly positive in every row.",
+      "i" = "Row{?s} {.val {which(n_v <= 0)}} ha{?s/ve} {.code n = 0}, which makes the proportion undefined."
+    ))
+  }
   if (any(defects_v > n_v)) {
     cli::cli_abort("{.arg defects} cannot exceed {.arg n} in any row.")
   }
@@ -92,6 +98,13 @@ shewhart_p <- function(data, defects, n, index = NULL,
   }
 
   flags <- flag_rules(p_i, rep(p_bar, length(p_i)), sigma_i, rules)
+  violations <- shewhart_runs(p_i, rules = rules,
+                              center = p_bar, sigma = sigma_i)
+  if (limits == "binomial") {
+    # Nelson 1 must agree with the plotted exact limits
+    ex <- apply_exact_limits_rule1(flags, violations, p_i, lower, upper, rules)
+    flags <- ex$flags; violations <- ex$violations
+  }
 
   augmented <- tibble::tibble(
     !!index_name := idx,
@@ -116,9 +129,6 @@ shewhart_p <- function(data, defects, n, index = NULL,
               if (length(unique(upper)) == 1L) "" else "varies with n",
               if (length(unique(lower)) == 1L) "" else "varies with n")
   )
-
-  violations <- shewhart_runs(p_i, rules = rules,
-                              center = p_bar, sigma = sigma_i)
 
   new_shewhart_chart(
     type         = "p",

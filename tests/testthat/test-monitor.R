@@ -145,3 +145,23 @@ test_that("monitor() works for Hotelling charts (individual obs)", {
   mon_bad   <- monitor(new_bad, cal)
   expect_gt(sum(mon_bad$augmented$.flag_signal), 0)
 })
+
+# Audit 2026-09-25, finding 3: Phase II I-MR carries the MR panel ------------
+
+test_that("monitor_i_mr() emits .mr columns seeded with the last Phase I value", {
+  set.seed(8)
+  base  <- data.frame(y = rnorm(40, 100, 2))
+  new   <- data.frame(y = rnorm(15, 101, 2))
+  calib <- calibrate(base, value = y, chart = "i_mr")
+  mon   <- monitor(new, calib)
+  a <- mon$augmented
+  expect_true(all(c(".mr", ".mr_center", ".mr_upper", ".mr_lower") %in% names(a)))
+  expect_equal(a$.mr[1], abs(new$y[1] - base$y[40]))
+  expect_equal(a$.mr[-1], abs(diff(new$y)))
+  expect_equal(unique(a$.mr_upper), calib$augmented$.mr_upper[1])
+  expect_equal(unique(a$.mr_center), calib$augmented$.mr_center[1])
+  expect_s3_class(ggplot2::autoplot(mon), "shewhart_plot_pair")
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off(), add = TRUE)
+  expect_no_error(ggplot2::ggplotGrob(ggplot2::autoplot(mon)$bottom))
+})

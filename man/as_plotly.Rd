@@ -10,7 +10,14 @@ as_plotly(x, ...)
 
 \method{as_plotly}{default}(x, ...)
 
-\method{as_plotly}{shewhart_chart}(x, tooltip = c("x", "y"), ...)
+\method{as_plotly}{shewhart_chart}(
+  x,
+  tooltip = c("x", "y"),
+  show_violations = TRUE,
+  show_sigma_zones = FALSE,
+  locale = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{A \link{shewhart_chart} object.}
@@ -20,6 +27,14 @@ as_plotly(x, ...)
 \item{tooltip}{Character vector of aesthetics to display in the
 hover tooltip, as accepted by \code{\link[plotly:ggplotly]{plotly::ggplotly()}}. Defaults to
 \code{c("x", "y")}.}
+
+\item{show_violations}{Logical. Highlight violations with red points?
+Default \code{TRUE}.}
+
+\item{show_sigma_zones}{Logical. Show 1- and 2-sigma zones as
+shaded bands? Default \code{FALSE}.}
+
+\item{locale}{Optional override for the chart's stored locale.}
 }
 \value{
 A \code{plotly} object (S3 class \code{plotly} / \code{htmlwidget}) ready

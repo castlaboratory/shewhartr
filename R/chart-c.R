@@ -91,6 +91,14 @@ shewhart_c <- function(data, defects, index = NULL,
                       rep(c_bar, length(defects_v)),
                       rep(sigma, length(defects_v)),
                       rules)
+  violations <- shewhart_runs(defects_v, rules = rules,
+                              center = c_bar, sigma = sigma)
+  if (limits == "poisson") {
+    # Nelson 1 must agree with the plotted exact limits
+    ex <- apply_exact_limits_rule1(flags, violations, defects_v,
+                                   lower, upper, rules)
+    flags <- ex$flags; violations <- ex$violations
+  }
 
   augmented <- tibble::tibble(
     !!index_name := idx,
@@ -108,9 +116,6 @@ shewhart_c <- function(data, defects, index = NULL,
     line  = c("CL", "UCL", "LCL"),
     value = c(c_bar, upper, lower)
   )
-
-  violations <- shewhart_runs(defects_v, rules = rules,
-                              center = c_bar, sigma = sigma)
 
   new_shewhart_chart(
     type         = "c",

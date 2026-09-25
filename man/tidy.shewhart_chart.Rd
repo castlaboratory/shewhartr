@@ -13,6 +13,11 @@
 }
 \value{
 A tibble with at least columns \code{chart}, \code{line}, \code{value}.
+For regression charts, whose limits follow a fitted curve, the
+tibble is in long format with one row per phase, endpoint and
+line: columns \code{chart} (\code{"regression"}), \code{.phase}, \code{endpoint}
+(\code{"first"} / \code{"last"} observation of the phase), \code{line} (\code{"CL"},
+\code{"UCL"}, \code{"LCL"}) and \code{value}.
 }
 \description{
 Returns a tibble of the chart's control limits in tall format. Each

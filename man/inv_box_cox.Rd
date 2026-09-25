@@ -17,3 +17,9 @@ A numeric vector on the original scale.
 \description{
 Inverse Box-Cox transformation
 }
+\examples{
+y <- box_cox(1:10, lambda = 0.5)
+inv_box_cox(y, lambda = 0.5)          # recovers 1:10
+inv_box_cox(log(1:10), lambda = 0)    # lambda = 0 is exp()
+
+}

@@ -1,4 +1,62 @@
-# shewhartr 1.3.0 (development version)
+# shewhartr 1.3.1 (development version)
+
+## Bug fixes (audit of 2026-09-25)
+
+* `shewhart_capability()` on Xbar-R / Xbar-S charts no longer multiplies
+  the chart's sigma by `sqrt(n)` (it is already the per-individual
+  sigma), and computes the mean and Pp/Ppk from the individual
+  measurements instead of the subgroup means. Cp was depressed by
+  `sqrt(n)` and Pp could be `Inf`. Subgroup charts now carry their
+  individual measurements in `metadata$values` (#2).
+* `shewhart_capability()` bootstrap intervals re-estimate sigma within
+  in every replicate with the chart's own estimator (whole subgroups
+  resampled for Xbar charts, consecutive pairs for individual charts).
+  The Cp/Cpk interval used to be an interval for Pp/Ppk. Capability now
+  errors for chart types where it is undefined (attribute, regression,
+  multivariate) (#24).
+* `monitor()` on an I-MR chart now returns the moving-range columns
+  (`.mr`, seeded with the last Phase I value, and the stored MR limits),
+  so `autoplot()` and `as_plotly()` work on Phase II I-MR charts (#3).
+* p / c / u charts with exact limits (`limits = "binomial"` /
+  `"poisson"`) flag Nelson 1 against the plotted exact limits, not
+  against 3 sigma; `monitor()` keeps the exact method instead of
+  falling back to 3-sigma limits (#10).
+* Regression chart legend wraps to rows of five keys when there are
+  more than five phases, with the title above the keys, so it no
+  longer runs off a 7-inch device; `as_plotly()` places the regression
+  legend below the plot (#12, GitHub issue #1).
+* Nelson rules 3, 4, 7 and 8 no longer abort on missing values: a
+  window containing an `NA` does not fire (#14).
+* `glance()$pct_violations` is now the share of points flagged by at
+  least one rule (`mean(.flag_any)`) and can no longer exceed 1 (#17).
+* `tidy()` on a regression chart follows the documented
+  `chart` / `line` / `value` schema (long format, with `.phase` and
+  `endpoint` columns) (#18).
+* `as_plotly()` forwards `locale`, `show_violations` and
+  `show_sigma_zones` to `autoplot()` (#19).
+* `show_sigma_zones = TRUE` now draws the 1- and 2-sigma zones on the
+  top panel of I-MR, Xbar-R and Xbar-S plots (#20).
+* Nelson rules 5 and 6 fire at the point that completes the pattern
+  (which must itself be beyond the zone): the same pair is no longer
+  flagged twice, and patterns starting at positions 1-2 are caught
+  (#30).
+* `shewhart_p()` and `monitor()` reject subgroups with `n = 0` instead
+  of silently producing `NaN` proportions (#32).
+* The regression legend uses the phase labels the constructor computes
+  ("Base", "Phase 1", ..., "Monitoring"); the regression subtitle and
+  the CUSUM "Positive" / "Negative" legend are translated through the
+  locale table (#36).
+
+## Release hygiene
+
+* `lubridate` and `vdiffr` removed from `Suggests` (unused).
+* `inv_box_cox()` gains an example; `cran-comments.md` describes the
+  1.3.0 submission.
+* Plot chunks re-enabled in the `phase1-phase2`, `getting-started`,
+  `variables-charts`, `attributes-charts`, `diagnostics` and `box-cox`
+  vignettes (#37).
+
+# shewhartr 1.3.0
 
 ## New chart family
 

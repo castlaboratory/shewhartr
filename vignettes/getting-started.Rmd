@@ -48,7 +48,7 @@ fit_imr
 The print method shows control limits for both panels (the I chart and
 the MR chart) and lists any rule violations. To see the chart:
 
-```{r, eval = FALSE}
+```{r, fig.height = 6}
 autoplot(fit_imr)
 ```
 
