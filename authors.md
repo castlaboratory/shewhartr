@@ -3,12 +3,15 @@
 ## Authors
 
 - **[André Leite](https://castlab.org)**. Author, maintainer.
+  [](https://orcid.org/0000-0002-4718-9766)
 
 - **Hugo Vasconcelos**. Author.
+  [](https://orcid.org/0000-0001-6249-0920)
 
 - **Raydonal Ospina**. Author.
 
 - **Cristiano Ferraz**. Author.
+  [](https://orcid.org/0000-0002-6838-6734)
 
 - **[![Castlab](https://castlab.org/img/icon.png)](https://castlab.org)**.
   Copyright holder, funder.

@@ -2,6 +2,8 @@
 
 ## shewhartr 1.4.0
 
+CRAN release: 2026-09-25
+
 ### New features: reproducing Ferraz et al. (2020) (GitHub issues [\#2](https://github.com/castlaboratory/shewhartr/issues/2), [\#3](https://github.com/castlaboratory/shewhartr/issues/3))
 
 - [`shewhart_regression()`](https://castlaboratory.github.io/shewhartr/reference/shewhart_regression.md)
