@@ -8,7 +8,7 @@
 - **Hugo Vasconcelos**. Author.
   [](https://orcid.org/0000-0001-6249-0920)
 
-- **Raydonal Ospina**. Author.
+- **Raydonal Ospina**. Author. [](https://orcid.org/0000-0002-9884-9090)
 
 - **Cristiano Ferraz**. Author.
   [](https://orcid.org/0000-0002-6838-6734)
