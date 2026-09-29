@@ -4,11 +4,14 @@ Title: Statistical Process Control with Tidyverse-Native Workflows
 Version: 1.4.0
 Authors@R: c(
     person("André", "Leite", , "leite@castlab.org",
-           role = c("aut", "cre")),
+           role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-4718-9766")),
     person("Hugo", "Vasconcelos", , "hugo.vasconcelos@ufpe.br",
-           role = "aut"),
+           role = "aut",
+           comment = c(ORCID = "0000-0001-6249-0920")),
     person("Raydonal", "Ospina", , "raydonal@castlab.org", role = "aut"),
-    person("Cristiano", "Ferraz", , "cferraz@castlab.org", role = "aut"),
+    person("Cristiano", "Ferraz", , "cferraz@castlab.org", role = "aut",
+           comment = c(ORCID = "0000-0002-6838-6734")),
     person("Castlab", role = c("cph", "fnd"))
     )
 Description: A comprehensive toolkit for Statistical Process Control (SPC)

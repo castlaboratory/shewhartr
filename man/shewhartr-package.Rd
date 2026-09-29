@@ -111,14 +111,14 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: André Leite \email{leite@castlab.org}
+\strong{Maintainer}: André Leite \email{leite@castlab.org} (\href{https://orcid.org/0000-0002-4718-9766}{ORCID})
 
 Authors:
 \itemize{
-  \item André Leite \email{leite@castlab.org}
-  \item Hugo Vasconcelos \email{hugo.vasconcelos@ufpe.br}
+  \item André Leite \email{leite@castlab.org} (\href{https://orcid.org/0000-0002-4718-9766}{ORCID})
+  \item Hugo Vasconcelos \email{hugo.vasconcelos@ufpe.br} (\href{https://orcid.org/0000-0001-6249-0920}{ORCID})
   \item Raydonal Ospina \email{raydonal@castlab.org}
-  \item Cristiano Ferraz \email{cferraz@castlab.org}
+  \item Cristiano Ferraz \email{cferraz@castlab.org} (\href{https://orcid.org/0000-0002-6838-6734}{ORCID})
 }
 
 Other contributors:
