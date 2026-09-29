@@ -9,7 +9,8 @@ Authors@R: c(
     person("Hugo", "Vasconcelos", , "hugo.vasconcelos@ufpe.br",
            role = "aut",
            comment = c(ORCID = "0000-0001-6249-0920")),
-    person("Raydonal", "Ospina", , "raydonal@castlab.org", role = "aut"),
+    person("Raydonal", "Ospina", , "raydonal@castlab.org", role = "aut",
+           comment = c(ORCID = "0000-0002-9884-9090")),
     person("Cristiano", "Ferraz", , "cferraz@castlab.org", role = "aut",
            comment = c(ORCID = "0000-0002-6838-6734")),
     person("Castlab", role = c("cph", "fnd"))
