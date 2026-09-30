@@ -204,7 +204,7 @@ If you use `shewhartr` in academic work, please cite:
 - Perla, R. J., Provost, S. M., Parry, G. J., Little, K., & Provost,
   L. P. (2020). Understanding variation in reported COVID-19 deaths
   with a novel Shewhart chart application. *International Journal
-  for Quality in Health Care*, 32(10), 685-688.
+  for Quality in Health Care*, 33(1), mzaa069.
   doi:10.1093/intqhc/mzaa069.
 - Ferraz, C., Petenate, A. J., Leite Wanderley, A., Ospina, R.,
   Torres, J. E. M., & Peruzzi Moreira, A. (2020). Gráficos de

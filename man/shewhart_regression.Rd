@@ -52,7 +52,13 @@ and \code{limits_scale = "model"} is available.}
 \item{dummy}{Optional tidy-eval column reference for an additive
 covariate (a "dummy" in the original v0.1 nomenclature; can be
 any factor or numeric covariate the user wants to adjust for,
-such as day-of-week effects or treatment indicators).}
+such as day-of-week effects or treatment indicators). A factor adds
+one coefficient per level but the first, so automatic phase
+detection keeps at least twice the number of coefficients in every
+phase it closes (16 rows for a trend plus the day of the week). A
+phase supplied through \code{phase_changes} that leaves fewer than 2
+residual degrees of freedom extrapolates the previous phase, with a
+warning; a base phase that short is an error.}
 
 \item{start_base}{Integer or \code{NULL}. Number of initial observations
 used to estimate the first (base) phase. With automatic phase
@@ -191,7 +197,7 @@ Process Control} (2nd ed.). SPC Press.
 Perla, R. J., Provost, S. M., Parry, G. J., Little, K., & Provost,
 L. P. (2020). Understanding variation in reported COVID-19 deaths
 with a novel Shewhart chart application. \emph{International Journal for
-Quality in Health Care}, 32(10), 685-688.
+Quality in Health Care}, 33(1), mzaa069.
 \doi{10.1093/intqhc/mzaa069}
 
 Ferraz, C., Petenate, A. J., Leite Wanderley, A., Ospina, R.,

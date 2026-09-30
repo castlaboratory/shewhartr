@@ -114,12 +114,26 @@ test_that("growth-curve first increment drops the cumsum offset (audit #35)", {
   d   <- data.frame(t = t, y = c(cum[1], diff(cum)) + c(0.3, -0.3))
   fit <- shewhart_regression(d, value = y, index = t, model = "logistic",
                              phase_changes = 999)
-  f  <- fit$fits[[1]]
-  C1 <- as.vector(stats::predict(f, newdata = data.frame(.N = 1)))
-  C2 <- as.vector(stats::predict(f, newdata = data.frame(.N = 2)))
-  # The model is fitted to cumsum(y) + 1, so the first increment is C(1) - 1
-  expect_equal(fit$augmented$.fitted[1], C1 - 1)
-  expect_equal(fit$augmented$.fitted[2], C2 - C1)
+  f <- fit$fits[[1]]
+  C <- as.vector(stats::predict(f, newdata = data.frame(.N = 0:2)))
+  # The model is fitted to cumsum(y) + 1; every increment, the first
+  # included, is a difference of the fitted curve, so the offset cancels
+  expect_equal(fit$augmented$.fitted[1], C[2] - C[1])
+  expect_equal(fit$augmented$.fitted[2], C[3] - C[2])
+})
+
+test_that("first increment of a mid-wave growth phase follows the curve", {
+  # The phase starts on the rising side of a wave, so the fitted
+  # cumulative curve is well above 1 at .N = 0. The old C(1) - 1 put
+  # that whole value on the first day (42.9 here, for 16 observed).
+  t   <- 0:60
+  cum <- 5000 * exp(-exp(-0.08 * (t - 20)))
+  d   <- data.frame(t = 1:60, y = round(diff(cum)))
+  fit <- shewhart_regression(d, value = y, index = t, model = "gompertz",
+                             phase_changes = integer(0))
+  expect_equal(fit$fits[[1]]$.shewhart_model, "gompertz")
+  expect_lt(abs(fit$augmented$.fitted[1] - d$y[1]), 4)
+  expect_lt(fit$augmented$.fitted[1], fit$augmented$.fitted[2])
 })
 
 test_that("build_phases has no undeclared global variables (audit #31)", {
@@ -127,4 +141,44 @@ test_that("build_phases has no undeclared global variables (audit #31)", {
   find_globals <- get("findGlobals", envir = asNamespace("codetools"))
   g <- find_globals(build_phases, merge = FALSE)$variables
   expect_false(".phase" %in% g)
+})
+
+test_that("automatic phases with a weekday covariate keep residual df", {
+  # A 7-level factor adds 6 coefficients; the old detection cut 8-row
+  # phases, which a model with 8 coefficients fits exactly (sigma = 0).
+  set.seed(11)
+  n   <- 200
+  dow <- factor(rep(c("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"),
+                    length.out = n))
+  eff <- c(Sun = -0.8, Mon = -0.6, Tue = 0.3, Wed = 0.3, Thu = 0.3,
+           Fri = 0.2, Sat = 0.3)[as.character(dow)]
+  lam <- exp(3 + 0.01 * seq_len(n) - 0.00008 * seq_len(n)^2 + eff)
+  d   <- data.frame(t = seq_len(n), y = stats::rpois(n, lam), dow = dow)
+  fit <- shewhart_regression(d, value = y, index = t, model = "log",
+                             dummy = dow, limits_scale = "model",
+                             start_base = 21, phase_rule = "we_seven_same")
+  len <- as.integer(table(fit$augmented$.phase))
+  k   <- vapply(fit$fits, function(f) sum(!is.na(stats::coef(f))), 1L)
+  expect_true(all(len[-length(len)] - k[-length(k)] >= 2L))
+  expect_true(all(fit$metadata$phase_sigma > 1e-6))
+})
+
+test_that("a supplied phase too short for its model extrapolates the previous one", {
+  set.seed(12)
+  n   <- 60
+  dow <- factor(rep(1:7, length.out = n))
+  d   <- data.frame(t = seq_len(n), y = 10 + 0.1 * seq_len(n) +
+                      as.integer(dow) + stats::rnorm(n), dow = dow)
+  expect_warning(
+    fit <- shewhart_regression(d, value = y, index = t, model = "linear",
+                               dummy = dow, phase_changes = c(31, 39)),
+    "too short"
+  )
+  expect_equal(fit$metadata$phase_sigma[2], fit$metadata$phase_sigma[1])
+  expect_equal(fit$metadata$phase_n_end[2], 38L)
+  expect_error(
+    shewhart_regression(d, value = y, index = t, model = "linear",
+                        dummy = dow, phase_changes = 9),
+    "base phase is too short"
+  )
 })

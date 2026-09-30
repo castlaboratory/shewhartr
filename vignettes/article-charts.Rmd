@@ -481,7 +481,7 @@ whether they departed from what was expected on 4 July.
 - Perla, R. J., Provost, S. M., Parry, G. J., Little, K., & Provost,
   L. P. (2020). Understanding variation in reported COVID-19 deaths
   with a novel Shewhart chart application. *International Journal for
-  Quality in Health Care*, 32(10), 685-688.
+  Quality in Health Care*, 33(1), mzaa069.
   doi:10.1093/intqhc/mzaa069.
 - Woodall, W. H. (2000). Controversies and contradictions in
   statistical process control. *Journal of Quality Technology*,

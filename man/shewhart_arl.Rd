@@ -69,7 +69,7 @@ shewhart_arl(shift = c(0, 0.5, 1, 1.5, 2),
 \references{
 Champ, C. W., & Woodall, W. H. (1987). Exact Results for Shewhart
 Control Charts with Supplementary Runs Rules. \emph{Technometrics},
-29(4), 393-399. \doi{10.1080/00401706.1987.10488262}
+29(4), 393-399. \doi{10.1080/00401706.1987.10488266}
 
 Wald, A. (1947). \emph{Sequential Analysis}. Wiley.
 }
