@@ -72,8 +72,8 @@
 #   Perla, R. J., Provost, S. M., Parry, G. J., Little, K., &
 #     Provost, L. P. (2020). Understanding variation in reported
 #     COVID-19 deaths with a novel Shewhart chart application.
-#     International Journal for Quality in Health Care, 32(10),
-#     685-688. <doi:10.1093/intqhc/mzaa069>
+#     International Journal for Quality in Health Care, 33(1),
+#     mzaa069. <doi:10.1093/intqhc/mzaa069>
 #   Ferraz, C., Petenate, A. J., Leite Wanderley, A., Ospina, R.,
 #     Torres, J., & Peruzzi Moreira, A. (2020). COVID-19:
 #     monitoramento por graficos de Shewhart. Revista Brasileira de
@@ -117,7 +117,13 @@
 #' @param dummy Optional tidy-eval column reference for an additive
 #'   covariate (a "dummy" in the original v0.1 nomenclature; can be
 #'   any factor or numeric covariate the user wants to adjust for,
-#'   such as day-of-week effects or treatment indicators).
+#'   such as day-of-week effects or treatment indicators). A factor adds
+#'   one coefficient per level but the first, so automatic phase
+#'   detection keeps at least twice the number of coefficients in every
+#'   phase it closes (16 rows for a trend plus the day of the week). A
+#'   phase supplied through `phase_changes` that leaves fewer than 2
+#'   residual degrees of freedom extrapolates the previous phase, with a
+#'   warning; a base phase that short is an error.
 #' @param start_base Integer or `NULL`. Number of initial observations
 #'   used to estimate the first (base) phase. With automatic phase
 #'   detection, `NULL` (the default) means 10. When `phase_changes` is
@@ -211,7 +217,7 @@
 #' Perla, R. J., Provost, S. M., Parry, G. J., Little, K., & Provost,
 #' L. P. (2020). Understanding variation in reported COVID-19 deaths
 #' with a novel Shewhart chart application. *International Journal for
-#' Quality in Health Care*, 32(10), 685-688.
+#' Quality in Health Care*, 33(1), mzaa069.
 #' \doi{10.1093/intqhc/mzaa069}
 #'
 #' Ferraz, C., Petenate, A. J., Leite Wanderley, A., Ospina, R.,
@@ -530,10 +536,15 @@ auto_model_from_lambda <- function(lambda) {
 #'
 #' Gompertz / logistic fits model the cumulative series
 #' `cumsum(y) + 1` against `.N`; the fitted increment at `.N` is
-#' `C(.N) - C(.N - 1)`, with `C(0) = 1` (the offset: nothing
-#' accumulated yet). Evaluating `C(.N - 1)` explicitly keeps this
-#' correct for the first row of a phase and for Phase II rows whose
-#' `.N` continues past the calibration data.
+#' `C_hat(.N) - C_hat(.N - 1)` for every row, the first of a phase
+#' included. The `+ 1` offset cancels in the difference (audit #35).
+#' The first row uses the fitted curve at `.N = 0`, not the observed
+#' `C(0) = 1`: a phase that starts mid-wave is fitted by a curve whose
+#' value at 0 is far above 1, and mixing the observed origin with the
+#' fitted curve put the whole fitted cumulative value on the first
+#' day (137 deaths for 28 observed in Pernambuco, 2020-04-15).
+#' Evaluating `C_hat(.N - 1)` explicitly keeps this correct for Phase
+#' II rows whose `.N` continues past the calibration data.
 #'
 #' @keywords internal
 #' @noRd
@@ -550,7 +561,6 @@ predict_original <- function(fit, newdata, value_name) {
       prev_data    <- newdata
       prev_data$.N <- newdata$.N - 1
       prev         <- stats::predict(fit, newdata = prev_data)
-      prev[prev_data$.N <= 0] <- 1
       as.vector(pred - prev)
     },
     pred
@@ -612,20 +622,30 @@ detect_phases <- function(data, value_q, index_q, dummy_q, model, formula,
     last_phase <- aug |>
       dplyr::filter(.data$.phase == max(.data$.phase))
 
-    if (nrow(last_phase) >= min_phase) {
+    # A phase must keep residual degrees of freedom after the cut. With
+    # the default models (2 or 3 coefficients) the run length is the
+    # binding constraint and nothing changes; a covariate such as the
+    # day of the week adds coefficients (8 with a 7-level factor), and
+    # an 8-row phase would then be fitted exactly, with sigma = 0.
+    k       <- n_coef(utils::tail(attr(aug, "fits"), 1L)[[1L]])
+    min_cut <- max(n_consec, 2L * k)
+    min_len <- max(min_phase, min_cut + n_consec)
+
+    if (nrow(last_phase) >= min_len) {
       flag_col <- paste0(".flag_", phase_rule)
-      # Skip the first n_consec rows of the phase: the run rule needs
+      # Skip the first min_cut rows of the phase: the run rule needs
       # n_consec observations to even start firing, so any flag inside
       # that window is just the rule's warm-up, not real evidence of a
-      # new phase.
+      # new phase; and the phase being closed needs enough rows for its
+      # coefficients.
       hit <- which(last_phase[[flag_col]] &
-                   seq_len(nrow(last_phase)) > n_consec)
+                   seq_len(nrow(last_phase)) > min_cut)
       if (length(hit) > 0L) {
         new_pos <- last_phase$.obs[hit[1]] + 1L
         # The piece left over after the cut must itself be large
         # enough to estimate a regression model on.
         leftover <- nrow(data) - new_pos + 1L
-        if (!new_pos %in% positions && leftover >= n_consec) {
+        if (!new_pos %in% positions && leftover >= max(n_consec, k + 2L)) {
           positions <- sort(unique(c(positions, new_pos)))
           changed   <- TRUE
         }
@@ -683,6 +703,29 @@ build_phases <- function(data, value_q, index_q, dummy_q, model, formula,
                       call = call)
       }
       offset <- 0L
+      # Fewer than 2 residual degrees of freedom: the fit is (nearly)
+      # exact and its sigma is meaningless. Treat the phase as too
+      # short, as above, instead of drawing limits of width ~0.
+      df_res <- fit_df_residual(fit, nrow(sub))
+      if (!is.na(df_res) && df_res < 2L) {
+        if (p == 0L) {
+          cli::cli_abort(c(
+            "The base phase is too short for its model.",
+            "x" = "{nrow(sub)} observation{?s} for {n_coef(fit)}
+                   coefficient{?s} leave{?s/} {df_res} residual degree{?s}
+                   of freedom.",
+            "i" = "Increase {.arg start_base}, or drop {.arg dummy}."
+          ), call = call)
+        }
+        cli::cli_warn(c(
+          "Phase {p} is too short for its model and extrapolates phase
+           {p - 1L}.",
+          "i" = "{nrow(sub)} observation{?s} for {n_coef(fit)} coefficient{?s}."
+        ))
+        inherit <- TRUE
+        fit     <- fits[[p]]
+        offset  <- n_end[p]
+      }
     }
     sub$.N <- offset + seq_len(nrow(sub))
     # Single-bracket assignment: `fits[[i]] <- NULL` would delete the
@@ -757,6 +800,27 @@ build_phases <- function(data, value_q, index_q, dummy_q, model, formula,
   attr(augmented, "fits") <- fits
   attr(augmented, "phase_info") <- list(n_end = n_end, sigma = sigma)
   augmented
+}
+
+#' Number of estimated coefficients of a phase fit (0 for no fit)
+#'
+#' Aliased coefficients (NA in a rank-deficient `lm`, e.g. a weekday
+#' level absent from a short phase) are not counted.
+#'
+#' @keywords internal
+#' @noRd
+n_coef <- function(fit) {
+  if (is.null(fit)) return(0L)
+  sum(!is.na(stats::coef(fit)))
+}
+
+#' Residual degrees of freedom of a phase fit
+#'
+#' @keywords internal
+#' @noRd
+fit_df_residual <- function(fit, n) {
+  if (is.null(fit)) return(NA_integer_)
+  as.integer(n - n_coef(fit))
 }
 
 #' Residual sigma by the chosen estimator

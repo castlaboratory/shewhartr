@@ -1,3 +1,38 @@
+# shewhartr (development version)
+
+## Bug fixes found while writing the R Journal article
+
+* `shewhart_regression()` with `model = "gompertz"` or `"logistic"`:
+  the fitted value of the first row of a phase is now the difference
+  of the fitted cumulative curve, `C_hat(1) - C_hat(0)`, like every
+  other row. Since audit #35 it was `C_hat(1) - 1`, which assumes the
+  fitted curve passes through the origin; a phase that starts
+  mid-wave is fitted by a curve well above 1 at `.N = 0`, and the
+  whole fitted cumulative value landed on the first day (137 deaths
+  for 28 observed in Pernambuco, 2020-04-15). Centre line and limits
+  change on the first row of such phases only, and in Phase II
+  nothing changes.
+* Automatic phase detection with `dummy` no longer closes phases too
+  short for the model. A 7-level factor adds 6 coefficients, and the
+  old minimum of `n_consec + 1` rows (8 for `"we_seven_same"`) fitted
+  a trend-plus-weekday model exactly, with sigma = 0. A phase now
+  needs at least twice its number of coefficients before it can be
+  closed, and the piece after the cut at least the number of
+  coefficients plus 2. Without a covariate the thresholds are
+  unchanged, so charts without `dummy` are identical.
+* A phase that leaves fewer than 2 residual degrees of freedom (for
+  example one supplied through `phase_changes` with a covariate) now
+  extrapolates the previous phase with a warning, instead of drawing
+  limits of width zero. A base phase that short is an error.
+
+## Documentation
+
+* Corrected the citation of Perla et al.: *International Journal for
+  Quality in Health Care* 33(1), mzaa069, not 32(10), 685-688.
+* Corrected the DOI of Champ & Woodall (1987) in `?shewhart_arl`
+  (`10.1080/00401706.1987.10488266`; the old one pointed to another
+  paper).
+
 # shewhartr 1.4.0
 
 ## New features: reproducing Ferraz et al. (2020) (GitHub issues #2, #3)
